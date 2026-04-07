@@ -1,20 +1,27 @@
 {
   "name": "focus-flow",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.1",
+  "private": false,
+  "description": "Local-first macOS task flow app built with Next.js and Tauri.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "TAURI_BUILD=true next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.7.0",
+    "@tauri-apps/plugin-fs": "^2",
     "next": "16.2.2",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tauri-apps/cli": "^2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -22,5 +29,14 @@
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "keywords": [
+    "focus",
+    "task-manager",
+    "productivity",
+    "tauri",
+    "nextjs"
+  ],
+  "author": "Focus Flow contributors",
+  "license": "MIT"
 }

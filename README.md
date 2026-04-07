@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Focus Flow
 
-## Getting Started
+Focus Flow is a local-first desktop task flow app for macOS. It is designed around a simple daily loop: capture tasks quickly, choose a small Today mainline, and keep review or batch work out of the way until it is time to process it.
 
-First, run the development server:
+The app is built with Next.js, React, Tailwind CSS, and Tauri. It can run as a browser-based development app or as a packaged macOS desktop app.
+
+## Highlights
+
+- Quick capture with multi-line task input and keyboard shortcuts.
+- Today mainline for the few tasks that should stay visible.
+- Inbox, Today, Review, and Batch task lanes.
+- Project and tag management.
+- Collapsible Pomodoro timer and utility toolbox.
+- Local-first persistence with browser fallback and Tauri disk storage.
+- Manual disk backups, import/export, and configurable data directory.
+- macOS desktop packaging with `.app` and `.dmg` outputs.
+- Experimental widget snapshot writer for a future native WidgetKit companion.
+
+## Tech Stack
+
+- Next.js 16
+- React 19
+- Tailwind CSS 4
+- Tauri 2
+- TypeScript
+- Rust for the Tauri shell
+
+## Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the browser development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run the Tauri desktop app in development mode:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run tauri:dev
+```
 
-## Learn More
+Build the static frontend:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Build the macOS desktop bundle and DMG:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run tauri:build
+```
 
-## Deploy on Vercel
+## Data Storage
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Focus Flow does not store user data inside the `.app` bundle.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+By default, the Tauri app stores data under the macOS Application Support directory:
+
+```text
+~/Library/Application Support/ai.openclaw.focusflow/
+```
+
+The app can also migrate data to a user-selected directory from the toolbox. Import, reset, and data-directory migration actions attempt to create a disk backup first.
+
+## macOS Widget Status
+
+The app currently writes a widget-friendly snapshot file for future integration:
+
+```text
+focus-flow-widget-snapshot.json
+```
+
+A real macOS widget still requires a native WidgetKit extension and an App Group data-sharing setup. See `MAC_WIDGET_PLAN.md` for the current plan.
+
+## Release Flow
+
+This project batches changes before packaging. A release should pass:
+
+```bash
+npm run lint
+npm run build
+npm run tauri:build
+```
+
+See `RELEASE_PLAN.md` and `RELEASE_CHECKLIST.md` for the current release process.
+
+## License
+
+MIT

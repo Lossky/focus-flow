@@ -20,6 +20,15 @@
 # production
 /build
 
+# tauri / rust
+/src-tauri/target/
+/src-tauri/gen/
+
+# local planning notes
+/findings.md
+/progress.md
+/task_plan.md
+
 # misc
 .DS_Store
 *.pem
