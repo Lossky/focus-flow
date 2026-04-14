@@ -5,7 +5,7 @@
   "description": "Local-first macOS task flow app built with Next.js and Tauri.",
   "scripts": {
     "dev": "next dev",
-    "build": "TAURI_BUILD=true next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "tauri:dev": "tauri dev",
