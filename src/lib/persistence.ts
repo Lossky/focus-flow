@@ -1,4 +1,4 @@
-import type { WidgetSnapshot } from "@/lib/focus-flow-model";
+import type { DailySessionStats, WidgetSnapshot } from "@/lib/focus-flow-model";
 
 export type PersistedSnapshot = {
   version: number;
@@ -7,11 +7,18 @@ export type PersistedSnapshot = {
   projects: unknown[];
   tags: unknown[];
   reports: { date: string; content: string }[];
+  sessionStats?: DailySessionStats;
 };
 export type PersistenceSettings = {
   version: 1;
   dataDir?: string;
   updatedAt: string;
+};
+export type BackupEntry = {
+  name: string;
+  path: string;
+  reason: string;
+  createdAt?: string;
 };
 
 export const STORAGE_FILE = "focus-flow-data.json";
@@ -91,6 +98,53 @@ export async function createBackupSnapshotToDisk(snapshot: PersistedSnapshot, re
     return filePath;
   } catch (error) {
     console.error("Failed to create backup snapshot", error);
+    return null;
+  }
+}
+
+export async function listBackupSnapshotsFromDisk(): Promise<BackupEntry[]> {
+  if (!(await isTauriRuntime())) return [];
+
+  try {
+    const [{ join }, { exists, readDir }] = await Promise.all([
+      import("@tauri-apps/api/path"),
+      import("@tauri-apps/plugin-fs"),
+    ]);
+
+    const dir = await resolveActiveDataDir();
+    const backupDir = await join(dir, BACKUP_DIR);
+    if (!(await exists(backupDir))) return [];
+
+    const entries = await readDir(backupDir);
+    const backups = await Promise.all(entries
+      .filter((entry) => entry.isFile && entry.name.startsWith("focus-flow-") && entry.name.endsWith(".json"))
+      .map(async (entry) => ({
+        ...parseBackupFileName(entry.name),
+        name: entry.name,
+        path: await join(backupDir, entry.name),
+      })));
+
+    return backups.sort((left, right) => {
+      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+      if (rightTime !== leftTime) return rightTime - leftTime;
+      return right.name.localeCompare(left.name);
+    });
+  } catch (error) {
+    console.error("Failed to list backup snapshots", error);
+    return [];
+  }
+}
+
+export async function loadBackupSnapshotFromDisk(path: string): Promise<PersistedSnapshot | null> {
+  if (!(await isTauriRuntime())) return null;
+
+  try {
+    const { readTextFile } = await import("@tauri-apps/plugin-fs");
+    const text = await readTextFile(path);
+    return JSON.parse(text) as PersistedSnapshot;
+  } catch (error) {
+    console.error("Failed to load backup snapshot", error);
     return null;
   }
 }
@@ -223,4 +277,19 @@ async function savePersistenceSettings(settings: PersistenceSettings): Promise<v
   await mkdir(dir, { recursive: true });
   const filePath = await join(dir, SETTINGS_FILE);
   await writeTextFile(filePath, JSON.stringify(settings, null, 2));
+}
+
+function parseBackupFileName(name: string): Pick<BackupEntry, "reason" | "createdAt"> {
+  const match = name.match(/^focus-flow-(.+)-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)\.json$/);
+  if (!match) return { reason: "backup" };
+
+  const [, rawReason, rawTimestamp] = match;
+  const createdAt = rawTimestamp.replace(
+    /^(\d{4}-\d{2}-\d{2}T)(\d{2})-(\d{2})-(\d{2})-(\d{3}Z)$/,
+    "$1$2:$3:$4.$5",
+  );
+  return {
+    reason: rawReason.replace(/-/g, " "),
+    createdAt,
+  };
 }

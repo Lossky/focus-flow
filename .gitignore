@@ -28,6 +28,7 @@
 /findings.md
 /progress.md
 /task_plan.md
+/.playwright-cli/
 
 # misc
 .DS_Store

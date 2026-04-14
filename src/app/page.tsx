@@ -1,47 +1,89 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createBackupSnapshotToDisk, getBackupDirPath, getDataFilePath, loadSnapshotFromDisk, resetDataDirToDefault, saveSnapshotToDisk, saveWidgetSnapshotToDisk, setCustomDataDir, type PersistedSnapshot } from "@/lib/persistence";
+import { open } from "@tauri-apps/plugin-dialog";
+import { getBackupDirPath, getDataFilePath } from "@/lib/persistence";
+import { FocusFlowProvider } from "@/contexts/focus-flow-context";
+import { LocaleProvider } from "@/contexts/locale-context";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { enterCornerWindowMode, exitCornerWindowMode } from "@/lib/window-controls";
 import { AlwaysOnTopToggle } from "@/components/focus-flow/always-on-top-toggle";
+import { CornerMiniWindow } from "@/components/focus-flow/corner-mini-window";
 import { EditItemModal } from "@/components/focus-flow/edit-item-modal";
-import { ProjectManagementModal, ProjectSummaryModal, ReportModal, TagManagementModal } from "@/components/focus-flow/management-modals";
+import { FloatingPomodoro } from "@/components/focus-flow/floating-pomodoro";
+import { FocusSession } from "@/components/focus-flow/focus-session";
+import {
+  CompletedHistoryModal,
+  ProjectManagementModal,
+  ProjectSummaryModal,
+  ReportModal,
+  RestReminderPanel,
+  TagManagementModal,
+} from "@/components/focus-flow/management-modals";
 import { QuickCapture } from "@/components/focus-flow/quick-capture";
 import { BoardView, FlowView, type FlowSection } from "@/components/focus-flow/task-views";
 import { TodayMainline } from "@/components/focus-flow/today-mainline";
 import { StatCard } from "@/components/focus-flow/ui";
 import { Workbench } from "@/components/focus-flow/workbench";
+import { LocaleToggle } from "@/components/focus-flow/locale-toggle";
+import { PixelHeart, PixelCat } from "@/components/focus-flow/pixel-art";
 import {
-  POMODORO_SECONDS,
-  PROJECTS_KEY,
-  REPORTS_KEY,
-  STORAGE_KEY,
-  TAGS_KEY,
-  classifyInput,
-  colors,
-  createSeedItems,
-  createWidgetSnapshot,
-  defaultProjects,
-  defaultTags,
-  parseMultiTask,
   type DragState,
   type ExportPayload,
   type Item,
   type ItemSource,
   type ItemStatus,
-  type PomodoroState,
   type Priority,
-  type Project,
   type RepeatType,
-  type StorageMode,
-  type TagDef,
   type ToastState,
   type ViewMode,
 } from "@/lib/focus-flow-model";
+import { useItems } from "@/hooks/use-items";
+import { usePomodoro } from "@/hooks/use-pomodoro";
+
+// ---------------------------------------------------------------------------
+// Motivation quotes
+// ---------------------------------------------------------------------------
+
+const MOTIVATION_QUOTES = [
+  { zh: "未经审视的人生不值得过。", en: "The unexamined life is not worth living.", author: "苏格拉底" },
+  { zh: "知人者智，自知者明。", en: "Knowing others is intelligence; knowing yourself is true wisdom.", author: "老子" },
+  { zh: "我思故我在。", en: "I think, therefore I am.", author: "笛卡尔" },
+  { zh: "他人即地狱。", en: "Hell is other people.", author: "萨特" },
+  { zh: "人是生而自由的，却无往不在枷锁之中。", en: "Man is born free, and everywhere he is in chains.", author: "卢梭" },
+  { zh: "凡不能毁灭我的，必使我更强大。", en: "What does not kill me makes me stronger.", author: "尼采" },
+  { zh: "世界上只有一种英雄主义，就是认清生活的真相后依然热爱它。", en: "There is only one heroism: to see the world as it is, and to love it.", author: "罗曼·罗兰" },
+  { zh: "人不是因为没有信念而失败，而是因为不能把信念化成行动。", en: "People fail not because they lack belief, but because they cannot turn belief into action.", author: "巴巴拉·格雷斯" },
+  { zh: "吾生也有涯，而知也无涯。", en: "Life is finite, but knowledge is infinite.", author: "庄子" },
+  { zh: "天行健，君子以自强不息。", en: "As heaven maintains vigor through movements, a gentleman should constantly strive for self-perfection.", author: "《周易》" },
+  { zh: "千里之行，始于足下。", en: "A journey of a thousand miles begins with a single step.", author: "老子" },
+  { zh: "学而不思则罔，思而不学则殆。", en: "Learning without thought is labor lost; thought without learning is perilous.", author: "孔子" },
+  { zh: "真正的智慧是知道自己的无知。", en: "True wisdom is in knowing you know nothing.", author: "苏格拉底" },
+  { zh: "不要去追一匹马，用追马的时间种草。", en: "Do not chase a horse; spend that time planting grass.", author: "谚语" },
+  { zh: "你无法在回顾中连接点滴，只能在展望中连接它们。", en: "You can't connect the dots looking forward; you can only connect them looking backwards.", author: "乔布斯" },
+  { zh: "简单是终极的复杂。", en: "Simplicity is the ultimate sophistication.", author: "达·芬奇" },
+  { zh: "行动是治愈恐惧的良药。", en: "Action is the foundational key to all success.", author: "毕加索" },
+  { zh: "把每一天当作生命的最后一天来过。", en: "Live each day as if it were your last.", author: "马可·奥勒留" },
+  { zh: "完成比完美更重要。", en: "Done is better than perfect.", author: "谢丽尔·桑德伯格" },
+  { zh: "专注意味着对一千件好事说不。", en: "Focus means saying no to a thousand good things.", author: "乔布斯" },
+];
+
+const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
+const APP_VERSION = "0.1.7";
+
+const SECTIONS: FlowSection[] = [
+  { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
+  { key: "today", title: "Today 主线", hint: "今天真正要推进的事情，尽量控制在 1 到 3 个。" },
+  { key: "review", title: "Review 待审区", hint: "AI 草稿、纪要摘要、方案初稿都先放这里。" },
+  { key: "batch", title: "Batch 批处理", hint: "不需要实时响应，但值得集中处理。" },
+];
+
+// ---------------------------------------------------------------------------
+// Home component
+// ---------------------------------------------------------------------------
 
 export default function Home() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [projects, setProjects] = useState<Project[]>(defaultProjects);
-  const [tags, setTags] = useState<TagDef[]>(defaultTags);
+  // --- UI state ---
   const [input, setInput] = useState("");
   const [searchText, setSearchText] = useState("");
   const [source, setSource] = useState<ItemSource>("manual");
@@ -57,78 +99,203 @@ export default function Home() {
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [savedReports, setSavedReports] = useState<{ date: string; content: string }[]>([]);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newTagName, setNewTagName] = useState("");
-  const [pomodoro, setPomodoro] = useState<PomodoroState>({ running: false, secondsLeft: POMODORO_SECONDS });
+  const [quoteIndex, setQuoteIndex] = useState(() => new Date().getDate() % MOTIVATION_QUOTES.length);
+  const [quoteCardPos, setQuoteCardPos] = useState({ x: 0, y: 0 });
+  const quoteVelocityRef = useRef({ vx: 0.4, vy: 0.3 });
+  const quoteCardRef = useRef<HTMLDivElement>(null);
+  const quoteAnimRef = useRef<number>(0);
+  const quoteDragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const quotePausedRef = useRef(false);
+  const [collapsedTaskIds, setCollapsedTaskIds] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(COLLAPSED_TASK_IDS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((value): value is string => typeof value === "string");
+      }
+    } catch {}
+    return [];
+  });
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
   const [dragState, setDragState] = useState<DragState>({});
+  const [isCornerMode, setIsCornerMode] = useState(false);
+
+  // --- Refs ---
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const captureInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const [storageMode, setStorageMode] = useState<StorageMode>("loading");
 
-  useEffect(() => {
-    const boot = async () => {
-      const diskSnapshot = await loadSnapshotFromDisk();
-      if (diskSnapshot?.items?.length) {
-        setItems((diskSnapshot.items as Item[]).map((item) => ({ ...item, projectId: item.projectId || "default", tags: item.tags || [], repeatType: item.repeatType || "none" })));
-        setProjects(diskSnapshot.projects?.length ? diskSnapshot.projects as Project[] : defaultProjects);
-        setTags(diskSnapshot.tags?.length ? diskSnapshot.tags as TagDef[] : defaultTags);
-        setSavedReports(diskSnapshot.reports?.length ? diskSnapshot.reports : []);
-        setStorageMode("disk");
-        return;
-      }
-      setStorageMode("local");
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems((JSON.parse(raw) as Item[]).map((item) => ({ ...item, projectId: item.projectId || "default", tags: item.tags || [], repeatType: item.repeatType || "none" })));
-      else setItems(createSeedItems());
+  // --- Data hook ---
+  const {
+    items,
+    projects,
+    tags,
+    savedReports,
+    setSavedReports,
+    sessionStats,
+    setSessionStats,
+    storageMode,
+    backupEntries,
+    getProjectById,
+    getTagDef,
+    addItems: addItemsHook,
+    moveItem: moveItemHook,
+    toggleMainline: toggleMainlineHook,
+    removeItem: removeItemHook,
+    changeItemProject: changeItemProjectHook,
+    updateItemTags: updateItemTagsHook,
+    saveItemEdit: saveItemEditHook,
+    reorderInStatus: reorderInStatusHook,
+    addProject: addProjectHook,
+    deleteProject: deleteProjectHook,
+    addTag: addTagHook,
+    deleteTag: deleteTagHook,
+    createDiskBackup: createDiskBackupHook,
+    setCustomDataDirectory: setCustomDataDirectoryHook,
+    restoreDefaultDataDirectory: restoreDefaultDataDirectoryHook,
+    restoreBackup: restoreBackupHook,
+    importData: importDataHook,
+    resetAllData: resetAllDataHook,
+    refreshBackups,
+    createCurrentSnapshot,
+  } = useItems();
 
-      const rawProjects = localStorage.getItem(PROJECTS_KEY);
-      if (rawProjects) {
-        const parsed = JSON.parse(rawProjects) as Project[];
-        setProjects(parsed.find((p) => p.id === "default") ? parsed : [...defaultProjects, ...parsed]);
-      }
+  // --- Pomodoro hook ---
+  const getTaskLabel = useCallback(
+    (taskId: string) => items.find((i) => i.id === taskId)?.content,
+    [items],
+  );
 
-      const rawTags = localStorage.getItem(TAGS_KEY);
-      if (rawTags) setTags(JSON.parse(rawTags) as TagDef[]);
+  const onFocusComplete = useCallback(
+    () => {
+      setSessionStats((prev) => ({
+        ...prev,
+        focusCount: prev.focusCount + 1,
+        lastFocusAt: new Date().toISOString(),
+      }));
+    },
+    [setSessionStats],
+  );
 
-      const rawReports = localStorage.getItem(REPORTS_KEY);
-      if (rawReports) setSavedReports(JSON.parse(rawReports) as { date: string; content: string }[]);
+  const {
+    pomodoro,
+    showRestReminder,
+    restReminderTask,
+    startPomodoro,
+    stopPomodoro,
+    resetPomodoro,
+    acknowledgeRest,
+    dismissRest,
+  } = usePomodoro({ onFocusComplete, getTaskLabel });
+
+  // --- Computed values ---
+  const counts = useMemo(() => {
+    const open = items.filter((i) => i.status !== "done" && i.status !== "archived");
+    return {
+      inbox: items.filter((i) => i.status === "inbox").length,
+      today: items.filter((i) => i.status === "today").length,
+      review: items.filter((i) => i.status === "review").length,
+      batch: items.filter((i) => i.status === "batch").length,
+      mainline: open.filter((i) => i.isMainline).length,
     };
-    void boot();
-  }, []);
-  useEffect(() => { if (storageMode !== "loading" && items.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }, [items, storageMode]);
-  useEffect(() => { if (storageMode !== "loading") localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects)); }, [projects, storageMode]);
-  useEffect(() => { if (storageMode !== "loading") localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); }, [tags, storageMode]);
-  useEffect(() => { if (storageMode !== "loading") localStorage.setItem(REPORTS_KEY, JSON.stringify(savedReports)); }, [savedReports, storageMode]);
-  useEffect(() => {
-    if (storageMode === "loading" || !items.length) return;
-    const snapshot: PersistedSnapshot = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      items,
-      projects,
-      tags,
-      reports: savedReports,
-    };
-    void saveSnapshotToDisk(snapshot);
-  }, [items, projects, tags, savedReports, storageMode]);
-  useEffect(() => {
-    if (storageMode === "loading") return;
-    const widgetSnapshot = createWidgetSnapshot({ items, projects, storageMode });
-    void saveWidgetSnapshotToDisk(widgetSnapshot);
-  }, [items, projects, storageMode]);
-  useEffect(() => {
-    if (!pomodoro.running) return;
-    const timer = setInterval(() => setPomodoro((prev) => prev.secondsLeft <= 1 ? { ...prev, running: false, secondsLeft: 0 } : { ...prev, secondsLeft: prev.secondsLeft - 1 }), 1000);
-    return () => clearInterval(timer);
-  }, [pomodoro.running]);
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    let result = items.filter((i) => i.status !== "done" && i.status !== "archived");
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      result = result.filter(
+        (i) =>
+          i.content.toLowerCase().includes(q) ||
+          (i.tags || []).some((t) => t.toLowerCase().includes(q)) ||
+          (getProjectById(i.projectId)?.name || "").toLowerCase().includes(q),
+      );
+    }
+    if (filterTag !== "all") {
+      result = result.filter((i) => (i.tags || []).includes(filterTag));
+    }
+    return result;
+  }, [items, searchText, filterTag, getProjectById]);
+
+  const allUsedTags = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((i) => (i.tags || []).forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [items]);
+
+  const todayLoadWarning = useMemo(() => {
+    const todayCount = items.filter((i) => i.status === "today").length;
+    if (todayCount > 5) return `Today 已有 ${todayCount} 条，建议精简到 1-3 条主线任务。`;
+    if (todayCount > 3) return `Today 有 ${todayCount} 条，留意是否都需要今天推进。`;
+    return "";
+  }, [items]);
+
+  const cornerTodayItems = useMemo(
+    () => items.filter((i) => i.status === "today"),
+    [items],
+  );
+
+  const completedHistoryItems = useMemo(
+    () =>
+      items
+        .filter((i) => i.status === "done" || i.status === "archived")
+        .sort((a, b) => new Date(b.completedAt || b.updatedAt).getTime() - new Date(a.completedAt || a.updatedAt).getTime()),
+    [items],
+  );
+
+  const projectSummary = useMemo(() => {
+    return projects.map((project) => {
+      const projectItems = items.filter((i) => (i.projectId || "default") === project.id);
+      const done = projectItems.filter((i) => i.status === "done" || i.status === "archived").length;
+      return { project, total: projectItems.length, done, undone: projectItems.length - done, items: projectItems };
+    });
+  }, [items, projects]);
+
+  const dailyReport = useMemo(() => {
+    const today = items.filter((i) => i.status === "today");
+    const done = items.filter((i) => i.status === "done");
+    const mainline = items.filter((i) => i.isMainline && i.status !== "done" && i.status !== "archived");
+    const lines: string[] = [
+      `# 日报 ${new Date().toLocaleDateString("zh-CN")}`,
+      "",
+      `## 今日主线 (${mainline.length})`,
+      ...mainline.map((i) => `- ${i.content}`),
+      "",
+      `## Today (${today.length})`,
+      ...today.map((i) => `- ${i.content}`),
+      "",
+      `## 已完成 (${done.length})`,
+      ...done.map((i) => `- ${i.content}`),
+      "",
+      `## 专注统计`,
+      `- 番茄钟完成：${sessionStats.focusCount} 次`,
+      `- 休息次数：${sessionStats.restCount} 次`,
+    ];
+    return lines.join("\n");
+  }, [items, sessionStats]);
+
+  const focusItem = useMemo(
+    () => (pomodoro.taskId ? items.find((item) => item.id === pomodoro.taskId) : undefined),
+    [items, pomodoro.taskId],
+  );
+  const isFocusMode = pomodoro.running;
+  const activePomodoroTaskId = isFocusMode ? pomodoro.taskId : undefined;
+  const isTaskFocusMode = isFocusMode && !!activePomodoroTaskId;
+  const focusProject = focusItem ? getProjectById(focusItem.projectId) : undefined;
+  const activeQuote = MOTIVATION_QUOTES[quoteIndex];
+
+  // --- Effects ---
   useEffect(() => {
     if (!toast.show) return;
     const timer = setTimeout(() => setToast({ show: false, text: "" }), 1800);
     return () => clearTimeout(timer);
   }, [toast]);
+
   useEffect(() => {
     const focusCapture = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -140,195 +307,221 @@ export default function Home() {
     return () => window.removeEventListener("keydown", focusCapture);
   }, []);
 
-  const getProjectById = useCallback((id?: string) => projects.find((p) => p.id === id) || defaultProjects[0], [projects]);
-  const getTagDef = (name: string) => tags.find((t) => t.name === name);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setQuoteIndex((prev) => (prev + 1) % MOTIVATION_QUOTES.length);
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const filteredItems = useMemo(() => {
-    const byTag = filterTag === "all" ? items : items.filter((i) => (i.tags || []).includes(filterTag));
-    const q = searchText.trim().toLowerCase();
-    if (!q) return byTag;
-    return byTag.filter((i) => {
-      const hay = [i.content, getProjectById(i.projectId).name, ...(i.tags || [])].join(" ").toLowerCase();
-      return hay.includes(q);
+  // --- Bouncing quote card animation (viewport-level) ---
+  useEffect(() => {
+    const card = quoteCardRef.current;
+    if (!card) return;
+
+    let x = quoteCardPos.x;
+    let y = quoteCardPos.y;
+    let { vx, vy } = quoteVelocityRef.current;
+
+    const step = () => {
+      if (!quotePausedRef.current) {
+        const cRect = card.getBoundingClientRect();
+        const maxX = window.innerWidth - cRect.width - 16;
+        const maxY = window.innerHeight - cRect.height - 16;
+
+        x += vx;
+        y += vy;
+
+        if (x <= 0) { x = 0; vx = Math.abs(vx); }
+        else if (x >= maxX) { x = maxX; vx = -Math.abs(vx); }
+
+        if (y <= 0) { y = 0; vy = Math.abs(vy); }
+        else if (y >= maxY) { y = maxY; vy = -Math.abs(vy); }
+
+        quoteVelocityRef.current = { vx, vy };
+        setQuoteCardPos({ x, y });
+      } else {
+        // While dragging, sync local x/y from state
+        x = quoteCardRef.current?.getBoundingClientRect().left ?? x;
+        y = quoteCardRef.current?.getBoundingClientRect().top ?? y;
+      }
+      quoteAnimRef.current = requestAnimationFrame(step);
+    };
+
+    quoteAnimRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(quoteAnimRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_TASK_IDS_KEY, JSON.stringify(collapsedTaskIds));
+    } catch {}
+  }, [collapsedTaskIds]);
+
+  // --- Handlers ---
+  const showToast = (text: string) => setToast({ show: true, text });
+
+  const toggleCollapsedTask = useCallback((id: string) => {
+    setCollapsedTaskIds((prev) => (prev.includes(id) ? prev.filter((taskId) => taskId !== id) : [...prev, id]));
+  }, []);
+
+  const addItems = (value: string) => {
+    const { parsedTasks, next } = addItemsHook(value, {
+      dueDate: dueDate || undefined,
+      source,
+      priority,
+      projectId: selectedProject,
+      tags: selectedTags,
+      repeatType,
     });
-  }, [items, filterTag, searchText, getProjectById]);
-  const allUsedTags = useMemo(() => Array.from(new Set(items.flatMap((i) => i.tags || []))), [items]);
-  const counts = useMemo(() => ({
-    inbox: filteredItems.filter((i) => i.status === "inbox").length,
-    today: filteredItems.filter((i) => i.status === "today").length,
-    review: filteredItems.filter((i) => i.status === "review").length,
-    batch: filteredItems.filter((i) => i.status === "batch").length,
-    mainline: filteredItems.filter((i) => i.isMainline && i.status !== "done" && i.status !== "archived").length,
-  }), [filteredItems]);
-  const todayLoadWarning = counts.today > 3 ? `Today 已有 ${counts.today} 条，建议收敛到 1-3 条主线。` : "";
-
-  const projectSummary = useMemo(() => projects.map((project) => {
-    const list = items.filter((i) => (i.projectId || "default") === project.id);
-    return { project, total: list.length, done: list.filter((i) => i.status === "done" || i.status === "archived").length, undone: list.filter((i) => i.status !== "done" && i.status !== "archived").length, items: list };
-  }).filter((x) => x.total > 0), [items, projects]);
-
-  const dailyReport = useMemo(() => {
-    const today = new Date();
-    const sameDay = (v?: string) => !!v && new Date(v).toDateString() === today.toDateString();
-    const added = items.filter((i) => sameDay(i.createdAt));
-    const completed = items.filter((i) => sameDay(i.completedAt));
-    const undone = items.filter((i) => i.status !== "done" && i.status !== "archived");
-    const section = (status: ItemStatus) => undone.filter((i) => i.status === status);
-    const projectStats = projects.map((p) => {
-      const list = items.filter((i) => (i.projectId || "default") === p.id);
-      const add = list.filter((i) => sameDay(i.createdAt)).length;
-      const done = list.filter((i) => sameDay(i.completedAt)).length;
-      const open = list.filter((i) => i.status !== "done" && i.status !== "archived").length;
-      return { p, add, done, open };
-    }).filter((x) => x.add || x.done || x.open);
-
-    const lines: string[] = [];
-    lines.push(`# Focus Flow 日报 - ${today.toLocaleDateString("zh-CN")}`);
-    lines.push("", "## 1. 今日新增");
-    if (!added.length) lines.push("- 无");
-    added.forEach((i) => lines.push(`- [${getProjectById(i.projectId).name}] ${i.content}`));
-    lines.push("", "## 2. 今日完成");
-    if (!completed.length) lines.push("- 无");
-    completed.forEach((i) => lines.push(`- [${getProjectById(i.projectId).name}] ${i.content}${i.result?.trim() ? `（结果：${i.result.trim()}）` : ""}`));
-    lines.push("", "## 3. 当前未完成", "### Today 主线");
-    const todayList = section("today");
-    if (!todayList.length) lines.push("- 无");
-    todayList.forEach((i) => lines.push(`- [${getProjectById(i.projectId).name}] ${i.content}`));
-    lines.push("", "### Batch");
-    const batchList = section("batch");
-    if (!batchList.length) lines.push("- 无");
-    batchList.forEach((i) => lines.push(`- [${getProjectById(i.projectId).name}] ${i.content}`));
-    lines.push("", "### Review");
-    const reviewList = section("review");
-    if (!reviewList.length) lines.push("- 无");
-    reviewList.forEach((i) => lines.push(`- [${getProjectById(i.projectId).name}] ${i.content}`));
-    lines.push("", "## 4. 项目汇总", "| 项目 | 新增 | 完成 | 未完成 |", "|---|---:|---:|---:|");
-    projectStats.forEach(({ p, add, done, open }) => lines.push(`| ${p.name} | ${add} | ${done} | ${open} |`));
-    lines.push("", "## 5. 明日建议");
-    if (todayList.length) lines.push(`- 优先处理 Today 主线中的 ${Math.min(todayList.length, 3)} 项`);
-    if (reviewList.length >= 3) lines.push("- Review 区积压较多，建议集中清理");
-    if (!todayList.length && batchList.length) lines.push("- 可从 Batch 中提炼 1~3 个明日主线任务");
-    if (lines[lines.length - 1] === "## 5. 明日建议") lines.push("- 暂无明显风险，保持节奏即可");
-    return lines.join("\n");
-  }, [items, projects, getProjectById]);
-
-  function addItems() {
-    const value = input.trim();
-    if (!value) return;
-    const now = new Date().toISOString();
-    const next = parseMultiTask(value).map((text) => {
-      const suggestion = classifyInput(text);
-      return { id: crypto.randomUUID(), content: text, source, type: suggestion.type, status: suggestion.status, priority, projectId: selectedProject, dueDate: dueDate || undefined, tags: selectedTags, repeatType, createdAt: now, updatedAt: now, rawInput: text, aiSuggestion: suggestion } as Item;
-    });
-    setItems((prev) => [...next, ...prev]);
-    setInput(""); setDueDate(""); setSelectedTags([]); setNewQuickTag(""); setRepeatType("none"); setPriority("medium");
+    setInput("");
+    setDueDate("");
+    setSelectedTags([]);
+    setNewQuickTag("");
+    setRepeatType("none");
+    setPriority("medium");
+    if (parsedTasks.some((task) => task.parentIndex !== undefined || task.depth > 0)) {
+      showToast(`已加入 ${next.length} 条多级任务`);
+      return;
+    }
     showToast(`已加入 ${next.length} 条任务`);
-  }
+  };
 
-  function showToast(text: string) { setToast({ show: true, text }); }
-  function addProject() {
+  const addFocusCaptureItems = useCallback((value: string, projectId: string) => {
+    const { parsedTasks, next } = addItemsHook(value, {
+      source: "manual",
+      priority: "medium",
+      projectId,
+      dueDate: undefined,
+      tags: [],
+      repeatType: "none",
+      statusOverride: "inbox",
+    });
+    if (parsedTasks.some((task) => task.parentIndex !== undefined || task.depth > 0)) {
+      showToast(`已记下 ${next.length} 条多级任务，稍后去 Inbox 分流`);
+      return;
+    }
+    showToast(`已记下 ${next.length} 条任务，稍后去 Inbox 处理`);
+  }, [addItemsHook]);
+
+  const addProject = () => {
     if (!newProjectName.trim()) return;
-    const project = { id: crypto.randomUUID(), name: newProjectName.trim(), color: colors[projects.length % colors.length] };
-    setProjects((prev) => [...prev, project]);
+    const project = addProjectHook(newProjectName.trim());
     setSelectedProject(project.id);
     setNewProjectName("");
     showToast("项目已创建");
-  }
-  function deleteProject(projectId: string) {
+  };
+
+  const deleteProject = (projectId: string) => {
     if (!confirm("确认删除这个项目？该项目下任务会回到默认项目。")) return;
-    setItems((prev) => prev.map((item) => item.projectId === projectId ? { ...item, projectId: "default" } : item));
-    setProjects((prev) => prev.filter((project) => project.id !== projectId));
+    deleteProjectHook(projectId);
     showToast("项目已删除");
-  }
-  function addTag(name: string) {
-    const clean = name.trim().replace(/^#/, "");
-    if (!clean || tags.some((t) => t.name === clean)) return clean;
-    const tag = { id: crypto.randomUUID(), name: clean, color: colors[tags.length % colors.length] };
-    setTags((prev) => [...prev, tag]);
+  };
+
+  const addTag = (name: string) => {
+    const clean = addTagHook(name);
+    if (!clean) return undefined;
     return clean;
-  }
-  function deleteTag(tagName: string) {
+  };
+
+  const deleteTag = (tagName: string) => {
     if (!confirm("确认删除这个标签？任务上的该标签会一并移除。")) return;
-    setItems((prev) => prev.map((item) => ({ ...item, tags: (item.tags || []).filter((name) => name !== tagName) })));
-    setTags((prev) => prev.filter((tag) => tag.name !== tagName));
+    deleteTagHook(tagName);
     showToast("标签已删除");
-  }
-  function toggleSelectedTag(tagName: string) {
-    setSelectedTags((prev) => prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]);
-  }
-  function createQuickTag() {
+  };
+
+  const toggleSelectedTag = (tagName: string) => {
+    setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]));
+  };
+
+  const createQuickTag = () => {
     const clean = addTag(newQuickTag);
     if (clean) toggleSelectedTag(clean);
     setNewQuickTag("");
-  }
-  function updateItemTags(id: string, tagName: string) {
-    setItems((prev) => prev.map((item) => {
-      if (item.id !== id) return item;
-      const has = (item.tags || []).includes(tagName);
-      return { ...item, tags: has ? (item.tags || []).filter((t) => t !== tagName) : [...(item.tags || []), tagName], updatedAt: new Date().toISOString() };
-    }));
-  }
-  function saveItemEdit(updatedItem: Item) {
-    setItems((prev) => prev.map((item) => item.id === updatedItem.id ? { ...updatedItem, updatedAt: new Date().toISOString() } : item));
+  };
+
+  const updateItemTags = updateItemTagsHook;
+
+  const saveItemEdit = (updatedItem: Item) => {
+    saveItemEditHook(updatedItem);
     setEditingItem(null);
     showToast("任务已保存");
-  }
-  function reorderInStatus(status: ItemStatus, draggedId: string, targetId?: string) {
-    setItems((prev) => {
-      const list = [...prev];
-      const draggedIndex = list.findIndex((i) => i.id === draggedId);
-      if (draggedIndex === -1) return prev;
-      const dragged = { ...list[draggedIndex], status, updatedAt: new Date().toISOString() };
-      list.splice(draggedIndex, 1);
-      if (!targetId) {
-        const lastIndex = list.map((i) => i.status).lastIndexOf(status);
-        list.splice(lastIndex + 1, 0, dragged);
-        return list;
-      }
-      const targetIndex = list.findIndex((i) => i.id === targetId);
-      if (targetIndex === -1) {
-        list.push(dragged);
-        return list;
-      }
-      list.splice(targetIndex, 0, dragged);
-      return list;
-    });
-  }
-  function moveItem(id: string, status: ItemStatus) {
-    const now = new Date().toISOString();
-    setItems((prev) => prev.flatMap((item) => {
-      if (item.id !== id) return [item];
-      const updated = { ...item, status, updatedAt: now, completedAt: status === "done" || status === "archived" ? now : item.completedAt };
-      if ((status === "done" || status === "archived") && item.repeatType && item.repeatType !== "none") {
-        const nextDue = item.dueDate ? new Date(item.dueDate) : new Date();
-        if (item.repeatType === "daily") nextDue.setDate(nextDue.getDate() + 1);
-        if (item.repeatType === "weekly") nextDue.setDate(nextDue.getDate() + 7);
-        return [updated, { ...item, id: crypto.randomUUID(), status: "inbox", isMainline: false, completedAt: undefined, dueDate: nextDue.toISOString().slice(0, 10), createdAt: now, updatedAt: now }];
-      }
-      return [updated];
+  };
+
+  const reorderInStatus = (status: ItemStatus, draggedId: string, targetId?: string) =>
+    reorderInStatusHook(status, draggedId, targetId);
+
+  const moveItem = moveItemHook;
+  const toggleMainline = toggleMainlineHook;
+
+  const removeItem = useCallback((id: string) => {
+    if (!confirm("确认删除这条任务？")) return;
+    removeItemHook(id);
+    showToast("任务已删除");
+  }, [removeItemHook]);
+
+  const changeItemProject = changeItemProjectHook;
+
+  // --- Pomodoro handlers (from hook) ---
+  function acknowledgeRestReminder() {
+    setSessionStats((prev) => ({
+      ...prev,
+      restCount: prev.restCount + 1,
+      lastRestAt: new Date().toISOString(),
     }));
+    acknowledgeRest();
+    showToast("记下休息次数了");
   }
-  function toggleMainline(id: string) { setItems((prev) => prev.map((item) => item.id === id ? { ...item, isMainline: !item.isMainline, updatedAt: new Date().toISOString() } : item)); }
-  function removeItem(id: string) { if (!confirm("确认删除这条任务？")) return; setItems((prev) => prev.filter((item) => item.id !== id)); showToast("任务已删除"); }
-  function changeItemProject(id: string, projectId: string) { setItems((prev) => prev.map((item) => item.id === id ? { ...item, projectId, updatedAt: new Date().toISOString() } : item)); }
-  function startPomodoro(taskId?: string) { setPomodoro({ running: true, secondsLeft: POMODORO_SECONDS, taskId }); }
-  function stopPomodoro() { setPomodoro((prev) => ({ ...prev, running: false })); }
-  function resetPomodoro() { setPomodoro({ running: false, secondsLeft: POMODORO_SECONDS }); }
-  async function copyDailyReport() { try { await navigator.clipboard.writeText(dailyReport); showToast("日报已复制"); } catch {} }
+
+  function dismissRestReminder() {
+    dismissRest();
+  }
+
+  const completeFocusItem = () => {
+    if (!focusItem) return;
+    moveItem(focusItem.id, "done");
+    resetPomodoro();
+  };
+
+  // --- Window modes ---
+  async function enterCornerMode() {
+    const result = await enterCornerWindowMode();
+    if (result === false) {
+      showToast("角落模式切换失败");
+      return;
+    }
+    setIsCornerMode(true);
+    showToast(result ? "已缩到角落并置顶" : "已切换角落小窗");
+  }
+
+  async function exitCornerMode() {
+    const result = await exitCornerWindowMode();
+    if (result === false) {
+      showToast("窗口恢复失败");
+      return;
+    }
+    setIsCornerMode(false);
+    showToast(result ? "已展开窗口" : "已退出角落小窗");
+  }
+
+  // --- Report ---
+  async function copyDailyReport() {
+    try {
+      await navigator.clipboard.writeText(dailyReport);
+      showToast("日报已复制");
+    } catch {}
+  }
+
   function saveDailyReport() {
     const date = new Date().toLocaleDateString("zh-CN");
     setSavedReports((prev) => [{ date, content: dailyReport }, ...prev.filter((r) => r.date !== date)]);
     showToast("日报已保存");
   }
-  function exportData() {
-    const payload: ExportPayload = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      items,
-      projects,
-      tags,
-      reports: savedReports,
-    };
+
+  // --- Data operations ---
+  const exportData = () => {
+    const payload: ExportPayload = createCurrentSnapshot();
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -337,19 +530,10 @@ export default function Home() {
     a.click();
     URL.revokeObjectURL(url);
     showToast("已导出本地备份");
-  }
-  function createCurrentSnapshot(): PersistedSnapshot {
-    return {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      items,
-      projects,
-      tags,
-      reports: savedReports,
-    };
-  }
+  };
+
   async function createDiskBackup(reason = "manual") {
-    const path = await createBackupSnapshotToDisk(createCurrentSnapshot(), reason);
+    const path = await createDiskBackupHook(reason);
     if (path) {
       showToast("磁盘备份已创建");
       return path;
@@ -357,10 +541,13 @@ export default function Home() {
     showToast("当前环境不支持磁盘备份，建议使用导出备份");
     return null;
   }
+
   async function copyDataPath() {
     const dataPath = await getDataFilePath();
     const backupPath = await getBackupDirPath();
-    const text = [dataPath && `数据文件：${dataPath}`, backupPath && `备份目录：${backupPath}`].filter(Boolean).join("\n");
+    const text = [dataPath && `数据文件：${dataPath}`, backupPath && `备份目录：${backupPath}`]
+      .filter(Boolean)
+      .join("\n");
     if (!text) {
       showToast("当前环境没有磁盘数据位置");
       return;
@@ -372,9 +559,9 @@ export default function Home() {
       showToast(text);
     }
   }
+
   async function chooseDataDir() {
     try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
       const selected = await open({
         title: "选择 Focus Flow 数据目录",
         directory: true,
@@ -382,196 +569,381 @@ export default function Home() {
         canCreateDirectories: true,
       });
       if (!selected || Array.isArray(selected)) return;
-      const snapshot = createCurrentSnapshot();
-      await createBackupSnapshotToDisk(snapshot, "before-data-dir-change");
-      const path = await setCustomDataDir(selected, snapshot);
+      const path = await setCustomDataDirectoryHook(selected);
       if (!path) {
         showToast("切换数据目录失败");
         return;
       }
-      await saveWidgetSnapshotToDisk(createWidgetSnapshot({ items, projects, storageMode: "disk" }));
       showToast("数据目录已切换");
     } catch {
       showToast("选择数据目录失败");
     }
   }
+
   async function restoreDefaultDataDir() {
     if (!confirm("确认恢复默认 AppData 数据目录？当前数据会先迁移回默认位置。")) return;
-    const snapshot = createCurrentSnapshot();
-    await createBackupSnapshotToDisk(snapshot, "before-restore-default-dir");
-    const path = await resetDataDirToDefault(snapshot);
+    const path = await restoreDefaultDataDirectoryHook();
     if (!path) {
       showToast("恢复默认目录失败");
       return;
     }
-    await saveWidgetSnapshotToDisk(createWidgetSnapshot({ items, projects, storageMode: "disk" }));
     showToast("已恢复默认数据目录");
   }
+
+  async function restoreDiskBackup(path: string) {
+    if (!confirm("确认恢复这个磁盘备份？当前数据会先自动备份。")) return;
+    const success = await restoreBackupHook(path);
+    if (!success) {
+      showToast("备份文件不可用");
+      return;
+    }
+    showToast("已恢复磁盘备份");
+  }
+
   async function importData(file?: File) {
     if (!file) return;
-    try {
-      const text = await file.text();
-      const payload = JSON.parse(text) as Partial<ExportPayload>;
-      if (!payload.items || !payload.projects || !payload.tags) throw new Error("invalid payload");
-      await createBackupSnapshotToDisk(createCurrentSnapshot(), "before-import");
-      setItems(payload.items as Item[]);
-      setProjects(payload.projects as Project[]);
-      setTags(payload.tags as TagDef[]);
-      setSavedReports((payload.reports || []) as { date: string; content: string }[]);
+    const success = await importDataHook(file);
+    if (success) {
       showToast("已导入备份，原数据已尝试自动备份");
-    } catch {
+    } else {
       showToast("导入失败，请检查文件");
     }
   }
+
   async function resetAllData() {
     if (!confirm("确认重置所有本地数据？此操作不可撤销。")) return;
-    await createBackupSnapshotToDisk(createCurrentSnapshot(), "before-reset");
-    setItems(createSeedItems());
-    setProjects(defaultProjects);
-    setTags(defaultTags);
-    setSavedReports([]);
+    await resetAllDataHook();
     showToast("已重置为初始数据，原数据已尝试自动备份");
   }
 
-  const sections: FlowSection[] = [
-    { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
-    { key: "today", title: "Today 主线", hint: "今天真正要推进的事情，尽量控制在 1 到 3 个。" },
-    { key: "review", title: "Review 待审区", hint: "AI 草稿、纪要摘要、方案初稿都先放这里。" },
-    { key: "batch", title: "Batch 批处理", hint: "不需要实时响应，但值得集中处理。" },
-  ];
+  // --- Context value ---
+  const ctxValue = useMemo(
+    () => ({
+      projects,
+      tags,
+      getProjectById,
+      getTagDef,
+      moveItem,
+      removeItem,
+      toggleMainline,
+      changeItemProject,
+      updateItemTags,
+      startPomodoro,
+      openEdit: setEditingItem,
+    }),
+    [projects, tags, getProjectById, getTagDef, moveItem, removeItem, toggleMainline, changeItemProject, updateItemTags, startPomodoro],
+  );
 
+  // --- Corner mode render ---
+  if (isCornerMode) {
+    return (
+      <div className="min-h-screen text-zinc-50">
+        {toast.show && (
+          <div className="fixed right-3 top-3 z-[60] rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-100 shadow-2xl">
+            {toast.text}
+          </div>
+        )}
+        <CornerMiniWindow
+          pomodoro={pomodoro}
+          focusItem={focusItem}
+          todayItems={cornerTodayItems}
+          getProjectById={getProjectById}
+          onExit={() => void exitCornerMode()}
+          onStartPomodoro={startPomodoro}
+          onStopPomodoro={stopPomodoro}
+          onResetPomodoro={resetPomodoro}
+          collapsedTaskIds={collapsedTaskIds}
+          toggleCollapsedTask={toggleCollapsedTask}
+        />
+        {showRestReminder && (
+          <RestReminderPanel taskContent={restReminderTask} onTakeRest={acknowledgeRestReminder} onDismiss={dismissRestReminder} />
+        )}
+      </div>
+    );
+  }
+
+  // --- Main render ---
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50">
-      {toast.show && <div className="fixed right-6 top-6 z-[60] rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 shadow-2xl">{toast.text}</div>}
-      <main className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
-        <header className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
+    <LocaleProvider>
+    <FocusFlowProvider value={ctxValue}>
+    <div className="min-h-screen text-zinc-50">
+      <FloatingPomodoro
+        pomodoro={pomodoro}
+        focusItem={focusItem}
+        startPomodoro={() => startPomodoro()}
+        stopPomodoro={stopPomodoro}
+        resetPomodoro={resetPomodoro}
+      />
+
+      {toast.show && (
+        <div className="fixed right-6 top-6 z-[60] rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-100 shadow-2xl">
+          {toast.text}
+        </div>
+      )}
+
+      {/* Floating bouncing quote card */}
+      <div
+        ref={quoteCardRef}
+        className="fixed z-[45] w-[260px] cursor-grab rounded-2xl border border-teal-300/8 bg-zinc-950/25 px-3.5 py-3 shadow-lg shadow-black/10 backdrop-blur-[2px] transition-colors hover:bg-zinc-950/45 active:cursor-grabbing"
+        style={{ left: quoteCardPos.x, top: quoteCardPos.y }}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          e.currentTarget.setPointerCapture(e.pointerId);
+          quotePausedRef.current = true;
+          quoteDragRef.current = { startX: e.clientX, startY: e.clientY, baseX: quoteCardPos.x, baseY: quoteCardPos.y };
+        }}
+        onPointerMove={(e) => {
+          if (!quoteDragRef.current) return;
+          setQuoteCardPos({
+            x: quoteDragRef.current.baseX + (e.clientX - quoteDragRef.current.startX),
+            y: quoteDragRef.current.baseY + (e.clientY - quoteDragRef.current.startY),
+          });
+        }}
+        onPointerUp={() => { quoteDragRef.current = null; quotePausedRef.current = false; }}
+        onPointerCancel={() => { quoteDragRef.current = null; quotePausedRef.current = false; }}
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex shrink-0 flex-col items-center gap-1.5 pt-0.5">
+            <PixelHeart />
+            <PixelCat />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-teal-200/25">
+              {activeQuote.author}
+            </p>
+            <p className="mt-1.5 text-[15px] font-medium leading-6 text-teal-50/60">{activeQuote.zh}</p>
+            <p className="mt-1 text-[12px] leading-5 text-teal-100/25">{activeQuote.en}</p>
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto flex max-w-7xl flex-col gap-5 px-5 pb-7 pt-16 sm:px-6">
+        {/* Header */}
+        <header
+          className={`relative overflow-hidden rounded-[1.5rem] border p-4 shadow-2xl shadow-black/20 backdrop-blur transition ${
+            isFocusMode ? "border-amber-200/30 bg-amber-200/[0.055]" : "border-white/10 bg-white/[0.04]"
+          }`}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-1 text-[11px] text-emerald-300">macOS app</span>
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-1 text-[11px] text-emerald-300">
+                  macOS app
+                </span>
+                <span className="rounded-full border border-zinc-600 bg-zinc-900/60 px-2.5 py-1 text-[11px] tabular-nums text-zinc-400">
+                  v{APP_VERSION}
+                </span>
+                <LocaleToggle />
                 {storageMode === "disk" ? (
-                  <span className="rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2.5 py-1 text-[11px] text-emerald-300">磁盘存储</span>
+                  <span className="rounded-full border border-emerald-500/50 bg-emerald-950/40 px-2.5 py-1 text-[11px] text-emerald-300">
+                    磁盘存储
+                  </span>
                 ) : storageMode === "local" ? (
-                  <span className="rounded-full border border-amber-500/30 bg-amber-950/30 px-2.5 py-1 text-[11px] text-amber-300">浏览器存储</span>
+                  <span className="rounded-full border border-amber-500/30 bg-amber-950/30 px-2.5 py-1 text-[11px] text-amber-300">
+                    浏览器存储
+                  </span>
                 ) : (
                   <span className="rounded-full border border-zinc-700 px-2.5 py-1 text-[11px] text-zinc-400">加载中...</span>
                 )}
                 <AlwaysOnTopToggle onStatus={showToast} />
+                <button
+                  onClick={() => void enterCornerMode()}
+                  className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1 text-[11px] text-amber-100 transition hover:bg-amber-400/15"
+                >
+                  角落小窗
+                </button>
               </div>
-              <p className="mt-3 text-sm uppercase tracking-[0.24em] text-zinc-400">Focus Flow MVP+</p>
-              <h1 className="mt-2 text-3xl font-semibold">AI 反碎片分流台</h1>
+              <p className="mt-3 text-xs uppercase tracking-[0.32em] text-teal-200/70">Focus Flow</p>
+              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight sm:text-3xl">今天，只推进真正重要的事</h1>
+              <p className="mt-1.5 max-w-2xl text-sm leading-5 text-zinc-400">
+                先收碎片，再把 1-3 个主线任务放到眼前。其它事情等它们该出现时再出现。
+              </p>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <StatCard label="Inbox" value={counts.inbox} />
-              <StatCard label="Today" value={counts.today} />
-              <StatCard label="Review" value={counts.review} />
-              <StatCard label="Batch" value={counts.batch} />
-              <StatCard label="主线" value={counts.mainline} />
+            <div className="flex w-full flex-col gap-3 lg:w-[420px] lg:flex-shrink-0">
+              <div className="grid w-full grid-cols-3 gap-2 sm:grid-cols-5">
+                <StatCard label="Inbox" value={counts.inbox} />
+                <StatCard label="Today" value={counts.today} />
+                <StatCard label="Review" value={counts.review} />
+                <StatCard label="Batch" value={counts.batch} />
+                <StatCard label="主线" value={counts.mainline} />
+              </div>
             </div>
           </div>
         </header>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.75fr)]">
-          <QuickCapture
-            input={input}
-            setInput={setInput}
-            source={source}
-            setSource={setSource}
-            priority={priority}
-            setPriority={setPriority}
-            dueDate={dueDate}
-            setDueDate={setDueDate}
-            repeatType={repeatType}
-            setRepeatType={setRepeatType}
+        {/* Focus mode */}
+        {isFocusMode && (
+          <FocusSession
+            pomodoro={pomodoro}
+            focusItem={focusItem}
+            focusProject={focusProject}
             selectedProject={selectedProject}
-            setSelectedProject={setSelectedProject}
-            selectedTags={selectedTags}
-            tags={tags}
-            projects={projects}
-            newQuickTag={newQuickTag}
-            setNewQuickTag={setNewQuickTag}
-            textareaRef={captureInputRef}
-            addItems={addItems}
-            toggleSelectedTag={toggleSelectedTag}
-            createQuickTag={createQuickTag}
-          />
-          <TodayMainline
-            items={filteredItems}
-            projects={projects}
-            tags={tags}
-            todayLoadWarning={todayLoadWarning}
-            getProjectById={getProjectById}
-            getTagDef={getTagDef}
-            moveItem={moveItem}
-            removeItem={removeItem}
-            toggleMainline={toggleMainline}
-            changeProject={changeItemProject}
-            startPomodoro={startPomodoro}
-            updateItemTags={updateItemTags}
-            openEdit={setEditingItem}
-          />
-        </section>
-
-        <Workbench
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          importInputRef={importInputRef}
-          importData={importData}
-          setShowReportModal={setShowReportModal}
-          setShowSummaryModal={setShowSummaryModal}
-          setShowTagModal={setShowTagModal}
-          setShowProjectModal={setShowProjectModal}
-          exportData={exportData}
-          resetAllData={resetAllData}
-          pomodoro={pomodoro}
-          startPomodoro={startPomodoro}
-          stopPomodoro={stopPomodoro}
-          resetPomodoro={resetPomodoro}
-          searchText={searchText}
-          setSearchText={setSearchText}
-          filterTag={filterTag}
-          setFilterTag={setFilterTag}
-          allUsedTags={allUsedTags}
-          storageMode={storageMode}
-          createDiskBackup={createDiskBackup}
-          copyDataPath={copyDataPath}
-          chooseDataDir={chooseDataDir}
-          restoreDefaultDataDir={restoreDefaultDataDir}
-        />
-
-        {viewMode === "flow" ? (
-          <FlowView
-            items={filteredItems}
-            projects={projects}
-            tags={tags}
-            sections={sections}
-            getProjectById={getProjectById}
-            getTagDef={getTagDef}
-            moveItem={moveItem}
-            removeItem={removeItem}
-            toggleMainline={toggleMainline}
-            changeProject={changeItemProject}
-            startPomodoro={startPomodoro}
-            updateItemTags={updateItemTags}
-            openEdit={setEditingItem}
-          />
-        ) : (
-          <BoardView
-            items={filteredItems}
-            projects={projects}
-            dragState={dragState}
-            setDragState={setDragState}
-            getTagDef={getTagDef}
-            reorderInStatus={reorderInStatus}
+            stopPomodoro={stopPomodoro}
+            resetPomodoro={resetPomodoro}
+            completeFocusItem={completeFocusItem}
+            addFocusCaptureItems={addFocusCaptureItems}
           />
         )}
+
+        {/* Normal mode content */}
+        <ErrorBoundary>
+        <div className={isFocusMode ? "hidden" : "contents"}>
+          <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.75fr)]">
+            <QuickCapture
+              input={input}
+              setInput={setInput}
+              source={source}
+              setSource={setSource}
+              priority={priority}
+              setPriority={setPriority}
+              dueDate={dueDate}
+              setDueDate={setDueDate}
+              repeatType={repeatType}
+              setRepeatType={setRepeatType}
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+              selectedTags={selectedTags}
+              tags={tags}
+              projects={projects}
+              newQuickTag={newQuickTag}
+              setNewQuickTag={setNewQuickTag}
+              textareaRef={captureInputRef}
+              addItems={() => addItems(input)}
+              toggleSelectedTag={toggleSelectedTag}
+              createQuickTag={createQuickTag}
+            />
+            <TodayMainline
+              items={filteredItems}
+              projects={projects}
+              tags={tags}
+              todayLoadWarning={todayLoadWarning}
+              getProjectById={getProjectById}
+              getTagDef={getTagDef}
+              moveItem={moveItem}
+              removeItem={removeItem}
+              toggleMainline={toggleMainline}
+              changeProject={changeItemProject}
+              startPomodoro={startPomodoro}
+              activePomodoroTaskId={activePomodoroTaskId}
+              isFocusMode={isTaskFocusMode}
+              updateItemTags={updateItemTags}
+              openEdit={setEditingItem}
+              collapsedTaskIds={collapsedTaskIds}
+              toggleCollapsedTask={toggleCollapsedTask}
+            />
+          </section>
+
+          <Workbench
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            importInputRef={importInputRef}
+            importData={importData}
+            setShowReportModal={setShowReportModal}
+            setShowSummaryModal={setShowSummaryModal}
+            setShowTagModal={setShowTagModal}
+            setShowProjectModal={setShowProjectModal}
+            setShowHistoryModal={setShowHistoryModal}
+            exportData={exportData}
+            resetAllData={resetAllData}
+            searchText={searchText}
+            setSearchText={setSearchText}
+            filterTag={filterTag}
+            setFilterTag={setFilterTag}
+            allUsedTags={allUsedTags}
+            storageMode={storageMode}
+            createDiskBackup={createDiskBackup}
+            copyDataPath={copyDataPath}
+            chooseDataDir={chooseDataDir}
+            restoreDefaultDataDir={restoreDefaultDataDir}
+            backupEntries={backupEntries}
+            refreshBackups={refreshBackups}
+            restoreDiskBackup={restoreDiskBackup}
+          />
+
+          {viewMode === "flow" ? (
+            <FlowView
+              items={filteredItems}
+              projects={projects}
+              tags={tags}
+              sections={SECTIONS}
+              getProjectById={getProjectById}
+              getTagDef={getTagDef}
+              moveItem={moveItem}
+              removeItem={removeItem}
+              toggleMainline={toggleMainline}
+              changeProject={changeItemProject}
+              startPomodoro={startPomodoro}
+              activePomodoroTaskId={activePomodoroTaskId}
+              isFocusMode={isTaskFocusMode}
+              updateItemTags={updateItemTags}
+              openEdit={setEditingItem}
+              collapsedTaskIds={collapsedTaskIds}
+              toggleCollapsedTask={toggleCollapsedTask}
+            />
+          ) : (
+            <BoardView
+              items={filteredItems}
+              projects={projects}
+              dragState={dragState}
+              setDragState={setDragState}
+              activePomodoroTaskId={activePomodoroTaskId}
+              isFocusMode={isTaskFocusMode}
+              getTagDef={getTagDef}
+              reorderInStatus={reorderInStatus}
+              collapsedTaskIds={collapsedTaskIds}
+              toggleCollapsedTask={toggleCollapsedTask}
+            />
+          )}
+        </div>
+        </ErrorBoundary>
       </main>
 
-      {showProjectModal && <ProjectManagementModal projects={projects} newProjectName={newProjectName} setNewProjectName={setNewProjectName} addProject={addProject} deleteProject={deleteProject} onClose={() => setShowProjectModal(false)} />}
-      {showTagModal && <TagManagementModal tags={tags} newTagName={newTagName} setNewTagName={setNewTagName} addTag={addTag} deleteTag={deleteTag} onClose={() => setShowTagModal(false)} />}
+      {/* Modals */}
+      {showProjectModal && (
+        <ProjectManagementModal
+          projects={projects}
+          newProjectName={newProjectName}
+          setNewProjectName={setNewProjectName}
+          addProject={addProject}
+          deleteProject={deleteProject}
+          onClose={() => setShowProjectModal(false)}
+        />
+      )}
+      {showTagModal && (
+        <TagManagementModal
+          tags={tags}
+          newTagName={newTagName}
+          setNewTagName={setNewTagName}
+          addTag={addTag}
+          deleteTag={deleteTag}
+          onClose={() => setShowTagModal(false)}
+        />
+      )}
       {showSummaryModal && <ProjectSummaryModal projectSummary={projectSummary} onClose={() => setShowSummaryModal(false)} />}
-      {showReportModal && <ReportModal dailyReport={dailyReport} savedReports={savedReports} saveDailyReport={saveDailyReport} copyDailyReport={copyDailyReport} onClose={() => setShowReportModal(false)} />}
-      {editingItem && <EditItemModal item={editingItem} projects={projects} tags={tags} onClose={() => setEditingItem(null)} onSave={saveItemEdit} />}
+      {showReportModal && (
+        <ReportModal
+          dailyReport={dailyReport}
+          savedReports={savedReports}
+          saveDailyReport={saveDailyReport}
+          copyDailyReport={copyDailyReport}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
+      {showHistoryModal && (
+        <CompletedHistoryModal
+          completedHistoryItems={completedHistoryItems}
+          getProjectById={getProjectById}
+          onClose={() => setShowHistoryModal(false)}
+        />
+      )}
+      {showRestReminder && (
+        <RestReminderPanel taskContent={restReminderTask} onTakeRest={acknowledgeRestReminder} onDismiss={dismissRestReminder} />
+      )}
+      {editingItem && (
+        <EditItemModal item={editingItem} projects={projects} tags={tags} onClose={() => setEditingItem(null)} onSave={saveItemEdit} />
+      )}
     </div>
+    </FocusFlowProvider>
+    </LocaleProvider>
   );
 }

@@ -1,5 +1,5 @@
-import { useMemo, type Dispatch, type RefObject, type SetStateAction } from "react";
-import { parseMultiTask, type ItemSource, type Priority, type Project, type RepeatType, type TagDef } from "@/lib/focus-flow-model";
+import { useMemo, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
+import { parseTaskInput, priorityTone, type ItemSource, type Priority, type Project, type RepeatType, type TagDef } from "@/lib/focus-flow-model";
 import { Select } from "./ui";
 
 type QuickCaptureProps = {
@@ -49,15 +49,20 @@ export function QuickCapture({
   toggleSelectedTag,
   createQuickTag,
 }: QuickCaptureProps) {
-  const pendingTasks = useMemo(() => input.trim() ? parseMultiTask(input) : [], [input]);
+  const pendingTasks = useMemo(() => input.trim() ? parseTaskInput(input) : [], [input]);
   const canAdd = pendingTasks.length > 0;
+  const hasHierarchy = pendingTasks.some((task) => task.parentIndex !== undefined || task.depth > 0);
+  const priorityMeta = priorityTone[priority];
 
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl shadow-black/20">
-      <div className="mb-3">
-        <p className="text-xs uppercase tracking-[0.22em] text-emerald-300">Capture first</p>
-        <h2 className="mt-1 text-xl font-semibold">快速录入</h2>
-        <p className="mt-1 text-sm text-zinc-500">先收集，再分流，不要让任务直接压进脑子里。按 Cmd+K 聚焦，Cmd+Enter 加入。</p>
+    <section className="rounded-[1.5rem] border border-teal-300/20 bg-teal-950/[0.18] p-4 shadow-2xl shadow-black/20 backdrop-blur">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-teal-200">Capture</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">快速录入</h2>
+          <p className="mt-1 text-sm leading-5 text-zinc-400">先收进来，稍后判断。Cmd+K 聚焦，Cmd+Enter 加入。</p>
+        </div>
+        <span className="rounded-full border border-teal-300/20 bg-teal-300/10 px-3 py-1 text-xs text-teal-100">第一步</span>
       </div>
       <textarea
         ref={textareaRef}
@@ -69,53 +74,87 @@ export function QuickCapture({
             addItems();
           }
         }}
-        placeholder="支持多任务：换行 / 分号 / 1. 2. 3."
-        className="min-h-32 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none placeholder:text-zinc-500 focus:border-zinc-600"
+        placeholder={"例如：\n- 发布客户方案\n  - 整理会议纪要\n  - 检查 AI 初稿"}
+        className="min-h-28 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-3.5 py-3 text-sm leading-6 outline-none transition placeholder:text-zinc-600 focus:border-teal-300/70 focus:bg-black/40"
       />
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-400">
-        <span>{canAdd ? `将添加 ${pendingTasks.length} 条任务` : "输入内容后会在这里预览拆分数量"}</span>
-        {pendingTasks.length > 1 && <span className="text-emerald-300">已识别多任务</span>}
-      </div>
-      <div className="flex flex-wrap gap-3">
-        <Select value={source} onChange={(event) => setSource(event.target.value as ItemSource)} options={[["manual", "手动"], ["feishu", "飞书"], ["ai", "AI"], ["obsidian", "Obsidian"], ["doc", "文档"], ["other", "其他"]]} />
-        <Select value={priority} onChange={(event) => setPriority(event.target.value as Priority)} options={[["high", "高"], ["medium", "中"], ["low", "低"]]} />
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(event) => setDueDate(event.target.value)}
-          className="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
-        />
-        <Select value={repeatType} onChange={(event) => setRepeatType(event.target.value as RepeatType)} options={[["none", "不重复"], ["daily", "每日"], ["weekly", "每周"]]} />
-        <Select value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)} options={projects.map((project) => [project.id, project.name])} />
-        <button onClick={addItems} disabled={!canAdd} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400">加入系统</button>
-      </div>
-      <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
-        <div className="mb-2 text-sm text-zinc-400">标签选择</div>
-        <div className="flex flex-wrap gap-2">
-          {tags.map((tag) => {
-            const active = selectedTags.includes(tag.name);
-            return (
-              <button
-                key={tag.id}
-                onClick={() => toggleSelectedTag(tag.name)}
-                className={`rounded-full border px-3 py-1 text-xs ${active ? "text-white" : "text-zinc-400"}`}
-                style={{ borderColor: active ? tag.color : "#3f3f46", backgroundColor: active ? `${tag.color}22` : "transparent" }}
-              >
-                #{tag.name}
-              </button>
-            );
-          })}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
+          <span className={canAdd ? "text-teal-200" : ""}>{canAdd ? `${pendingTasks.length} 条待收` : "输入后预览拆分"}</span>
+          {hasHierarchy && <span className="text-sky-300">Markdown 多级</span>}
+          <span>{projects.find((project) => project.id === selectedProject)?.name || "默认项目"}</span>
+          <span className={`font-medium ${priorityMeta.summaryClass}`}>P{priorityMeta.label} {priorityMeta.label}优先级</span>
+          {dueDate && <span>{dueDate}</span>}
+          {selectedTags.map((tag) => <span key={tag}>#{tag}</span>)}
+          {pendingTasks.length > 1 && <span className="text-emerald-300">多任务</span>}
         </div>
-        <div className="mt-3 flex gap-2">
-          <input
-            value={newQuickTag}
-            onChange={(event) => setNewQuickTag(event.target.value)}
-            placeholder="新建标签"
-            className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
-          />
-          <button onClick={createQuickTag} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">创建并选中</button>
-        </div>
+        <button onClick={addItems} disabled={!canAdd} className="rounded-xl bg-teal-200 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-950/30 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 disabled:shadow-none">收进系统</button>
       </div>
+      <details className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-2.5">
+        <summary className="cursor-pointer list-none text-sm text-zinc-400">
+          <div className="flex items-center justify-between gap-3">
+            <span>录入选项</span>
+            <span className="text-xs text-zinc-600">项目 / 优先级 / 标签</span>
+          </div>
+        </summary>
+        <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 md:grid-cols-3">
+          <Field label="来源">
+            <Select value={source} onChange={(event) => setSource(event.target.value as ItemSource)} options={[["manual", "手动"], ["feishu", "飞书"], ["ai", "AI"], ["obsidian", "Obsidian"], ["doc", "文档"], ["other", "其他"]]} />
+          </Field>
+          <Field label="优先级">
+            <Select value={priority} onChange={(event) => setPriority(event.target.value as Priority)} options={[["high", "高"], ["medium", "中"], ["low", "低"]]} />
+          </Field>
+          <Field label="截止">
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-teal-400/70"
+            />
+          </Field>
+          <Field label="重复">
+            <Select value={repeatType} onChange={(event) => setRepeatType(event.target.value as RepeatType)} options={[["none", "不重复"], ["daily", "每日"], ["weekly", "每周"]]} />
+          </Field>
+          <Field label="项目">
+            <Select value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)} options={projects.map((project) => [project.id, project.name])} />
+          </Field>
+        </div>
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="mb-2 text-sm text-zinc-400">可选标签</div>
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => {
+              const active = selectedTags.includes(tag.name);
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleSelectedTag(tag.name)}
+                  className={`rounded-full border px-3 py-1 text-xs ${active ? "text-white" : "text-zinc-400"}`}
+                  style={{ borderColor: active ? tag.color : "#3f3f46", backgroundColor: active ? `${tag.color}22` : "transparent" }}
+                >
+                  #{tag.name}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <input
+              value={newQuickTag}
+              onChange={(event) => setNewQuickTag(event.target.value)}
+              placeholder="新建标签"
+              className="flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-teal-400/70"
+            />
+            <button onClick={createQuickTag} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">创建并选中</button>
+          </div>
+        </div>
+      </details>
     </section>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="space-y-1">
+      <span className="block text-[11px] tracking-[0.12em] text-zinc-500">{label}</span>
+      {children}
+    </label>
   );
 }

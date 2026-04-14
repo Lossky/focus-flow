@@ -1,4 +1,4 @@
-import type { Item, ItemStatus, Project, TagDef } from "@/lib/focus-flow-model";
+import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus, type Project, type TagDef } from "@/lib/focus-flow-model";
 import { ItemCard } from "./item-card";
 import { EmptyState } from "./ui";
 
@@ -14,8 +14,12 @@ type TodayMainlineProps = {
   toggleMainline: (id: string) => void;
   changeProject: (id: string, projectId: string) => void;
   startPomodoro: (taskId?: string) => void;
+  activePomodoroTaskId?: string;
+  isFocusMode?: boolean;
   updateItemTags: (id: string, tagName: string) => void;
   openEdit: (item: Item) => void;
+  collapsedTaskIds: string[];
+  toggleCollapsedTask: (id: string) => void;
 };
 
 export function TodayMainline({
@@ -30,30 +34,41 @@ export function TodayMainline({
   toggleMainline,
   changeProject,
   startPomodoro,
+  activePomodoroTaskId,
+  isFocusMode = false,
   updateItemTags,
   openEdit,
+  collapsedTaskIds,
+  toggleCollapsedTask,
 }: TodayMainlineProps) {
   const todayItems = items.filter((item) => item.status === "today");
+  const visibleTodayItems = filterVisibleTreeItems(todayItems, new Set(collapsedTaskIds));
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const childCounts = buildChildCountMap(todayItems);
 
   return (
-    <section className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-950/40 to-zinc-900/80 p-5 shadow-[0_0_0_1px_rgba(245,158,11,0.12)]">
-      <div className="mb-4 flex items-start justify-between gap-3">
+    <section className="rounded-[2rem] border border-amber-300/30 bg-gradient-to-br from-amber-300/[0.14] via-orange-950/[0.18] to-black/20 p-4 shadow-2xl shadow-black/20 backdrop-blur">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-amber-300">Mainline</p>
-          <h2 className="mt-1 text-xl font-semibold text-amber-300">Today 主线</h2>
-          <p className="mt-1 text-sm text-amber-100/70">今天真正要推进的任务，建议只保留最重要的 1 到 3 个。</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-amber-200">Mainline</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-amber-100">Today 主线</h2>
+          <p className="mt-1 text-sm leading-6 text-amber-100/70">今天真正要推进的任务，只保留最重要的 1 到 3 个。</p>
           {todayLoadWarning && <p className="mt-3 rounded-xl border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-xs text-orange-100">{todayLoadWarning}</p>}
         </div>
-        <span className="rounded-full border border-amber-500/40 px-3 py-1 text-xs text-amber-200">{todayItems.length} 条</span>
+        <span className="rounded-full border border-amber-300/30 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">{todayItems.length} 条</span>
       </div>
-      <div className="space-y-3">
-        {todayItems.length === 0 ? (
+      <div className="space-y-2 stagger-children">
+        {visibleTodayItems.length === 0 ? (
           <EmptyState />
         ) : (
-          todayItems.map((item) => (
+          visibleTodayItems.map((item) => (
             <ItemCard
               key={item.id}
               item={item}
+              parentItem={item.parentId ? itemById.get(item.parentId) : undefined}
+              ancestorItems={getAncestorItems(item, itemById)}
+              childCount={childCounts.get(item.id) || 0}
+              isChildrenCollapsed={collapsedTaskIds.includes(item.id)}
               project={getProjectById(item.projectId)}
               projects={projects}
               tags={tags}
@@ -63,6 +78,9 @@ export function TodayMainline({
               toggleMainline={toggleMainline}
               changeProject={changeProject}
               startPomodoro={startPomodoro}
+              onToggleChildren={toggleCollapsedTask}
+              isFocusMode={isFocusMode}
+              isPomodoroActive={activePomodoroTaskId === item.id}
               updateItemTags={updateItemTags}
               openEdit={openEdit}
             />
@@ -72,4 +90,3 @@ export function TodayMainline({
     </section>
   );
 }
-

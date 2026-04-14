@@ -1,6 +1,6 @@
 "use client";
 
-import { statusLabel, type Item, type Project, type TagDef } from "@/lib/focus-flow-model";
+import { formatTime, statusLabel, type Item, type Project, type TagDef } from "@/lib/focus-flow-model";
 import { Modal } from "./ui";
 
 type Report = { date: string; content: string };
@@ -35,7 +35,7 @@ export function TagManagementModal({
   tags: TagDef[];
   newTagName: string;
   setNewTagName: (name: string) => void;
-  addTag: (name: string) => string;
+  addTag: (name: string) => string | undefined;
   deleteTag: (tagName: string) => void;
   onClose: () => void;
 }) {
@@ -65,4 +65,96 @@ export function ReportModal({
   onClose: () => void;
 }) {
   return <Modal title="今日日报" onClose={onClose} wide><div className="mb-3 flex justify-end gap-2"><button onClick={saveDailyReport} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">保存日报</button><button onClick={copyDailyReport} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">复制 Markdown</button></div><pre className="whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-200">{dailyReport}</pre>{savedReports.length > 0 && <div className="mt-4"><div className="mb-2 text-sm text-zinc-400">历史日报</div><div className="space-y-2">{savedReports.map((report) => <details key={report.date} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><summary className="cursor-pointer text-sm text-zinc-300">{report.date}</summary><pre className="mt-3 whitespace-pre-wrap text-xs text-zinc-400">{report.content}</pre></details>)}</div></div>}</Modal>;
+}
+
+export function CompletedHistoryModal({
+  completedHistoryItems,
+  getProjectById,
+  onClose,
+}: {
+  completedHistoryItems: Item[];
+  getProjectById: (id?: string) => Project;
+  onClose: () => void;
+}) {
+  const recentItems = completedHistoryItems.slice(0, 12);
+  return (
+    <Modal title="完成历史" onClose={onClose} wide>
+      <p className="text-sm text-zinc-400">这里只在你需要回看时打开，不会占着主屏幕。</p>
+      <div className="mt-4 space-y-2">
+        {recentItems.length ? recentItems.map((item) => {
+          const project = getProjectById(item.projectId);
+          return (
+            <article key={item.id} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-200">
+                    {item.status === "done" ? "完成" : "归档"}
+                  </span>
+                  <span className="truncate text-sm text-zinc-100">{item.content}</span>
+                </div>
+                <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : "无完成时间"}</span>
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] text-zinc-500">
+                <span style={{ color: project.color }}>{project.name}</span>
+                <span>{item.parentId ? "有父任务" : "顶层任务"}</span>
+                <span>{item.dueDate ? `截止 ${item.dueDate}` : "无截止"}</span>
+              </div>
+            </article>
+          );
+        }) : (
+          <p className="rounded-xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">还没有完成历史。完成任务后，这里会自动记录。</p>
+        )}
+      </div>
+      {completedHistoryItems.length > recentItems.length && (
+        <details className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+          <summary className="cursor-pointer text-sm text-zinc-300">展开全部历史</summary>
+          <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
+            {completedHistoryItems.slice(12).map((item) => {
+              const project = getProjectById(item.projectId);
+              return (
+                <article key={item.id} className="rounded-xl border border-zinc-800 bg-black/20 px-3 py-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="truncate text-sm text-zinc-100">{item.content}</span>
+                    <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : "无完成时间"}</span>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] text-zinc-500">
+                    <span style={{ color: project.color }}>{project.name}</span>
+                    <span>{item.status === "done" ? "完成" : "归档"}</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </details>
+      )}
+    </Modal>
+  );
+}
+
+export function RestReminderPanel({
+  taskContent,
+  onTakeRest,
+  onDismiss,
+}: {
+  taskContent?: string;
+  onTakeRest: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="fixed bottom-6 right-6 z-[70] w-[320px] rounded-2xl border border-amber-300/30 bg-zinc-950/95 p-4 shadow-2xl shadow-black/40 backdrop-blur">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/70">Rest Reminder</p>
+      <h3 className="mt-1 text-lg font-semibold text-zinc-50">该休息一下了</h3>
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
+        {taskContent ? `这轮专注已经结束，先离开一下：${taskContent}` : "你已经完成了一轮专注，先去休息一下吧。"}
+      </p>
+      <div className="mt-4 flex gap-2">
+        <button onClick={onTakeRest} className="rounded-xl bg-amber-200 px-3 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-100">
+          我去休息
+        </button>
+        <button onClick={onDismiss} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/10">
+          稍后
+        </button>
+      </div>
+    </div>
+  );
 }

@@ -5,6 +5,13 @@ export type Priority = "high" | "medium" | "low";
 export type RepeatType = "none" | "daily" | "weekly";
 export type ViewMode = "flow" | "board";
 export type StorageMode = "loading" | "disk" | "local";
+export type DailySessionStats = {
+  date: string;
+  focusCount: number;
+  restCount: number;
+  lastFocusAt?: string;
+  lastRestAt?: string;
+};
 
 export type Project = { id: string; name: string; color: string };
 export type TagDef = { id: string; name: string; color: string };
@@ -27,6 +34,8 @@ export type Item = {
   rawInput?: string;
   aiSuggestion?: { type: ItemType; status: ItemStatus; reason: string };
   isMainline?: boolean;
+  parentId?: string;
+  depth?: number;
 };
 
 export type PomodoroState = { running: boolean; secondsLeft: number; taskId?: string };
@@ -39,10 +48,13 @@ export type ExportPayload = {
   projects: Project[];
   tags: TagDef[];
   reports: { date: string; content: string }[];
+  sessionStats?: DailySessionStats;
 };
 export type WidgetSnapshotItem = {
   id: string;
   content: string;
+  parentId?: string;
+  depth?: number;
   projectName: string;
   projectColor: string;
   priority: Priority;
@@ -50,6 +62,11 @@ export type WidgetSnapshotItem = {
   tags: string[];
   isMainline: boolean;
   updatedAt: string;
+};
+export type ParsedTaskInput = {
+  content: string;
+  depth: number;
+  parentIndex?: number;
 };
 export type WidgetSnapshot = {
   version: 1;
@@ -70,10 +87,26 @@ export type WidgetSnapshot = {
   nextItem?: WidgetSnapshotItem;
 };
 
+export function getTodayKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function createDefaultDailySessionStats(date = getTodayKey()): DailySessionStats {
+  return {
+    date,
+    focusCount: 0,
+    restCount: 0,
+  };
+}
+
 export const STORAGE_KEY = "focus-flow-items-v1";
 export const PROJECTS_KEY = "focus-flow-projects-v1";
 export const TAGS_KEY = "focus-flow-tags-v1";
 export const REPORTS_KEY = "focus-flow-reports-v1";
+export const SESSION_STATS_KEY = "focus-flow-session-stats-v1";
 export const POMODORO_SECONDS = 25 * 60;
 
 export const defaultProjects: Project[] = [{ id: "default", name: "默认项目", color: "#71717a" }];
@@ -88,6 +121,27 @@ export const colors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#
 export const statusLabel: Record<ItemStatus, string> = { inbox: "Inbox", today: "Today", batch: "Batch", review: "Review", done: "Done", archived: "Archived" };
 export const sourceLabel: Record<ItemSource, string> = { manual: "手动", feishu: "飞书", ai: "AI", obsidian: "Obsidian", doc: "文档", other: "其他" };
 export const repeatLabel: Record<RepeatType, string> = { none: "不重复", daily: "每日", weekly: "每周" };
+export const priorityLabel: Record<Priority, string> = { high: "高优先级", medium: "中优先级", low: "低优先级" };
+export const priorityTone: Record<Priority, { label: string; accent: string; chipClass: string; summaryClass: string }> = {
+  high: {
+    label: "高",
+    accent: "#fb7185",
+    chipClass: "border-rose-400/50 bg-rose-500/10 text-rose-200",
+    summaryClass: "text-rose-300",
+  },
+  medium: {
+    label: "中",
+    accent: "#fbbf24",
+    chipClass: "border-amber-300/40 bg-amber-300/10 text-amber-100",
+    summaryClass: "text-amber-200",
+  },
+  low: {
+    label: "低",
+    accent: "#2dd4bf",
+    chipClass: "border-teal-300/30 bg-teal-300/10 text-teal-200",
+    summaryClass: "text-teal-200",
+  },
+};
 
 export function createSeedItems(): Item[] {
   const now = new Date().toISOString();
@@ -107,12 +161,87 @@ export function createSeedItems(): Item[] {
   ];
 }
 
-export function parseMultiTask(text: string): string[] {
+function stripMarkdownTaskText(value: string) {
+  return value
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/^\[[ xX]\]\s+/, "")
+    .trim();
+}
+
+function parseMarkdownTaskInput(text: string): ParsedTaskInput[] {
+  const stack: { depth: number; index: number }[] = [];
+  const tasks: ParsedTaskInput[] = [];
+
+  text.split("\n").forEach((line) => {
+    if (!line.trim()) return;
+    const listMatch = /^(\s*)(?:[-*+]\s+|\d+[.)、]\s+)(.+)$/.exec(line);
+    const headingMatch = /^(#{1,6})\s+(.+)$/.exec(line.trim());
+    if (!listMatch && !headingMatch) return;
+
+    const rawDepth = listMatch ? Math.floor(listMatch[1].replace(/\t/g, "  ").length / 2) : headingMatch ? headingMatch[1].length - 1 : 0;
+    const content = stripMarkdownTaskText(listMatch ? listMatch[2] : headingMatch?.[2] || "");
+    if (!content) return;
+
+    while (stack.length && stack[stack.length - 1].depth >= rawDepth) stack.pop();
+    const parentIndex = stack[stack.length - 1]?.index;
+    const index = tasks.length;
+    tasks.push({ content, depth: Math.min(rawDepth, 4), parentIndex });
+    stack.push({ depth: rawDepth, index });
+  });
+
+  return tasks;
+}
+
+export function parseTaskInput(text: string): ParsedTaskInput[] {
+  const markdownTasks = parseMarkdownTaskInput(text);
+  if (markdownTasks.length) return markdownTasks;
+
   const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
-  if (lines.length > 1) return lines;
-  if (text.includes("；") || text.includes(";")) return text.split(/[；;]/).map((value) => value.trim()).filter(Boolean);
-  if (/^\d+[.、]\s*.+/.test(text)) return text.split(/\d+[.、]\s*/).map((value) => value.trim()).filter(Boolean);
-  return [text.trim()];
+  if (lines.length > 1) return lines.map((content) => ({ content: stripMarkdownTaskText(content), depth: 0 })).filter((task) => task.content);
+  if (text.includes("；") || text.includes(";")) return text.split(/[；;]/).map((value) => ({ content: stripMarkdownTaskText(value), depth: 0 })).filter((task) => task.content);
+  if (/^\d+[.、]\s*.+/.test(text)) return text.split(/\d+[.、]\s*/).map((value) => ({ content: stripMarkdownTaskText(value), depth: 0 })).filter((task) => task.content);
+  return [{ content: stripMarkdownTaskText(text), depth: 0 }].filter((task) => task.content);
+}
+
+export function parseMultiTask(text: string): string[] {
+  return parseTaskInput(text).map((task) => task.content);
+}
+
+export function getAncestorItems(item: Item, itemById: Map<string, Item>) {
+  const ancestors: Item[] = [];
+  let currentParentId = item.parentId;
+
+  while (currentParentId) {
+    const parent = itemById.get(currentParentId);
+    if (!parent) break;
+    ancestors.unshift(parent);
+    currentParentId = parent.parentId;
+  }
+
+  return ancestors;
+}
+
+export function buildChildCountMap(items: Item[]) {
+  return items.reduce((counts, item) => {
+    if (!item.parentId) return counts;
+    counts.set(item.parentId, (counts.get(item.parentId) || 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+}
+
+export function filterVisibleTreeItems(items: Item[], collapsedItemIds: Set<string>) {
+  if (!collapsedItemIds.size) return items;
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const currentItemIds = new Set(items.map((item) => item.id));
+
+  return items.filter((item) => {
+    let currentParentId = item.parentId;
+    while (currentParentId) {
+      if (currentItemIds.has(currentParentId) && collapsedItemIds.has(currentParentId)) return false;
+      currentParentId = itemById.get(currentParentId)?.parentId;
+    }
+    return true;
+  });
 }
 
 export function classifyInput(text: string): NonNullable<Item["aiSuggestion"]> {
@@ -133,9 +262,37 @@ export function formatTime(value?: string) {
   return new Date(value).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+function parseLocalDate(value: string) {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnly) return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
+  return new Date(value);
+}
+
+function toDateInputValue(value: Date) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function formatDate(value?: string) {
   if (!value) return "-";
-  return new Date(value).toLocaleDateString("zh-CN");
+  return parseLocalDate(value).toLocaleDateString("zh-CN");
+}
+
+export function isDateBeforeToday(value?: string) {
+  if (!value) return false;
+  const date = parseLocalDate(value);
+  const today = new Date();
+  date.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  return date.getTime() < today.getTime();
+}
+
+export function addDaysToDate(value: string | undefined, days: number) {
+  const date = value ? parseLocalDate(value) : new Date();
+  date.setDate(date.getDate() + days);
+  return toDateInputValue(date);
 }
 
 export function formatSeconds(seconds: number) {
@@ -152,6 +309,8 @@ export function createWidgetSnapshot({ items, projects, storageMode }: { items: 
     return {
       id: item.id,
       content: item.content,
+      parentId: item.parentId,
+      depth: item.depth || 0,
       projectName: project.name,
       projectColor: project.color,
       priority: item.priority,

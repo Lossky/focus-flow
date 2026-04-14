@@ -6,8 +6,12 @@
   "permissions": [
     "core:default",
     "core:window:allow-set-always-on-top",
+    "core:window:allow-set-position",
+    "core:window:allow-set-size",
     "dialog:allow-open",
+    "notification:default",
     "fs:allow-exists",
+    "fs:allow-read-dir",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "fs:allow-mkdir",

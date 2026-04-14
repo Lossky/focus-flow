@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #070b12;
+  --foreground: #f4f7fb;
   --font-focus-sans: "Avenir Next", "SF Pro Text", "Helvetica Neue", sans-serif;
   --font-focus-mono: "SF Mono", Menlo, Monaco, monospace;
 }
@@ -14,15 +14,54 @@
   --font-mono: var(--font-focus-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background: #070b12;
   color: var(--foreground);
   font-family: var(--font-focus-sans);
 }
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(20, 184, 166, 0.16), transparent 28rem),
+    radial-gradient(circle at 80% 0%, rgba(245, 158, 11, 0.12), transparent 24rem),
+    linear-gradient(135deg, #070b12 0%, #0d1320 52%, #111014 100%);
+}
+
+/* Task card animations */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes card-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-card-in {
+  animation: card-in 0.25s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out both;
+}
+
+/* Stagger children */
+.stagger-children > * {
+  animation: card-in 0.25s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(n+6) { animation-delay: 200ms; }
