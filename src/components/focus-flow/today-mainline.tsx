@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus, type Project, type TagDef } from "@/lib/focus-flow-model";
 import { ItemCard } from "./item-card";
 import { EmptyState } from "./ui";
@@ -45,9 +46,20 @@ export function TodayMainline({
   const visibleTodayItems = filterVisibleTreeItems(todayItems, new Set(collapsedTaskIds));
   const itemById = new Map(items.map((item) => [item.id, item]));
   const childCounts = buildChildCountMap(todayItems);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   return (
-    <section className="rounded-[2rem] border border-amber-300/30 bg-gradient-to-br from-amber-300/[0.14] via-orange-950/[0.18] to-black/20 p-4 shadow-2xl shadow-black/20 backdrop-blur">
+    <section
+      className={`rounded-[2rem] border bg-gradient-to-br from-amber-300/[0.14] via-orange-950/[0.18] to-black/20 p-4 shadow-2xl shadow-black/20 backdrop-blur transition-colors duration-200 ${isDragOver ? "border-amber-400/60 ring-1 ring-amber-400/30" : "border-amber-300/30"}`}
+      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+      onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setIsDragOver(false); }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const draggedId = e.dataTransfer.getData("text/plain");
+        if (draggedId) moveItem(draggedId, "today");
+      }}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.24em] text-amber-200">Mainline</p>

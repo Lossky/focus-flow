@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, type ChangeEventHandler, type ReactNode } from "react";
+import { PixelCat } from "./pixel-art";
 
 type SelectProps = {
   value: string;
@@ -31,11 +32,14 @@ export function Select({ value, onChange, options }: SelectProps) {
   );
 }
 
-export function EmptyState() {
+export function EmptyState({ hint }: { hint?: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-5 text-sm text-zinc-500">
-      <div>这里还没有内容。</div>
-      <div className="mt-1 text-xs text-zinc-600">可以从上方快速录入，或把其它区块的任务拖过来。</div>
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-center">
+      <PixelCat />
+      <div>
+        <p className="text-sm text-zinc-400">{hint || "这里还没有内容"}</p>
+        <p className="mt-1 text-xs text-zinc-600">可以从上方快速录入，或把其它区块的任务拖过来。</p>
+      </div>
     </div>
   );
 }

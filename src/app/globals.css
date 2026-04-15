@@ -18,6 +18,7 @@ body {
   background: #070b12;
   color: var(--foreground);
   font-family: var(--font-focus-sans);
+  color-scheme: dark;
 }
 
 body::before {
@@ -37,14 +38,19 @@ body::before {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes card-out {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.95); }
-}
-
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(20px); }
 }
 
 .animate-card-in {
@@ -53,6 +59,19 @@ body::before {
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out both;
+}
+
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out both;
+}
+
+.animate-toast-out {
+  animation: toast-out 0.2s ease-in both;
+}
+
+/* Details expand animation */
+details[open] > :not(summary) {
+  animation: card-in 0.2s ease-out both;
 }
 
 /* Stagger children */

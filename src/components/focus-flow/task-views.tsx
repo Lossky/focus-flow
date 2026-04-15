@@ -107,33 +107,28 @@ export function FlowView({
                   </div>
                 ) : (
                   visibleSectionItems.map((item) => (
-                    <div
+                    <ItemCard
                       key={item.id}
-                      draggable
-                      onDragStart={(e) => { e.dataTransfer.setData("text/plain", item.id); e.dataTransfer.effectAllowed = "move"; }}
-                    >
-                      <ItemCard
-                        item={item}
-                        parentItem={item.parentId ? itemById.get(item.parentId) : undefined}
-                        ancestorItems={getAncestorItems(item, itemById)}
-                        childCount={childCounts.get(item.id) || 0}
-                        isChildrenCollapsed={collapsedSet.has(item.id)}
-                        project={getProjectById(item.projectId)}
-                        projects={projects}
-                        tags={tags}
-                        getTagDef={getTagDef}
-                        moveItem={moveItem}
-                        removeItem={removeItem}
-                        toggleMainline={toggleMainline}
-                        changeProject={changeProject}
-                        startPomodoro={startPomodoro}
-                        onToggleChildren={toggleCollapsedTask}
-                        isFocusMode={isFocusMode}
-                        isPomodoroActive={activePomodoroTaskId === item.id}
-                        updateItemTags={updateItemTags}
-                        openEdit={openEdit}
-                      />
-                    </div>
+                      item={item}
+                      parentItem={item.parentId ? itemById.get(item.parentId) : undefined}
+                      ancestorItems={getAncestorItems(item, itemById)}
+                      childCount={childCounts.get(item.id) || 0}
+                      isChildrenCollapsed={collapsedSet.has(item.id)}
+                      project={getProjectById(item.projectId)}
+                      projects={projects}
+                      tags={tags}
+                      getTagDef={getTagDef}
+                      moveItem={moveItem}
+                      removeItem={removeItem}
+                      toggleMainline={toggleMainline}
+                      changeProject={changeProject}
+                      startPomodoro={startPomodoro}
+                      onToggleChildren={toggleCollapsedTask}
+                      isFocusMode={isFocusMode}
+                      isPomodoroActive={activePomodoroTaskId === item.id}
+                      updateItemTags={updateItemTags}
+                      openEdit={openEdit}
+                    />
                   ))
                 )}
               </div>

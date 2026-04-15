@@ -107,7 +107,10 @@ export function CompletedHistoryModal({
       </div>
       {completedHistoryItems.length > recentItems.length && (
         <details className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-3">
-          <summary className="cursor-pointer text-sm text-zinc-300">展开全部历史</summary>
+          <summary className="flex cursor-pointer items-center justify-between text-sm text-zinc-300">
+            <span>展开全部历史</span>
+            <svg className="h-4 w-4 shrink-0 text-zinc-500 transition-transform [[open]>&]:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
+          </summary>
           <div className="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
             {completedHistoryItems.slice(12).map((item) => {
               const project = getProjectById(item.projectId);
