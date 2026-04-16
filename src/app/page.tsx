@@ -20,15 +20,13 @@ import {
   TagManagementModal,
 } from "@/components/focus-flow/management-modals";
 import { QuickCapture } from "@/components/focus-flow/quick-capture";
-import { BoardView, FlowView, type FlowSection } from "@/components/focus-flow/task-views";
+import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-flow/task-views";
 import { TodayMainline } from "@/components/focus-flow/today-mainline";
 import { PixelHeart, PixelCat } from "@/components/focus-flow/pixel-art";
 import {
-  type DragState,
   type ExportPayload,
   type Item,
   type ItemSource,
-  type ItemStatus,
   type Priority,
   type RepeatType,
   type ToastState,
@@ -65,7 +63,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.8";
+const APP_VERSION = "0.1.9";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -119,7 +117,6 @@ export default function Home() {
   });
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
-  const [dragState, setDragState] = useState<DragState>({});
   const [isCornerMode, setIsCornerMode] = useState(false);
 
   // --- Refs ---
@@ -146,7 +143,6 @@ export default function Home() {
     changeItemProject: changeItemProjectHook,
     updateItemTags: updateItemTagsHook,
     saveItemEdit: saveItemEditHook,
-    reorderInStatus: reorderInStatusHook,
     addProject: addProjectHook,
     deleteProject: deleteProjectHook,
     addTag: addTagHook,
@@ -443,9 +439,6 @@ export default function Home() {
     setEditingItem(null);
     showToast("任务已保存");
   };
-
-  const reorderInStatus = (status: ItemStatus, draggedId: string, targetId?: string) =>
-    reorderInStatusHook(status, draggedId, targetId);
 
   const moveItem = moveItemHook;
   const toggleMainline = toggleMainlineHook;
@@ -765,7 +758,6 @@ export default function Home() {
           {/* Compact toolbar */}
           <div className="flex items-center gap-1">
             <input ref={importInputRef} type="file" accept="application/json" className="hidden" onChange={(event) => importData(event.target.files?.[0])} />
-            <button onClick={() => setViewMode(viewMode === "flow" ? "board" : "flow")} className="shrink-0 rounded border border-white/10 px-2 py-0.5 text-[10px] text-zinc-400 transition hover:bg-white/10 hover:text-zinc-200">{viewMode === "flow" ? "看板" : "流程"}</button>
             <button onClick={() => setShowReportModal(true)} className="shrink-0 rounded border border-white/10 px-2 py-0.5 text-[10px] text-zinc-400 transition hover:bg-white/10 hover:text-zinc-200">日报</button>
             <button onClick={() => setShowProjectModal(true)} className="shrink-0 rounded border border-white/10 px-2 py-0.5 text-[10px] text-zinc-400 transition hover:bg-white/10 hover:text-zinc-200">项目</button>
             <button onClick={() => setShowTagModal(true)} className="shrink-0 rounded border border-white/10 px-2 py-0.5 text-[10px] text-zinc-400 transition hover:bg-white/10 hover:text-zinc-200">标签</button>
@@ -852,41 +844,47 @@ export default function Home() {
             />
           </section>
 
-          {/* Row 2: Triage lanes */}
-          {viewMode === "flow" ? (
-            <FlowView
-              items={filteredItems}
-              projects={projects}
-              tags={tags}
-              sections={SECTIONS}
-              getProjectById={getProjectById}
-              getTagDef={getTagDef}
-              moveItem={moveItem}
-              removeItem={removeItem}
-              toggleMainline={toggleMainline}
-              changeProject={changeItemProject}
-              startPomodoro={startPomodoro}
-              activePomodoroTaskId={activePomodoroTaskId}
-              isFocusMode={isTaskFocusMode}
-              updateItemTags={updateItemTags}
-              openEdit={setEditingItem}
-              collapsedTaskIds={collapsedTaskIds}
-              toggleCollapsedTask={toggleCollapsedTask}
-            />
-          ) : (
-            <BoardView
-              items={filteredItems}
-              projects={projects}
-              dragState={dragState}
-              setDragState={setDragState}
-              activePomodoroTaskId={activePomodoroTaskId}
-              isFocusMode={isTaskFocusMode}
-              getTagDef={getTagDef}
-              reorderInStatus={reorderInStatus}
-              collapsedTaskIds={collapsedTaskIds}
-              toggleCollapsedTask={toggleCollapsedTask}
-            />
-          )}
+          {/* Row 2: Tab switcher + content */}
+          <section>
+            <div className="mb-4 flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1 w-fit">
+              <button
+                onClick={() => setViewMode("flow")}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "flow" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
+              >
+                分流处理
+              </button>
+              <button
+                onClick={() => setViewMode("board")}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "board" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
+              >
+                项目总览
+              </button>
+            </div>
+
+            {viewMode === "flow" ? (
+              <FlowView
+                items={filteredItems}
+                projects={projects}
+                tags={tags}
+                sections={SECTIONS}
+                getProjectById={getProjectById}
+                getTagDef={getTagDef}
+                moveItem={moveItem}
+                removeItem={removeItem}
+                toggleMainline={toggleMainline}
+                changeProject={changeItemProject}
+                startPomodoro={startPomodoro}
+                activePomodoroTaskId={activePomodoroTaskId}
+                isFocusMode={isTaskFocusMode}
+                updateItemTags={updateItemTags}
+                openEdit={setEditingItem}
+                collapsedTaskIds={collapsedTaskIds}
+                toggleCollapsedTask={toggleCollapsedTask}
+              />
+            ) : (
+              <ProjectOverview items={items} projects={projects} />
+            )}
+          </section>
 
         </div>
         </ErrorBoundary>
