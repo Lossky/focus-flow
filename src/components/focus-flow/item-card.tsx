@@ -2,8 +2,17 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { formatDate, formatTime, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus, type Project, type TagDef } from "@/lib/focus-flow-model";
+import { formatDate, formatTime, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus } from "@/lib/focus-flow-model";
+import { useFocusFlow } from "@/contexts/focus-flow-context";
 import { Chip } from "./ui";
+
+// 模块级变量，作为 dataTransfer 的后备方案
+// 某些 WebView 环境下 dataTransfer 在拖拽过程中可能丢失数据
+let activeDragId: string | null = null;
+
+export function getActiveDragId() {
+  return activeDragId;
+}
 
 type ItemCardProps = {
   item: Item;
@@ -11,20 +20,9 @@ type ItemCardProps = {
   ancestorItems?: Item[];
   childCount?: number;
   isChildrenCollapsed?: boolean;
-  project: Project;
-  projects: Project[];
-  tags: TagDef[];
-  getTagDef: (name: string) => TagDef | undefined;
-  moveItem: (id: string, status: ItemStatus) => void;
-  removeItem: (id: string) => void;
-  toggleMainline: (id: string) => void;
-  changeProject: (id: string, projectId: string) => void;
-  startPomodoro: (taskId?: string) => void;
   onToggleChildren?: (id: string) => void;
   isFocusMode?: boolean;
   isPomodoroActive?: boolean;
-  updateItemTags: (id: string, tagName: string) => void;
-  openEdit: (item: Item) => void;
 };
 
 type PrimaryAction = { label: string; to: ItemStatus; tone: "warm" | "cool" | "quiet" };
@@ -43,7 +41,9 @@ const secondaryActionMap: Partial<Record<ItemStatus, { label: string; to: ItemSt
   batch: [{ label: "完成", to: "done" }, { label: "转 Review", to: "review" }],
 };
 
-export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems = [], childCount = 0, isChildrenCollapsed = false, project, projects, tags, getTagDef, moveItem, removeItem, toggleMainline, changeProject, startPomodoro, onToggleChildren, isFocusMode = false, isPomodoroActive = false, updateItemTags, openEdit }: ItemCardProps) {
+export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems = [], childCount = 0, isChildrenCollapsed = false, onToggleChildren, isFocusMode = false, isPomodoroActive = false }: ItemCardProps) {
+  const { getProjectById, getTagDef, openEdit } = useFocusFlow();
+  const project = getProjectById(item.projectId);
   const isMainline = item.isMainline && item.status !== "done" && item.status !== "archived";
   const primaryAction = primaryActionMap[item.status];
   const secondaryActions = secondaryActionMap[item.status] ?? [];
@@ -63,6 +63,10 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
       onDragStart={(e) => {
         e.dataTransfer.setData("text/plain", item.id);
         e.dataTransfer.effectAllowed = "move";
+        activeDragId = item.id;
+      }}
+      onDragEnd={() => {
+        activeDragId = null;
       }}
       className={`group relative rounded-xl border px-3 py-2.5 shadow-lg shadow-black/10 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl ${isMainline ? "border-amber-300/40" : "border-white/10"} ${focusTone}`}
       style={{ marginLeft: depth ? `${depth * 14}px` : undefined, borderLeftWidth: 3, borderLeftColor: priority.accent, ...bgStyle }}
@@ -112,14 +116,6 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
         isPomodoroActive={!!isPomodoroActive}
         primaryAction={primaryAction}
         secondaryActions={secondaryActions}
-        moveItem={moveItem}
-        startPomodoro={startPomodoro}
-        toggleMainline={toggleMainline}
-        changeProject={changeProject}
-        removeItem={removeItem}
-        updateItemTags={updateItemTags}
-        projects={projects}
-        tags={tags}
       />
     </article>
   );
@@ -127,19 +123,11 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
 
 function ActionBar({
   item, isMainline, isPomodoroActive, primaryAction, secondaryActions,
-  moveItem, startPomodoro, toggleMainline, changeProject, removeItem, updateItemTags,
-  projects, tags,
 }: {
   item: Item; isMainline: boolean; isPomodoroActive: boolean;
   primaryAction?: PrimaryAction; secondaryActions: { label: string; to: ItemStatus }[];
-  moveItem: (id: string, status: ItemStatus) => void;
-  startPomodoro: (taskId?: string) => void;
-  toggleMainline: (id: string) => void;
-  changeProject: (id: string, projectId: string) => void;
-  removeItem: (id: string) => void;
-  updateItemTags: (id: string, tagName: string) => void;
-  projects: Project[]; tags: TagDef[];
 }) {
+  const { projects, tags, moveItem, removeItem, toggleMainline, changeItemProject, updateItemTags, startPomodoro } = useFocusFlow();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -206,7 +194,7 @@ function ActionBar({
               {item.completedAt && (item.status === "done" || item.status === "archived") && <span className="text-green-400">完成于 {formatTime(item.completedAt)}</span>}
             </div>
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <select value={item.projectId || "default"} onChange={(event) => changeProject(item.id, event.target.value)} className="rounded-lg border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-xs text-zinc-200 outline-none">
+              <select value={item.projectId || "default"} onChange={(event) => changeItemProject(item.id, event.target.value)} className="rounded-lg border border-white/10 bg-zinc-950/80 px-2.5 py-1.5 text-xs text-zinc-200 outline-none">
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               <button onClick={() => removeItem(item.id)} className="rounded-lg border border-red-900/80 px-2.5 py-1.5 text-xs text-red-300 transition hover:bg-red-950/50">删除</button>

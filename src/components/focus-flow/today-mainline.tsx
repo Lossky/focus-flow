@@ -1,44 +1,24 @@
 import { useState } from "react";
-import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus, type Project, type TagDef } from "@/lib/focus-flow-model";
-import { ItemCard } from "./item-card";
+import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus } from "@/lib/focus-flow-model";
+import { ItemCard, getActiveDragId } from "./item-card";
 import { EmptyState } from "./ui";
 
 type TodayMainlineProps = {
   items: Item[];
-  projects: Project[];
-  tags: TagDef[];
   todayLoadWarning: string;
-  getProjectById: (id?: string) => Project;
-  getTagDef: (name: string) => TagDef | undefined;
   moveItem: (id: string, status: ItemStatus) => void;
-  removeItem: (id: string) => void;
-  toggleMainline: (id: string) => void;
-  changeProject: (id: string, projectId: string) => void;
-  startPomodoro: (taskId?: string) => void;
   activePomodoroTaskId?: string;
   isFocusMode?: boolean;
-  updateItemTags: (id: string, tagName: string) => void;
-  openEdit: (item: Item) => void;
   collapsedTaskIds: string[];
   toggleCollapsedTask: (id: string) => void;
 };
 
 export function TodayMainline({
   items,
-  projects,
-  tags,
   todayLoadWarning,
-  getProjectById,
-  getTagDef,
   moveItem,
-  removeItem,
-  toggleMainline,
-  changeProject,
-  startPomodoro,
   activePomodoroTaskId,
   isFocusMode = false,
-  updateItemTags,
-  openEdit,
   collapsedTaskIds,
   toggleCollapsedTask,
 }: TodayMainlineProps) {
@@ -56,7 +36,7 @@ export function TodayMainline({
       onDrop={(e) => {
         e.preventDefault();
         setIsDragOver(false);
-        const draggedId = e.dataTransfer.getData("text/plain");
+        const draggedId = e.dataTransfer.getData("text/plain") || getActiveDragId();
         if (draggedId) moveItem(draggedId, "today");
       }}
     >
@@ -81,20 +61,9 @@ export function TodayMainline({
               ancestorItems={getAncestorItems(item, itemById)}
               childCount={childCounts.get(item.id) || 0}
               isChildrenCollapsed={collapsedTaskIds.includes(item.id)}
-              project={getProjectById(item.projectId)}
-              projects={projects}
-              tags={tags}
-              getTagDef={getTagDef}
-              moveItem={moveItem}
-              removeItem={removeItem}
-              toggleMainline={toggleMainline}
-              changeProject={changeProject}
-              startPomodoro={startPomodoro}
               onToggleChildren={toggleCollapsedTask}
               isFocusMode={isFocusMode}
               isPomodoroActive={activePomodoroTaskId === item.id}
-              updateItemTags={updateItemTags}
-              openEdit={openEdit}
             />
           ))
         )}
