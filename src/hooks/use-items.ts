@@ -250,7 +250,21 @@ export function useItems() {
   }, []);
 
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id && item.parentId !== id));
+    setItems((prev) => {
+      const idsToRemove = new Set<string>([id]);
+      // 递归收集所有后代任务
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const item of prev) {
+          if (item.parentId && idsToRemove.has(item.parentId) && !idsToRemove.has(item.id)) {
+            idsToRemove.add(item.id);
+            changed = true;
+          }
+        }
+      }
+      return prev.filter((item) => !idsToRemove.has(item.id));
+    });
   }, []);
 
   const changeItemProject = useCallback((id: string, projectId: string) => {

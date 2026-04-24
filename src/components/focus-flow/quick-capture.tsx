@@ -1,58 +1,93 @@
-import { useMemo, type Dispatch, type ReactNode, type RefObject, type SetStateAction } from "react";
+"use client";
+
+import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { parseTaskInput, priorityTone, type ItemSource, type Priority, type Project, type RepeatType, type TagDef } from "@/lib/focus-flow-model";
 import { Select } from "./ui";
 
-type QuickCaptureProps = {
-  input: string;
-  setInput: Dispatch<SetStateAction<string>>;
+type AddItemsHook = (value: string, options: {
+  dueDate?: string;
   source: ItemSource;
-  setSource: Dispatch<SetStateAction<ItemSource>>;
   priority: Priority;
-  setPriority: Dispatch<SetStateAction<Priority>>;
-  dueDate: string;
-  setDueDate: Dispatch<SetStateAction<string>>;
+  projectId: string;
+  tags: string[];
   repeatType: RepeatType;
-  setRepeatType: Dispatch<SetStateAction<RepeatType>>;
-  selectedProject: string;
-  setSelectedProject: Dispatch<SetStateAction<string>>;
-  selectedTags: string[];
-  tags: TagDef[];
+}) => { parsedTasks: { content: string; depth: number; parentIndex?: number }[]; next: unknown[] };
+
+type QuickCaptureProps = {
   projects: Project[];
-  newQuickTag: string;
-  setNewQuickTag: Dispatch<SetStateAction<string>>;
+  tags: TagDef[];
+  addItemsHook: AddItemsHook;
+  addTagHook: (name: string) => string | undefined;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
-  addItems: () => void;
-  toggleSelectedTag: (tagName: string) => void;
-  createQuickTag: () => void;
+  showToast: (text: string) => void;
 };
 
 export function QuickCapture({
-  input,
-  setInput,
-  source,
-  setSource,
-  priority,
-  setPriority,
-  dueDate,
-  setDueDate,
-  repeatType,
-  setRepeatType,
-  selectedProject,
-  setSelectedProject,
-  selectedTags,
-  tags,
   projects,
-  newQuickTag,
-  setNewQuickTag,
+  tags,
+  addItemsHook,
+  addTagHook,
   textareaRef,
-  addItems,
-  toggleSelectedTag,
-  createQuickTag,
+  showToast,
 }: QuickCaptureProps) {
+  const [input, setInput] = useState("");
+  const [source, setSource] = useState<ItemSource>("manual");
+  const [priority, setPriority] = useState<Priority>("medium");
+  const [selectedProject, setSelectedProject] = useState("default");
+  const [dueDate, setDueDate] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [newQuickTag, setNewQuickTag] = useState("");
+  const [repeatType, setRepeatType] = useState<RepeatType>("none");
+
   const pendingTasks = useMemo(() => input.trim() ? parseTaskInput(input) : [], [input]);
   const canAdd = pendingTasks.length > 0;
   const hasHierarchy = pendingTasks.some((task) => task.parentIndex !== undefined || task.depth > 0);
   const priorityMeta = priorityTone[priority];
+
+  // 检测是否可以一键转为父子结构：多行纯文本且没有 Markdown 列表标记
+  const plainLines = useMemo(() => {
+    if (!input.trim()) return [];
+    return input.split("\n").map((l) => l.trim()).filter(Boolean);
+  }, [input]);
+  const canConvertToHierarchy = plainLines.length >= 2 && !hasHierarchy;
+
+  const convertToHierarchy = () => {
+    if (plainLines.length < 2) return;
+    const converted = plainLines.map((line, i) => i === 0 ? `- ${line}` : `  - ${line}`).join("\n");
+    setInput(converted);
+  };
+
+  const addItems = () => {
+    const { parsedTasks, next } = addItemsHook(input, {
+      dueDate: dueDate || undefined,
+      source,
+      priority,
+      projectId: selectedProject,
+      tags: selectedTags,
+      repeatType,
+    });
+    setInput("");
+    setDueDate("");
+    setSelectedTags([]);
+    setNewQuickTag("");
+    setRepeatType("none");
+    setPriority("medium");
+    if (parsedTasks.some((task) => task.parentIndex !== undefined || task.depth > 0)) {
+      showToast(`已加入 ${next.length} 条多级任务`);
+      return;
+    }
+    showToast(`已加入 ${next.length} 条任务`);
+  };
+
+  const toggleSelectedTag = (tagName: string) => {
+    setSelectedTags((prev) => (prev.includes(tagName) ? prev.filter((t) => t !== tagName) : [...prev, tagName]));
+  };
+
+  const createQuickTag = () => {
+    const clean = addTagHook(newQuickTag);
+    if (clean) toggleSelectedTag(clean);
+    setNewQuickTag("");
+  };
 
   return (
     <section className="rounded-[1.5rem] border border-teal-300/20 bg-teal-950/[0.18] p-4 shadow-2xl shadow-black/20 backdrop-blur">
@@ -98,17 +133,40 @@ export function QuickCapture({
 
       {/* Status bar + submit */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
           <span className={canAdd ? "text-teal-200" : ""}>{canAdd ? `${pendingTasks.length} 条待收` : "输入后预览拆分"}</span>
           {hasHierarchy && <span className="text-sky-300">多级任务</span>}
-          {pendingTasks.length > 1 && <span className="text-emerald-300">多任务</span>}
+          {pendingTasks.length > 1 && !hasHierarchy && <span className="text-emerald-300">多任务</span>}
           <span className={`font-medium ${priorityMeta.summaryClass}`}>P{priorityMeta.label}</span>
           {selectedTags.map((tag) => <span key={tag}>#{tag}</span>)}
+          {canConvertToHierarchy && (
+            <button
+              onClick={convertToHierarchy}
+              className="rounded-lg border border-sky-400/40 bg-sky-400/10 px-2 py-0.5 text-[11px] text-sky-200 transition hover:bg-sky-400/20"
+            >
+              一键父子
+            </button>
+          )}
         </div>
         <button onClick={addItems} disabled={!canAdd} className="rounded-xl bg-teal-200 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-950/30 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 disabled:shadow-none">
           收进系统
         </button>
       </div>
+
+      {/* Hierarchy preview */}
+      {hasHierarchy && pendingTasks.length > 0 && (
+        <div className="mt-2 rounded-xl border border-sky-300/20 bg-sky-950/10 px-3 py-2">
+          <p className="mb-1.5 text-[10px] uppercase tracking-[0.16em] text-sky-200/60">层级预览</p>
+          <div className="space-y-0.5">
+            {pendingTasks.map((task, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-xs" style={{ paddingLeft: `${task.depth * 12}px` }}>
+                <span className="h-1 w-1 shrink-0 rounded-full bg-sky-300/40" />
+                <span className={task.depth === 0 ? "font-medium text-zinc-200" : "text-zinc-400"}>{task.content}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Advanced options — collapsed */}
       <details className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-2.5">

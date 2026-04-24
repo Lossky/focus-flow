@@ -1,48 +1,25 @@
 import { useState } from "react";
-import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, statusLabel, type Item, type ItemStatus, type Project, type TagDef } from "@/lib/focus-flow-model";
-import { ItemCard } from "./item-card";
+import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, statusLabel, type Item, type ItemStatus, type Project } from "@/lib/focus-flow-model";
+import { ItemCard, getActiveDragId } from "./item-card";
 
 export type FlowSection = { key: ItemStatus; title: string; hint: string };
 
-type CommonTaskViewProps = {
+type FlowViewProps = {
   items: Item[];
-  projects: Project[];
-  tags: TagDef[];
-  getProjectById: (id?: string) => Project;
-  getTagDef: (name: string) => TagDef | undefined;
+  sections: FlowSection[];
   moveItem: (id: string, status: ItemStatus) => void;
-  removeItem: (id: string) => void;
-  toggleMainline: (id: string) => void;
-  changeProject: (id: string, projectId: string) => void;
-  startPomodoro: (taskId?: string) => void;
   activePomodoroTaskId?: string;
   isFocusMode?: boolean;
-  updateItemTags: (id: string, tagName: string) => void;
-  openEdit: (item: Item) => void;
   collapsedTaskIds: string[];
   toggleCollapsedTask: (id: string) => void;
 };
 
-type FlowViewProps = CommonTaskViewProps & {
-  sections: FlowSection[];
-};
-
 export function FlowView({
   items,
-  projects,
-  tags,
   sections,
-  getProjectById,
-  getTagDef,
   moveItem,
-  removeItem,
-  toggleMainline,
-  changeProject,
-  startPomodoro,
   activePomodoroTaskId,
   isFocusMode = false,
-  updateItemTags,
-  openEdit,
   collapsedTaskIds,
   toggleCollapsedTask,
 }: FlowViewProps) {
@@ -69,7 +46,7 @@ export function FlowView({
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOverLane(null);
-                const draggedId = e.dataTransfer.getData("text/plain");
+                const draggedId = e.dataTransfer.getData("text/plain") || getActiveDragId();
                 if (draggedId) moveItem(draggedId, section.key);
               }}
             >
@@ -94,20 +71,9 @@ export function FlowView({
                       ancestorItems={getAncestorItems(item, itemById)}
                       childCount={childCounts.get(item.id) || 0}
                       isChildrenCollapsed={collapsedSet.has(item.id)}
-                      project={getProjectById(item.projectId)}
-                      projects={projects}
-                      tags={tags}
-                      getTagDef={getTagDef}
-                      moveItem={moveItem}
-                      removeItem={removeItem}
-                      toggleMainline={toggleMainline}
-                      changeProject={changeProject}
-                      startPomodoro={startPomodoro}
                       onToggleChildren={toggleCollapsedTask}
                       isFocusMode={isFocusMode}
                       isPomodoroActive={activePomodoroTaskId === item.id}
-                      updateItemTags={updateItemTags}
-                      openEdit={openEdit}
                     />
                   ))
                 )}
