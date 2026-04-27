@@ -5,6 +5,14 @@ export type Priority = "high" | "medium" | "low";
 export type RepeatType = "none" | "daily" | "weekly";
 export type ViewMode = "flow" | "board";
 export type StorageMode = "loading" | "disk" | "local";
+export type ItemHistoryType = "created" | "status_changed" | "edited" | "completed" | "archived";
+export type ItemHistoryEntry = {
+  type: ItemHistoryType;
+  from?: ItemStatus;
+  to?: ItemStatus;
+  at: string;
+  note?: string;
+};
 export type DailySessionStats = {
   date: string;
   focusCount: number;
@@ -25,6 +33,8 @@ export type Item = {
   priority: Priority;
   projectId?: string;
   dueDate?: string;
+  plannedFor?: string;
+  output?: string;
   completedAt?: string;
   repeatType?: RepeatType;
   tags?: string[];
@@ -36,6 +46,7 @@ export type Item = {
   isMainline?: boolean;
   parentId?: string;
   depth?: number;
+  history?: ItemHistoryEntry[];
 };
 
 export type PomodoroState = { running: boolean; secondsLeft: number; taskId?: string };
@@ -148,15 +159,15 @@ export function createSeedItems(): Item[] {
   return [
     {
       id: crypto.randomUUID(), content: "把今天会议纪要整理成待办", source: "manual", type: "task", status: "inbox", priority: "medium", projectId: "default",
-      tags: ["会议"], repeatType: "none", createdAt: now, updatedAt: now, aiSuggestion: { type: "task", status: "batch", reason: "像明确动作项，适合批处理。" },
+      tags: ["会议"], repeatType: "none", createdAt: now, updatedAt: now, aiSuggestion: { type: "task", status: "batch", reason: "像明确动作项，适合批处理。" }, history: [{ type: "created", to: "inbox", at: now }],
     },
     {
       id: crypto.randomUUID(), content: "AI 给了一版需求方案初稿，待我审", source: "ai", type: "draft", status: "review", priority: "medium", projectId: "default",
-      tags: ["PRD"], repeatType: "none", createdAt: now, updatedAt: now, aiSuggestion: { type: "draft", status: "review", reason: "更像待审内容，不该直接进正式任务。" },
+      tags: ["PRD"], repeatType: "none", createdAt: now, updatedAt: now, aiSuggestion: { type: "draft", status: "review", reason: "更像待审内容，不该直接进正式任务。" }, history: [{ type: "created", to: "review", at: now }],
     },
     {
       id: crypto.randomUUID(), content: "本周主线：把客户方案评审版发出去", source: "manual", type: "task", status: "today", priority: "high", projectId: "default",
-      tags: ["客户", "紧急"], repeatType: "none", createdAt: now, updatedAt: now, isMainline: true, aiSuggestion: { type: "task", status: "today", reason: "高优先级主线任务。" },
+      tags: ["客户", "紧急"], repeatType: "none", createdAt: now, updatedAt: now, isMainline: true, aiSuggestion: { type: "task", status: "today", reason: "高优先级主线任务。" }, history: [{ type: "created", to: "today", at: now }],
     },
   ];
 }

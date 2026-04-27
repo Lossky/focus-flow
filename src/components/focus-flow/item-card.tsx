@@ -100,9 +100,16 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
+        {item.plannedFor && <Chip>计划 {formatDate(item.plannedFor)}</Chip>}
         {item.dueDate && <Chip className={isDateBeforeToday(item.dueDate) && item.status !== "done" && item.status !== "archived" ? "border-red-500/50 text-red-300" : ""}>截止 {formatDate(item.dueDate)}</Chip>}
         {(item.tags || []).map((tag) => <span key={tag} className="rounded-full px-2 py-0.5 text-[11px] text-zinc-100" style={{ backgroundColor: getTagDef(tag)?.color || "#3f3f46" }}>#{tag}</span>)}
       </div>
+
+      {item.output?.trim() && (
+        <div className="mt-2 rounded-lg border border-sky-500/20 bg-sky-950/20 px-2.5 py-1.5 text-xs leading-5 text-sky-100">
+          <span className="mr-2 text-sky-300">产出物</span>{item.output}
+        </div>
+      )}
 
       {item.result?.trim() && (
         <div className="mt-2 rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-2.5 py-1.5 text-xs leading-5 text-emerald-200">

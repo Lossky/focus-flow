@@ -220,6 +220,7 @@ export function useItems() {
         aiSuggestion: suggestion,
         parentId,
         depth: task.depth,
+        history: [{ type: "created", to: targetStatus, at: now }],
       });
     });
 
@@ -232,10 +233,16 @@ export function useItems() {
       prev.map((item) => {
         if (item.id !== id) return item;
         const now = new Date().toISOString();
-        const updates: Partial<Item> = { status, updatedAt: now };
-        if (status === "done" || status === "archived") {
-          updates.completedAt = now;
-        }
+        const completedAt = status === "done" || status === "archived" ? now : undefined;
+        const historyType = status === "done" ? "completed" : status === "archived" ? "archived" : "status_changed";
+        const updates: Partial<Item> = {
+          status,
+          updatedAt: now,
+          completedAt,
+          history: item.status === status
+            ? item.history
+            : [...(item.history || []), { type: historyType, from: item.status, to: status, at: now }],
+        };
         return { ...item, ...updates };
       }),
     );
@@ -288,9 +295,23 @@ export function useItems() {
 
   const saveItemEdit = useCallback((updatedItem: Item) => {
     setItems((prev) =>
-      prev.map((item) =>
-        item.id === updatedItem.id ? { ...updatedItem, updatedAt: new Date().toISOString() } : item,
-      ),
+      prev.map((item) => {
+        if (item.id !== updatedItem.id) return item;
+        const now = new Date().toISOString();
+        const statusChanged = item.status !== updatedItem.status;
+        const completedAt = updatedItem.status === "done" || updatedItem.status === "archived"
+          ? updatedItem.completedAt || now
+          : undefined;
+        const historyType = updatedItem.status === "done" ? "completed" : updatedItem.status === "archived" ? "archived" : "status_changed";
+        return {
+          ...updatedItem,
+          completedAt,
+          updatedAt: now,
+          history: statusChanged
+            ? [...(item.history || []), { type: historyType, from: item.status, to: updatedItem.status, at: now }]
+            : [...(item.history || []), { type: "edited", at: now }],
+        };
+      }),
     );
   }, []);
 

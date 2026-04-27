@@ -23,6 +23,7 @@ import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-
 import { TodayMainline } from "@/components/focus-flow/today-mainline";
 import { ToolbarMenu } from "@/components/focus-flow/toolbar-menu";
 import {
+  getTodayKey,
   type Item,
   type ToastState,
   type ViewMode,
@@ -227,20 +228,25 @@ export default function Home() {
   }, [items, projects]);
 
   const dailyReport = useMemo(() => {
+    const todayKey = getTodayKey();
     const today = items.filter((i) => i.status === "today");
-    const done = items.filter((i) => i.status === "done");
+    const createdToday = items.filter((i) => i.createdAt?.slice(0, 10) === todayKey);
+    const doneToday = items.filter((i) => i.status === "done" && i.completedAt?.slice(0, 10) === todayKey);
     const mainline = items.filter((i) => i.isMainline && i.status !== "done" && i.status !== "archived");
     const lines: string[] = [
       `# 日报 ${new Date().toLocaleDateString("zh-CN")}`,
       "",
+      `## 今日完成 (${doneToday.length})`,
+      ...doneToday.map((i) => `- ${i.content}${i.result ? `：${i.result}` : ""}`),
+      "",
+      `## 今日新增 (${createdToday.length})`,
+      ...createdToday.map((i) => `- ${i.content}`),
+      "",
       `## 今日主线 (${mainline.length})`,
-      ...mainline.map((i) => `- ${i.content}`),
+      ...mainline.map((i) => `- ${i.content}${i.output ? ` → ${i.output}` : ""}`),
       "",
-      `## Today (${today.length})`,
-      ...today.map((i) => `- ${i.content}`),
-      "",
-      `## 已完成 (${done.length})`,
-      ...done.map((i) => `- ${i.content}`),
+      `## Today 遗留 (${today.length})`,
+      ...today.map((i) => `- ${i.content}${i.output ? ` → ${i.output}` : ""}`),
       "",
       `## 专注统计`,
       `- 番茄钟完成：${sessionStats.focusCount} 次`,
