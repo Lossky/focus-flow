@@ -23,12 +23,8 @@ import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-
 import { TodayMainline } from "@/components/focus-flow/today-mainline";
 import { ToolbarMenu } from "@/components/focus-flow/toolbar-menu";
 import {
-  analyzeTaskMaturity,
   analyzeTodayLoad,
-  getAgingLevel,
   getTodayKey,
-  suggestMergeGroups,
-  summarizeProjectPressure,
   type Item,
   type ToastState,
   type ViewMode,
@@ -128,7 +124,6 @@ export default function Home() {
     changeItemProject: changeItemProjectHook,
     updateItemTags: updateItemTagsHook,
     saveItemEdit: saveItemEditHook,
-    mergeItems: mergeItemsHook,
     addProject: addProjectHook,
     deleteProject: deleteProjectHook,
     addTag: addTagHook,
@@ -214,19 +209,6 @@ export default function Home() {
     if (todayCount > 3) return `Today 有 ${todayCount} 条，留意是否都需要今天推进。`;
     return "";
   }, [items, todayLoad]);
-
-  const agingItems = useMemo(() => filteredItems
-    .map((item) => ({ item, aging: getAgingLevel(item) }))
-    .filter((entry): entry is { item: Item; aging: NonNullable<ReturnType<typeof getAgingLevel>> } => !!entry.aging)
-    .sort((left, right) => right.aging.days - left.aging.days), [filteredItems]);
-
-  const weakMaturityItems = useMemo(() => filteredItems
-    .map((item) => ({ item, maturity: analyzeTaskMaturity(item) }))
-    .filter((entry) => entry.maturity.level === "weak")
-    .slice(0, 5), [filteredItems]);
-
-  const pressureSummary = useMemo(() => summarizeProjectPressure(items, projects).filter((summary) => summary.openCount > 0).slice(0, 4), [items, projects]);
-  const mergeSuggestions = useMemo(() => suggestMergeGroups(filteredItems), [filteredItems]);
 
   const cornerTodayItems = useMemo(
     () => items.filter((i) => i.status === "today"),
@@ -399,17 +381,6 @@ export default function Home() {
   }, [removeItemHook]);
 
   const changeItemProject = changeItemProjectHook;
-
-  const mergeSuggestedItems = useCallback((itemIds: string[], defaultTitle: string) => {
-    const title = window.prompt("合并后的任务标题", defaultTitle);
-    if (!title?.trim()) return;
-    const created = mergeItemsHook(itemIds, title.trim());
-    if (!created) {
-      showToast("至少选择 2 条未完成任务才能合并");
-      return;
-    }
-    showToast("已合并为 Review 任务，原任务已归档");
-  }, [mergeItemsHook]);
 
   // --- Pomodoro handlers (from hook) ---
   function acknowledgeRestReminder() {
@@ -658,84 +629,6 @@ export default function Home() {
               textareaRef={captureInputRef}
               showToast={showToast}
             />
-          </section>
-
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-semibold">工作驾驶舱</h2>
-                  <p className="mt-1 text-xs text-zinc-500">规则化判断，不接 AI：负载、老化、表达质量、阻塞。</p>
-                </div>
-                <span className={`rounded-full border px-2.5 py-1 text-xs ${todayLoad.level === "overloaded" ? "border-red-500/40 text-red-300" : todayLoad.level === "full" ? "border-amber-500/40 text-amber-200" : "border-emerald-500/30 text-emerald-300"}`}>{todayLoad.message}</span>
-              </div>
-              <div className="grid gap-2 text-xs md:grid-cols-3">
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <div className="text-zinc-500">Today 负载</div>
-                  <div className="mt-1 text-lg font-semibold text-zinc-100">{todayLoad.totalMinutes ? `${Math.round(todayLoad.totalMinutes / 60 * 10) / 10}h` : `${todayLoad.taskCount}条`}</div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <div className="text-zinc-500">老化提醒</div>
-                  <div className="mt-1 text-lg font-semibold text-amber-100">{agingItems.length}</div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <div className="text-zinc-500">表达偏弱</div>
-                  <div className="mt-1 text-lg font-semibold text-amber-100">{weakMaturityItems.length}</div>
-                </div>
-              </div>
-              <div className="mt-3 grid gap-3 text-xs md:grid-cols-2">
-                <div>
-                  <div className="mb-1.5 text-zinc-500">最老化任务</div>
-                  <div className="space-y-1.5">
-                    {agingItems.slice(0, 3).map(({ item, aging }) => <div key={item.id} className="rounded-lg border border-white/10 px-2 py-1.5 text-zinc-300"><span className="text-amber-300">{aging.days}天</span> · {item.content}</div>)}
-                    {!agingItems.length && <div className="rounded-lg border border-dashed border-white/10 px-2 py-2 text-zinc-500">暂无老化提醒</div>}
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1.5 text-zinc-500">表达待补</div>
-                  <div className="space-y-1.5">
-                    {weakMaturityItems.slice(0, 3).map(({ item, maturity }) => <div key={item.id} className="rounded-lg border border-white/10 px-2 py-1.5 text-zinc-300">{item.content}<div className="text-[11px] text-zinc-500">{maturity.reasons.join("、")}</div></div>)}
-                    {!weakMaturityItems.length && <div className="rounded-lg border border-dashed border-white/10 px-2 py-2 text-zinc-500">表达质量正常</div>}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-semibold">项目压力 & 合并建议</h2>
-                  <p className="mt-1 text-xs text-zinc-500">按项目聚合压力，并提示可能属于同一事项的零碎任务。</p>
-                </div>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-2">
-                  {pressureSummary.map((summary) => (
-                    <div key={summary.project.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-zinc-100">{summary.project.name}</span>
-                        <span className={summary.pressureLevel === "high" ? "text-red-300" : summary.pressureLevel === "medium" ? "text-amber-200" : "text-zinc-400"}>{summary.pressureLevel === "high" ? "高压" : summary.pressureLevel === "medium" ? "中压" : "低压"}</span>
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-2 text-zinc-500">
-                        <span>活跃 {summary.openCount}</span><span>Today {summary.todayCount}</span><span>Review {summary.reviewCount}</span><span>阻塞 {summary.blockedCount}</span><span>老化 {summary.agingCount}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  {mergeSuggestions.slice(0, 3).map((group) => (
-                    <div key={group.key} className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs">
-                      <div className="mb-1 text-amber-100">疑似可合并 · {group.items.length} 条</div>
-                      <div className="space-y-1 text-zinc-400">
-                        {group.items.slice(0, 3).map((item) => <div key={item.id}>- {item.content}</div>)}
-                      </div>
-                      <button onClick={() => mergeSuggestedItems(group.items.map((item) => item.id), `梳理${group.items[0].content.replace(/[\-—].*$/, "")}相关事项，输出范围、问题和待确认清单`)} className="mt-2 rounded-lg border border-amber-300/30 px-2.5 py-1 text-[11px] text-amber-100 hover:bg-amber-300/10">合并这组</button>
-                    </div>
-                  ))}
-                  {!mergeSuggestions.length && <div className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-xs text-zinc-500">暂无明显可合并任务</div>}
-                </div>
-              </div>
-            </div>
           </section>
 
           {/* Row 2: Tab switcher + content */}
