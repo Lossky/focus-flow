@@ -5,7 +5,7 @@ export type Priority = "high" | "medium" | "low";
 export type RepeatType = "none" | "daily" | "weekly";
 export type ViewMode = "flow" | "board";
 export type StorageMode = "loading" | "disk" | "local";
-export type ItemHistoryType = "created" | "status_changed" | "edited" | "completed" | "archived";
+export type ItemHistoryType = "created" | "status_changed" | "edited" | "completed" | "archived" | "merged";
 export type ItemHistoryEntry = {
   type: ItemHistoryType;
   from?: ItemStatus;
@@ -35,6 +35,10 @@ export type Item = {
   dueDate?: string;
   plannedFor?: string;
   output?: string;
+  estimateMinutes?: number;
+  blockedBy?: string;
+  waitingFor?: string;
+  mergedFrom?: string[];
   completedAt?: string;
   repeatType?: RepeatType;
   tags?: string[];
@@ -153,6 +157,158 @@ export const priorityTone: Record<Priority, { label: string; accent: string; chi
     summaryClass: "text-teal-200",
   },
 };
+
+export type TaskMaturity = { score: number; level: "weak" | "medium" | "strong"; reasons: string[] };
+export type TodayLoad = { totalMinutes: number; taskCount: number; level: "light" | "balanced" | "full" | "overloaded"; message: string };
+export type AgingSignal = { level: "warning" | "danger"; days: number; message: string };
+export type ProjectPressure = {
+  project: Project;
+  openCount: number;
+  todayCount: number;
+  reviewCount: number;
+  blockedCount: number;
+  agingCount: number;
+  totalEstimateMinutes: number;
+  score: number;
+  pressureLevel: "low" | "medium" | "high";
+};
+export type MergeSuggestionGroup = { key: string; items: Item[]; reason: string };
+
+const actionWords = ["梳理", "输出", "确认", "评审", "跟进", "整理", "完成", "推进", "设计", "写", "发", "处理", "沟通", "对齐", "复盘"];
+const outputWords = ["清单", "方案", "原型", "文档", "问题", "纪要", "范围", "计划", "结论", "材料", "报告", "版本", "字段", "流程"];
+const vagueWords = ["看看", "弄一下", "处理下", "跟进下", "想一下", "研究下", "搞一下", "看下"];
+const mergeKeywords = ["后台", "企业", "产业链", "权限", "字段", "配置", "维护", "客户", "方案", "原型", "页面", "流程", "评审", "需求"];
+
+function isOpenItem(item: Item) {
+  return item.status !== "done" && item.status !== "archived" && !item.completedAt;
+}
+
+function daysSince(value: string | undefined, now = new Date()) {
+  if (!value) return 0;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 0;
+  return Math.max(0, Math.floor((now.getTime() - date.getTime()) / 86_400_000));
+}
+
+export function analyzeTaskMaturity(item: Item): TaskMaturity {
+  const text = `${item.content} ${item.output || ""}`;
+  const reasons: string[] = [];
+  let score = 100;
+  if (item.content.trim().length < 8) {
+    score -= 20;
+    reasons.push("标题偏短");
+  }
+  if (!actionWords.some((word) => text.includes(word))) {
+    score -= 25;
+    reasons.push("缺少明确动作");
+  }
+  if (!item.output?.trim() && !outputWords.some((word) => text.includes(word))) {
+    score -= 25;
+    reasons.push("缺少产出物");
+  }
+  if (vagueWords.some((word) => text.includes(word))) {
+    score -= 25;
+    reasons.push("包含模糊表达");
+  }
+  if (!item.projectId) {
+    score -= 10;
+    reasons.push("未关联项目");
+  }
+  const normalizedScore = Math.max(0, Math.min(100, score));
+  return {
+    score: normalizedScore,
+    level: normalizedScore >= 80 ? "strong" : normalizedScore >= 60 ? "medium" : "weak",
+    reasons,
+  };
+}
+
+export function analyzeTodayLoad(items: Item[]): TodayLoad {
+  const todayItems = items.filter((item) => item.status === "today" && isOpenItem(item));
+  const totalMinutes = todayItems.reduce((sum, item) => sum + (item.estimateMinutes || 0), 0);
+  const hours = Number((totalMinutes / 60).toFixed(1));
+  const level: TodayLoad["level"] = totalMinutes === 0
+    ? todayItems.length > 5 ? "full" : "balanced"
+    : totalMinutes >= 420 ? "overloaded" : totalMinutes > 300 ? "full" : totalMinutes >= 180 ? "balanced" : "light";
+  const messageMap: Record<TodayLoad["level"], string> = {
+    light: `Today 预计 ${hours}小时，负载偏轻，可补一个低风险推进项。`,
+    balanced: totalMinutes ? `Today 预计 ${hours}小时，负载基本合理。` : `Today 有 ${todayItems.length} 条，建议补充预计耗时。`,
+    full: totalMinutes ? `Today 预计 ${hours}小时，偏满，建议保留 1-3 个主线。` : `Today 有 ${todayItems.length} 条，偏满，建议精简。`,
+    overloaded: `Today 预计 ${hours}小时，明显超载，建议移出低优先级任务。`,
+  };
+  return { totalMinutes, taskCount: todayItems.length, level, message: messageMap[level] };
+}
+
+export function getAgingLevel(item: Item, now = new Date()): AgingSignal | undefined {
+  if (!isOpenItem(item)) return undefined;
+  const days = daysSince(item.updatedAt || item.createdAt, now);
+  const thresholds: Partial<Record<ItemStatus, { warning: number; danger: number; label: string }>> = {
+    inbox: { warning: 3, danger: 7, label: "Inbox 超过 3 天未分流" },
+    review: { warning: 5, danger: 7, label: "Review 超过 5 天未决策" },
+    today: { warning: 2, danger: 4, label: "Today 连续多天未完成" },
+    batch: { warning: 14, danger: 21, label: "Batch 长期未处理" },
+  };
+  const threshold = thresholds[item.status];
+  if (!threshold || days < threshold.warning) return undefined;
+  const level = days >= threshold.danger ? "danger" : "warning";
+  return { level, days, message: `${threshold.label}（${days}天）` };
+}
+
+export function summarizeProjectPressure(items: Item[], projects: Project[], now = new Date()): ProjectPressure[] {
+  return projects.map((project) => {
+    const projectItems = items.filter((item) => (item.projectId || "default") === project.id && isOpenItem(item));
+    const todayCount = projectItems.filter((item) => item.status === "today").length;
+    const reviewCount = projectItems.filter((item) => item.status === "review").length;
+    const blockedCount = projectItems.filter((item) => item.blockedBy?.trim() || item.waitingFor?.trim()).length;
+    const agingCount = projectItems.filter((item) => getAgingLevel(item, now)).length;
+    const totalEstimateMinutes = projectItems.reduce((sum, item) => sum + (item.estimateMinutes || 0), 0);
+    const score = projectItems.length + todayCount + reviewCount + blockedCount * 2 + agingCount + Math.floor(totalEstimateMinutes / 120);
+    const pressureLevel: ProjectPressure["pressureLevel"] = score >= 6 ? "high" : score >= 3 ? "medium" : "low";
+    return {
+      project,
+      openCount: projectItems.length,
+      todayCount,
+      reviewCount,
+      blockedCount,
+      agingCount,
+      totalEstimateMinutes,
+      score,
+      pressureLevel,
+    };
+  }).sort((left, right) => right.score - left.score);
+}
+
+function getMergeTokens(item: Item) {
+  const text = item.content;
+  return mergeKeywords.filter((keyword) => text.includes(keyword));
+}
+
+function shareAnyToken(left: Item, right: Item) {
+  const leftTokens = new Set(getMergeTokens(left));
+  return getMergeTokens(right).some((token) => leftTokens.has(token));
+}
+
+export function suggestMergeGroups(items: Item[]): MergeSuggestionGroup[] {
+  const openItems = items.filter(isOpenItem);
+  const usedIds = new Set<string>();
+  const groups: MergeSuggestionGroup[] = [];
+
+  openItems.forEach((seed) => {
+    if (usedIds.has(seed.id) || !getMergeTokens(seed).length) return;
+    const groupItems = openItems.filter((candidate) =>
+      candidate.id !== seed.id
+      && !usedIds.has(candidate.id)
+      && (candidate.projectId || "default") === (seed.projectId || "default")
+      && shareAnyToken(seed, candidate),
+    );
+    if (!groupItems.length) return;
+    const merged = [seed, ...groupItems];
+    merged.forEach((item) => usedIds.add(item.id));
+    const tokens = Array.from(new Set(merged.flatMap(getMergeTokens))).slice(0, 3);
+    groups.push({ key: `${seed.projectId || "default"}:${tokens.join("+")}`, items: merged, reason: `同项目内都包含 ${tokens.join("、")} 等关键词` });
+  });
+
+  return groups.slice(0, 5);
+}
 
 export function createSeedItems(): Item[] {
   const now = new Date().toISOString();

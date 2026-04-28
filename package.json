@@ -1,6 +1,6 @@
 {
   "name": "focus-flow",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": false,
   "description": "Local-first macOS task flow app built with Next.js and Tauri.",
   "scripts": {
@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "tauri": "tauri"

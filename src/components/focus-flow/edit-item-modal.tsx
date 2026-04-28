@@ -79,6 +79,38 @@ export function EditItemModal({ item, projects, tags, onClose, onSave }: EditIte
           </label>
         </div>
 
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="space-y-1">
+            <span className="block text-xs text-zinc-400">预计耗时（分钟）</span>
+            <input
+              type="number"
+              min="0"
+              value={draft.estimateMinutes || ""}
+              onChange={(event) => setDraft({ ...draft, estimateMinutes: event.target.value ? Number(event.target.value) : undefined })}
+              placeholder="例如：90"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="block text-xs text-zinc-400">阻塞原因</span>
+            <input
+              value={draft.blockedBy || ""}
+              onChange={(event) => setDraft({ ...draft, blockedBy: event.target.value || undefined })}
+              placeholder="例如：等客户确认范围"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="block text-xs text-zinc-400">等待对象</span>
+            <input
+              value={draft.waitingFor || ""}
+              onChange={(event) => setDraft({ ...draft, waitingFor: event.target.value || undefined })}
+              placeholder="例如：研发 / 客户 / 领导"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+            />
+          </label>
+        </div>
+
         <div>
           <div className="mb-2 text-sm text-zinc-400">标签</div>
           <div className="flex flex-wrap gap-2">
@@ -137,6 +169,7 @@ function formatHistoryType(type: NonNullable<Item["history"]>[number]["type"]) {
     edited: "编辑",
     completed: "完成",
     archived: "归档",
+    merged: "合并",
   };
   return labels[type];
 }

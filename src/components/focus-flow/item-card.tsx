@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { formatDate, formatTime, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus } from "@/lib/focus-flow-model";
+import { analyzeTaskMaturity, formatDate, formatTime, getAgingLevel, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus } from "@/lib/focus-flow-model";
 import { useFocusFlow } from "@/contexts/focus-flow-context";
 import { Chip } from "./ui";
 
@@ -51,6 +51,8 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
   const depth = Math.min(item.depth || 0, 4);
   const focusTone = isPomodoroActive ? "ring-1 ring-amber-200/40" : isFocusMode ? "opacity-70 hover:opacity-100" : "";
   const ancestorPath = ancestorItems.map((ancestor) => ancestor.content).join(" > ");
+  const maturity = analyzeTaskMaturity(item);
+  const aging = getAgingLevel(item);
 
   // Card background: priority color at 20% + mainline amber tint
   const bgStyle = isMainline
@@ -101,6 +103,11 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
 
       <div className="mt-2 flex flex-wrap gap-1.5">
         {item.plannedFor && <Chip>计划 {formatDate(item.plannedFor)}</Chip>}
+        {item.estimateMinutes ? <Chip>{Math.round(item.estimateMinutes / 60 * 10) / 10}h</Chip> : null}
+        {maturity.level !== "strong" && <Chip className="border-amber-500/40 text-amber-200">表达{maturity.level === "weak" ? "偏弱" : "待补"}</Chip>}
+        {aging && <Chip className={aging.level === "danger" ? "border-red-500/50 text-red-300" : "border-amber-500/40 text-amber-200"}>老化 {aging.days}天</Chip>}
+        {(item.blockedBy || item.waitingFor) && <Chip className="border-red-500/40 text-red-200">阻塞/等待</Chip>}
+        {item.mergedFrom?.length ? <Chip>合并自 {item.mergedFrom.length} 条</Chip> : null}
         {item.dueDate && <Chip className={isDateBeforeToday(item.dueDate) && item.status !== "done" && item.status !== "archived" ? "border-red-500/50 text-red-300" : ""}>截止 {formatDate(item.dueDate)}</Chip>}
         {(item.tags || []).map((tag) => <span key={tag} className="rounded-full px-2 py-0.5 text-[11px] text-zinc-100" style={{ backgroundColor: getTagDef(tag)?.color || "#3f3f46" }}>#{tag}</span>)}
       </div>
@@ -108,6 +115,19 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
       {item.output?.trim() && (
         <div className="mt-2 rounded-lg border border-sky-500/20 bg-sky-950/20 px-2.5 py-1.5 text-xs leading-5 text-sky-100">
           <span className="mr-2 text-sky-300">产出物</span>{item.output}
+        </div>
+      )}
+
+      {(item.blockedBy?.trim() || item.waitingFor?.trim()) && (
+        <div className="mt-2 rounded-lg border border-red-500/20 bg-red-950/20 px-2.5 py-1.5 text-xs leading-5 text-red-100">
+          {item.blockedBy?.trim() && <div><span className="mr-2 text-red-300">阻塞</span>{item.blockedBy}</div>}
+          {item.waitingFor?.trim() && <div><span className="mr-2 text-red-300">等待</span>{item.waitingFor}</div>}
+        </div>
+      )}
+
+      {maturity.reasons.length > 0 && maturity.level !== "strong" && (
+        <div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-950/10 px-2.5 py-1.5 text-xs leading-5 text-amber-100">
+          <span className="mr-2 text-amber-300">表达提示</span>{maturity.reasons.join("、")}
         </div>
       )}
 

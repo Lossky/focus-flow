@@ -315,6 +315,53 @@ export function useItems() {
     );
   }, []);
 
+  const mergeItems = useCallback((itemIds: string[], content: string): Item | null => {
+    const cleanContent = content.trim();
+    if (itemIds.length < 2 || !cleanContent) return null;
+    let createdItem: Item | null = null;
+    setItems((prev) => {
+      const sourceItems = prev.filter((item) => itemIds.includes(item.id) && item.status !== "done" && item.status !== "archived");
+      if (sourceItems.length < 2) return prev;
+      const now = new Date().toISOString();
+      const priorityRank: Record<Priority, number> = { high: 3, medium: 2, low: 1 };
+      const topPriority = sourceItems.reduce<Priority>((current, item) => priorityRank[item.priority] > priorityRank[current] ? item.priority : current, "low");
+      const tagSet = new Set(sourceItems.flatMap((item) => item.tags || []));
+      const estimateMinutes = sourceItems.reduce((sum, item) => sum + (item.estimateMinutes || 0), 0) || undefined;
+      const joinedBlockers = sourceItems.map((item) => item.blockedBy).filter(Boolean).join("；") || undefined;
+      const joinedWaiting = sourceItems.map((item) => item.waitingFor).filter(Boolean).join("；") || undefined;
+      const mergedItem: Item = {
+        id: crypto.randomUUID(),
+        content: cleanContent,
+        source: "manual",
+        type: "task",
+        status: "review",
+        priority: topPriority,
+        projectId: sourceItems[0].projectId || "default",
+        repeatType: "none",
+        tags: tagSet.size ? Array.from(tagSet) : undefined,
+        estimateMinutes,
+        blockedBy: joinedBlockers,
+        waitingFor: joinedWaiting,
+        mergedFrom: sourceItems.map((item) => item.id),
+        createdAt: now,
+        updatedAt: now,
+        history: [{ type: "merged", to: "review", at: now, note: `由 ${sourceItems.length} 条任务合并` }],
+      };
+      createdItem = mergedItem;
+      return [
+        ...prev.map((item) => itemIds.includes(item.id) ? {
+          ...item,
+          status: "archived" as ItemStatus,
+          completedAt: now,
+          updatedAt: now,
+          history: [...(item.history || []), { type: "merged" as const, from: item.status, to: "archived" as ItemStatus, at: now, note: `合并到：${cleanContent}` }],
+        } : item),
+        mergedItem,
+      ];
+    });
+    return createdItem;
+  }, []);
+
   const reorderInStatus = useCallback((status: ItemStatus, draggedId: string, targetId?: string) => {
     setItems((prev) => {
       const inStatus = prev.filter((item) => item.status === status);
@@ -460,6 +507,7 @@ export function useItems() {
     changeItemProject,
     updateItemTags,
     saveItemEdit,
+    mergeItems,
     reorderInStatus,
     addProject,
     deleteProject,
