@@ -20,6 +20,7 @@ import {
 } from "@/components/focus-flow/management-modals";
 import { QuickCapture } from "@/components/focus-flow/quick-capture";
 import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-flow/task-views";
+import { CalendarView } from "@/components/focus-flow/calendar-view";
 import { TodayMainline } from "@/components/focus-flow/today-mainline";
 import { ToolbarMenu } from "@/components/focus-flow/toolbar-menu";
 import {
@@ -679,6 +680,12 @@ export default function Home() {
               >
                 项目总览
               </button>
+              <button
+                onClick={() => setViewMode("calendar")}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "calendar" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
+              >
+                日历视图
+              </button>
             </div>
 
             {viewMode === "flow" ? (
@@ -691,6 +698,8 @@ export default function Home() {
                 collapsedTaskIds={collapsedTaskIds}
                 toggleCollapsedTask={toggleCollapsedTask}
               />
+            ) : viewMode === "calendar" ? (
+              <CalendarView items={items} getProjectById={getProjectById} />
             ) : (
               <ProjectOverview items={items} projects={projects} />
             )}

@@ -3,7 +3,7 @@ export type ItemStatus = "inbox" | "today" | "batch" | "review" | "done" | "arch
 export type ItemSource = "manual" | "feishu" | "ai" | "obsidian" | "doc" | "other";
 export type Priority = "high" | "medium" | "low";
 export type RepeatType = "none" | "daily" | "weekly";
-export type ViewMode = "flow" | "board";
+export type ViewMode = "flow" | "board" | "calendar";
 export type StorageMode = "loading" | "disk" | "local";
 export type ItemHistoryType = "created" | "status_changed" | "edited" | "completed" | "archived" | "merged";
 export type ItemHistoryEntry = {
@@ -520,3 +520,57 @@ const priorityRank: Record<Priority, number> = {
   medium: 2,
   low: 1,
 };
+
+// ---------------------------------------------------------------------------
+// Calendar view utilities
+// ---------------------------------------------------------------------------
+
+export type CalendarFilter = "all" | "created" | "completed";
+
+const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
+
+export function getWeekDayLabel(date: Date): string {
+  return WEEKDAY_LABELS[date.getDay()];
+}
+
+export function getWeekDays(weekOffset = 0): Date[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // getDay(): 0=周日, 1=周一, ..., 6=周六
+  const dayOfWeek = today.getDay() || 7; // 把周日从 0 转为 7
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dayOfWeek - 1) + weekOffset * 7);
+
+  const days: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    days.push(d);
+  }
+  return days;
+}
+
+export function formatWeekRange(start: Date, end: Date): string {
+  return `${start.getMonth() + 1}/${start.getDate()} - ${end.getMonth() + 1}/${end.getDate()}`;
+}
+
+export function formatDayLabel(date: Date): string {
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+export function isSameDay(date: Date, other: Date): boolean {
+  return date.getFullYear() === other.getFullYear()
+    && date.getMonth() === other.getMonth()
+    && date.getDate() === other.getDate();
+}
+
+export function getItemsForDay(
+  items: Item[],
+  date: Date,
+  filter: CalendarFilter,
+): { created: Item[]; completed: Item[] } {
+  const key = getTodayKey(date);
+  const created = filter === "completed" ? [] : items.filter((item) => item.createdAt?.slice(0, 10) === key);
+  const completed = filter === "created" ? [] : items.filter((item) => item.completedAt?.slice(0, 10) === key);
+  return { created, completed };
+}
