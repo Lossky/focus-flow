@@ -1,6 +1,7 @@
 "use client";
 
-import { formatTime, statusLabel, type Item, type Project, type TagDef } from "@/lib/focus-flow-model";
+import { useState } from "react";
+import { colors, formatTime, statusLabel, type Item, type Project, type TagDef } from "@/lib/focus-flow-model";
 import { Modal } from "./ui";
 
 type Report = { date: string; content: string };
@@ -11,6 +12,8 @@ export function ProjectManagementModal({
   newProjectName,
   setNewProjectName,
   addProject,
+  renameProject,
+  updateProjectColor,
   deleteProject,
   onClose,
 }: {
@@ -18,10 +21,103 @@ export function ProjectManagementModal({
   newProjectName: string;
   setNewProjectName: (name: string) => void;
   addProject: () => void;
+  renameProject: (projectId: string, newName: string) => void;
+  updateProjectColor: (projectId: string, color: string) => void;
   deleteProject: (projectId: string) => void;
   onClose: () => void;
 }) {
-  return <Modal title="管理项目" onClose={onClose}><div className="space-y-2">{projects.map((project) => <div key={project.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} /><span>{project.name}</span></div>{project.id !== "default" && <button onClick={() => deleteProject(project.id)} className="text-xs text-red-400">删除</button>}</div>)}</div><div className="mt-4 flex gap-2"><input value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="新项目名称" className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600" onKeyDown={(event) => event.key === "Enter" && addProject()} /><button onClick={addProject} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">添加</button></div></Modal>;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [colorPickerId, setColorPickerId] = useState<string | null>(null);
+
+  const startEdit = (project: Project) => {
+    setEditingId(project.id);
+    setEditingName(project.name);
+  };
+
+  const confirmEdit = () => {
+    if (editingId && editingName.trim()) {
+      renameProject(editingId, editingName.trim());
+    }
+    setEditingId(null);
+    setEditingName("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingName("");
+  };
+
+  return (
+    <Modal title="管理项目" onClose={onClose}>
+      <div className="space-y-2">
+        {projects.map((project) => (
+          <div key={project.id} className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setColorPickerId(colorPickerId === project.id ? null : project.id)}
+                  className="h-4 w-4 shrink-0 rounded-full border border-white/20 transition hover:scale-110"
+                  style={{ backgroundColor: project.color }}
+                  title="点击更换颜色"
+                />
+                {editingId === project.id ? (
+                  <input
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); if (e.key === "Escape") cancelEdit(); }}
+                    autoFocus
+                    className="min-w-0 flex-1 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1 text-sm outline-none focus:border-zinc-400"
+                  />
+                ) : (
+                  <span className="truncate">{project.name}</span>
+                )}
+              </div>
+              <div className="ml-3 flex shrink-0 items-center gap-2">
+                {editingId === project.id ? (
+                  <>
+                    <button onClick={confirmEdit} className="text-xs text-emerald-400 hover:text-emerald-300">确认</button>
+                    <button onClick={cancelEdit} className="text-xs text-zinc-400 hover:text-zinc-300">取消</button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEdit(project)} className="text-xs text-zinc-400 hover:text-zinc-200">编辑</button>
+                    {project.id !== "default" && (
+                      <button onClick={() => deleteProject(project.id)} className="text-xs text-red-400">删除</button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+            {colorPickerId === project.id && (
+              <div className="mt-2 flex flex-wrap gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 p-2">
+                {colors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => { updateProjectColor(project.id, c); setColorPickerId(null); }}
+                    className={`h-5 w-5 rounded-full border-2 transition hover:scale-110 ${project.color === c ? "border-white" : "border-transparent"}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex gap-2">
+        <input
+          value={newProjectName}
+          onChange={(event) => setNewProjectName(event.target.value)}
+          placeholder="新项目名称"
+          className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600"
+          onKeyDown={(event) => event.key === "Enter" && addProject()}
+        />
+        <button onClick={addProject} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">添加</button>
+      </div>
+    </Modal>
+  );
 }
 
 export function TagManagementModal({

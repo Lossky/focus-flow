@@ -61,7 +61,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.10";
+const APP_VERSION = "0.1.14";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -134,6 +134,9 @@ export default function Home() {
     restoreBackup: restoreBackupHook,
     importData: importDataHook,
     resetAllData: resetAllDataHook,
+    reloadFromDisk: reloadFromDiskHook,
+    renameProject: renameProjectHook,
+    updateProjectColor: updateProjectColorHook,
     createCurrentSnapshot,
   } = useItems();
 
@@ -351,6 +354,25 @@ export default function Home() {
     showToast("项目已删除");
   };
 
+  const renameProject = (projectId: string, newName: string) => {
+    renameProjectHook(projectId, newName);
+    showToast("项目已重命名");
+  };
+
+  const updateProjectColor = (projectId: string, color: string) => {
+    updateProjectColorHook(projectId, color);
+  };
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const reloadData = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    await reloadFromDiskHook();
+    showToast("数据已刷新");
+    setTimeout(() => setIsRefreshing(false), 800);
+  };
+
   const addTag = (name: string) => {
     const clean = addTagHook(name);
     if (!clean) return undefined;
@@ -550,6 +572,17 @@ export default function Home() {
               </button>
             )}
             <button
+              onClick={() => void reloadData()}
+              disabled={isRefreshing}
+              className="flex items-center gap-1 rounded-full border border-zinc-500/40 bg-zinc-500/10 px-2.5 py-1 text-[10px] text-zinc-200 transition hover:bg-zinc-500/20 disabled:opacity-50"
+            >
+              <svg className={`h-3 w-3 ${isRefreshing ? "animate-spin-once" : ""}`} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2.5 8a5.5 5.5 0 0 1 9.3-4M13.5 8a5.5 5.5 0 0 1-9.3 4" />
+                <path d="M12 1.5v3h3M4 11.5v3H1" />
+              </svg>
+              刷新
+            </button>
+            <button
               onClick={() => void enterCornerMode()}
               className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-[10px] text-amber-100 transition hover:bg-amber-400/15"
             >
@@ -674,6 +707,8 @@ export default function Home() {
           newProjectName={newProjectName}
           setNewProjectName={setNewProjectName}
           addProject={addProject}
+          renameProject={renameProject}
+          updateProjectColor={updateProjectColor}
           deleteProject={deleteProject}
           onClose={() => setActiveModal(null)}
         />

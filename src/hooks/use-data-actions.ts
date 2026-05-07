@@ -80,6 +80,7 @@ export function useDataActions(hooks: DataHooks, showToast: ShowToast) {
 
   const restoreDefaultDataDir = useCallback(async () => {
     if (!confirm("确认恢复默认 AppData 数据目录？当前数据会先迁移回默认位置。")) return;
+    showToast("正在自动备份当前数据…");
     const path = await hooks.restoreDefaultDataDirectory();
     if (!path) {
       showToast("恢复默认目录失败");
@@ -90,6 +91,7 @@ export function useDataActions(hooks: DataHooks, showToast: ShowToast) {
 
   const restoreDiskBackup = useCallback(async (path: string) => {
     if (!confirm("确认恢复这个磁盘备份？当前数据会先自动备份。")) return;
+    showToast("正在自动备份当前数据…");
     const success = await hooks.restoreBackup(path);
     if (!success) {
       showToast("备份文件不可用");
@@ -100,9 +102,10 @@ export function useDataActions(hooks: DataHooks, showToast: ShowToast) {
 
   const importData = useCallback(async (file?: File) => {
     if (!file) return;
+    showToast("正在自动备份当前数据…");
     const success = await hooks.importData(file);
     if (success) {
-      showToast("已导入备份，原数据已尝试自动备份");
+      showToast("已导入备份（原数据已自动备份）");
     } else {
       showToast("导入失败，请检查文件");
     }
@@ -110,8 +113,9 @@ export function useDataActions(hooks: DataHooks, showToast: ShowToast) {
 
   const resetAllData = useCallback(async () => {
     if (!confirm("确认重置所有本地数据？此操作不可撤销。")) return;
+    showToast("正在自动备份当前数据…");
     await hooks.resetAllData();
-    showToast("已重置为初始数据，原数据已尝试自动备份");
+    showToast("已重置为初始数据（原数据已自动备份）");
   }, [hooks, showToast]);
 
   return {

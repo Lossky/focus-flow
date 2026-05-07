@@ -110,6 +110,27 @@ export function useItems() {
     return () => { cancelled = true; };
   }, []);
 
+  // --- Reload from disk (for external data changes) ---
+  async function reloadFromDisk(): Promise<boolean> {
+    const diskSnapshot = await loadSnapshotFromDisk();
+    if (diskSnapshot) {
+      applySnapshot(diskSnapshot);
+      return true;
+    }
+    // 非磁盘模式下从 localStorage 重新读取
+    const localItems = loadLocal<Item[]>(STORAGE_KEY, []);
+    const localProjects = loadLocal<Project[]>(PROJECTS_KEY, defaultProjects);
+    const localTags = loadLocal<TagDef[]>(TAGS_KEY, defaultTags);
+    const localReports = loadLocal<{ date: string; content: string }[]>(REPORTS_KEY, []);
+    const localStats = loadLocal<DailySessionStats>(SESSION_STATS_KEY, createDefaultDailySessionStats());
+    setItems(localItems.length ? localItems : createSeedItems());
+    setProjects(localProjects);
+    setTags(localTags);
+    setSavedReports(localReports);
+    setSessionStats(localStats);
+    return true;
+  }
+
   function applySnapshot(snapshot: PersistedSnapshot) {
     setItems((snapshot.items as Item[]).length ? (snapshot.items as Item[]) : createSeedItems());
     setProjects((snapshot.projects as Project[]).length ? (snapshot.projects as Project[]) : defaultProjects);
@@ -394,6 +415,20 @@ export function useItems() {
     return project;
   }
 
+  function renameProject(projectId: string, newName: string) {
+    const clean = newName.trim();
+    if (!clean) return;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, name: clean } : p)),
+    );
+  }
+
+  function updateProjectColor(projectId: string, color: string) {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === projectId ? { ...p, color } : p)),
+    );
+  }
+
   function deleteProject(projectId: string) {
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
     setItems((prev) =>
@@ -510,6 +545,8 @@ export function useItems() {
     mergeItems,
     reorderInStatus,
     addProject,
+    renameProject,
+    updateProjectColor,
     deleteProject,
     addTag,
     deleteTag,
@@ -519,6 +556,7 @@ export function useItems() {
     restoreBackup,
     importData,
     resetAllData,
+    reloadFromDisk,
     refreshBackups: refreshBackupsList,
     createCurrentSnapshot,
   };

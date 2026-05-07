@@ -1,6 +1,6 @@
 [package]
 name = "focus-flow"
-version = "0.1.13"
+version = "0.1.14"
 description = "Focus Flow desktop app"
 authors = ["Ls"]
 edition = "2021"
