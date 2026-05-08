@@ -60,6 +60,6 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "Focus Flow ${{ github.ref_name }}"
           releaseBody: "See RELEASE_NOTES for details."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.target }}
