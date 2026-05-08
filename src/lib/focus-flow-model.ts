@@ -312,18 +312,87 @@ export function suggestMergeGroups(items: Item[]): MergeSuggestionGroup[] {
 
 export function createSeedItems(): Item[] {
   const now = new Date().toISOString();
+  const today = new Date();
+
+  // 生成过去几天的日期 ISO 字符串
+  function daysAgo(n: number) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - n);
+    d.setHours(10, 0, 0, 0);
+    return d.toISOString();
+  }
+
   return [
-    {
-      id: crypto.randomUUID(), content: "把今天会议纪要整理成待办", source: "manual", type: "task", status: "inbox", priority: "medium", projectId: "default",
-      tags: ["会议"], repeatType: "none", createdAt: now, updatedAt: now, aiSuggestion: { type: "task", status: "batch", reason: "像明确动作项，适合批处理。" }, history: [{ type: "created", to: "inbox", at: now }],
-    },
-    {
-      id: crypto.randomUUID(), content: "AI 给了一版需求方案初稿，待我审", source: "ai", type: "draft", status: "review", priority: "medium", projectId: "default",
-      tags: ["PRD"], repeatType: "none", createdAt: now, updatedAt: now, aiSuggestion: { type: "draft", status: "review", reason: "更像待审内容，不该直接进正式任务。" }, history: [{ type: "created", to: "review", at: now }],
-    },
+    // 今天的任务
     {
       id: crypto.randomUUID(), content: "本周主线：把客户方案评审版发出去", source: "manual", type: "task", status: "today", priority: "high", projectId: "default",
-      tags: ["客户", "紧急"], repeatType: "none", createdAt: now, updatedAt: now, isMainline: true, aiSuggestion: { type: "task", status: "today", reason: "高优先级主线任务。" }, history: [{ type: "created", to: "today", at: now }],
+      tags: ["客户", "紧急"], repeatType: "none", createdAt: daysAgo(0), updatedAt: now, isMainline: true, history: [{ type: "created", to: "today", at: daysAgo(0) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "整理会议纪要并发给团队", source: "manual", type: "task", status: "inbox", priority: "medium", projectId: "default",
+      tags: ["会议"], repeatType: "none", createdAt: daysAgo(0), updatedAt: now, history: [{ type: "created", to: "inbox", at: daysAgo(0) }],
+    },
+    // 昨天创建 + 昨天完成
+    {
+      id: crypto.randomUUID(), content: "修复登录页面样式问题", source: "manual", type: "task", status: "done", priority: "high", projectId: "default",
+      tags: ["紧急"], repeatType: "none", createdAt: daysAgo(1), updatedAt: daysAgo(1), completedAt: daysAgo(1), history: [{ type: "created", to: "inbox", at: daysAgo(1) }, { type: "completed", from: "today", to: "done", at: daysAgo(1) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "评审 PRD v2 初稿", source: "ai", type: "draft", status: "done", priority: "medium", projectId: "default",
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(1), updatedAt: daysAgo(1), completedAt: daysAgo(1), history: [{ type: "created", to: "review", at: daysAgo(1) }, { type: "completed", from: "review", to: "done", at: daysAgo(1) }],
+    },
+    // 2 天前创建
+    {
+      id: crypto.randomUUID(), content: "设计新的数据导出方案", source: "manual", type: "task", status: "review", priority: "medium", projectId: "default",
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(2), updatedAt: daysAgo(1), history: [{ type: "created", to: "inbox", at: daysAgo(2) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "调研竞品的日历功能实现", source: "manual", type: "task", status: "done", priority: "low", projectId: "default",
+      tags: [], repeatType: "none", createdAt: daysAgo(2), updatedAt: daysAgo(2), completedAt: daysAgo(2), history: [{ type: "created", to: "inbox", at: daysAgo(2) }, { type: "completed", from: "today", to: "done", at: daysAgo(2) }],
+    },
+    // 3 天前
+    {
+      id: crypto.randomUUID(), content: "写周报并提交", source: "manual", type: "task", status: "done", priority: "medium", projectId: "default",
+      tags: [], repeatType: "none", createdAt: daysAgo(3), updatedAt: daysAgo(3), completedAt: daysAgo(3), history: [{ type: "created", to: "today", at: daysAgo(3) }, { type: "completed", from: "today", to: "done", at: daysAgo(3) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "和产品对齐 Q3 规划", source: "manual", type: "task", status: "done", priority: "high", projectId: "default",
+      tags: ["会议"], repeatType: "none", createdAt: daysAgo(3), updatedAt: daysAgo(3), completedAt: daysAgo(3), history: [{ type: "created", to: "today", at: daysAgo(3) }, { type: "completed", from: "today", to: "done", at: daysAgo(3) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "更新项目文档结构", source: "manual", type: "task", status: "batch", priority: "low", projectId: "default",
+      tags: [], repeatType: "none", createdAt: daysAgo(3), updatedAt: daysAgo(2), history: [{ type: "created", to: "batch", at: daysAgo(3) }],
+    },
+    // 4 天前
+    {
+      id: crypto.randomUUID(), content: "部署 staging 环境", source: "manual", type: "task", status: "done", priority: "high", projectId: "default",
+      tags: ["紧急"], repeatType: "none", createdAt: daysAgo(4), updatedAt: daysAgo(4), completedAt: daysAgo(4), history: [{ type: "created", to: "today", at: daysAgo(4) }, { type: "completed", from: "today", to: "done", at: daysAgo(4) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "Code review: 权限模块重构", source: "manual", type: "task", status: "done", priority: "medium", projectId: "default",
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(4), updatedAt: daysAgo(4), completedAt: daysAgo(4), history: [{ type: "created", to: "review", at: daysAgo(4) }, { type: "completed", from: "review", to: "done", at: daysAgo(4) }],
+    },
+    // 5 天前
+    {
+      id: crypto.randomUUID(), content: "梳理用户反馈清单", source: "manual", type: "task", status: "done", priority: "medium", projectId: "default",
+      tags: ["客户"], repeatType: "none", createdAt: daysAgo(5), updatedAt: daysAgo(5), completedAt: daysAgo(5), history: [{ type: "created", to: "inbox", at: daysAgo(5) }, { type: "completed", from: "today", to: "done", at: daysAgo(5) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "准备客户演示 PPT", source: "manual", type: "task", status: "done", priority: "high", projectId: "default",
+      tags: ["客户"], repeatType: "none", createdAt: daysAgo(5), updatedAt: daysAgo(5), completedAt: daysAgo(5), history: [{ type: "created", to: "today", at: daysAgo(5) }, { type: "completed", from: "today", to: "done", at: daysAgo(5) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "优化首页加载性能", source: "manual", type: "task", status: "today", priority: "medium", projectId: "default",
+      tags: [], repeatType: "none", createdAt: daysAgo(5), updatedAt: daysAgo(1), history: [{ type: "created", to: "inbox", at: daysAgo(5) }],
+    },
+    // 6 天前
+    {
+      id: crypto.randomUUID(), content: "搭建 CI/CD 流水线", source: "manual", type: "task", status: "done", priority: "medium", projectId: "default",
+      tags: [], repeatType: "none", createdAt: daysAgo(6), updatedAt: daysAgo(6), completedAt: daysAgo(6), history: [{ type: "created", to: "today", at: daysAgo(6) }, { type: "completed", from: "today", to: "done", at: daysAgo(6) }],
+    },
+    {
+      id: crypto.randomUUID(), content: "制定技术选型文档", source: "manual", type: "task", status: "done", priority: "low", projectId: "default",
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(6), updatedAt: daysAgo(5), completedAt: daysAgo(5), history: [{ type: "created", to: "inbox", at: daysAgo(6) }, { type: "completed", from: "batch", to: "done", at: daysAgo(5) }],
     },
   ];
 }
