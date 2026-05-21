@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
-import { parseTaskInput, priorityTone, type ItemSource, type Priority, type Project, type RepeatType, type TagDef } from "@/lib/focus-flow-model";
+import { DEFAULT_TASK_ID, DEFAULT_TASK_NAME, parseTaskInput, priorityTone, type ItemSource, type Priority, type Project, type RepeatType, type TagDef, type Task } from "@/lib/focus-flow-model";
 import { Select } from "./ui";
 
 type AddItemsHook = (value: string, options: {
@@ -11,11 +11,13 @@ type AddItemsHook = (value: string, options: {
   projectId: string;
   tags: string[];
   repeatType: RepeatType;
+  taskId?: string;
 }) => { parsedTasks: { content: string; depth: number; parentIndex?: number }[]; next: unknown[] };
 
 type QuickCaptureProps = {
   projects: Project[];
   tags: TagDef[];
+  tasks?: Task[];
   addItemsHook: AddItemsHook;
   addTagHook: (name: string) => string | undefined;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
@@ -25,6 +27,7 @@ type QuickCaptureProps = {
 export function QuickCapture({
   projects,
   tags,
+  tasks = [],
   addItemsHook,
   addTagHook,
   textareaRef,
@@ -34,10 +37,13 @@ export function QuickCapture({
   const [source, setSource] = useState<ItemSource>("manual");
   const [priority, setPriority] = useState<Priority>("medium");
   const [selectedProject, setSelectedProject] = useState("default");
+  const [selectedTaskId, setSelectedTaskId] = useState(DEFAULT_TASK_ID);
   const [dueDate, setDueDate] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newQuickTag, setNewQuickTag] = useState("");
   const [repeatType, setRepeatType] = useState<RepeatType>("none");
+
+  const tasksForProject = useMemo(() => tasks.filter((t) => t.projectId === selectedProject), [tasks, selectedProject]);
 
   const pendingTasks = useMemo(() => input.trim() ? parseTaskInput(input) : [], [input]);
   const canAdd = pendingTasks.length > 0;
@@ -65,6 +71,7 @@ export function QuickCapture({
       projectId: selectedProject,
       tags: selectedTags,
       repeatType,
+      taskId: selectedTaskId === DEFAULT_TASK_ID ? undefined : selectedTaskId,
     });
     setInput("");
     setDueDate("");
@@ -72,6 +79,7 @@ export function QuickCapture({
     setNewQuickTag("");
     setRepeatType("none");
     setPriority("medium");
+    setSelectedTaskId(DEFAULT_TASK_ID);
     if (parsedTasks.some((task) => task.parentIndex !== undefined || task.depth > 0)) {
       showToast(`已加入 ${next.length} 条多级任务`);
       return;
@@ -100,9 +108,12 @@ export function QuickCapture({
       </div>
 
       {/* Quick settings row — always visible */}
-      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Field label="项目">
-          <Select value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)} options={projects.map((project) => [project.id, project.name])} />
+          <Select value={selectedProject} onChange={(event) => { setSelectedProject(event.target.value); setSelectedTaskId(DEFAULT_TASK_ID); }} options={projects.map((project) => [project.id, project.name])} />
+        </Field>
+        <Field label="Task">
+          <Select value={selectedTaskId} onChange={(event) => setSelectedTaskId(event.target.value)} options={[[DEFAULT_TASK_ID, DEFAULT_TASK_NAME], ...tasksForProject.map((t): [string, string] => [t.id, t.name])]} />
         </Field>
         <Field label="优先级">
           <Select value={priority} onChange={(event) => setPriority(event.target.value as Priority)} options={[["high", "高"], ["medium", "中"], ["low", "低"]]} />

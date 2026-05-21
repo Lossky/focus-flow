@@ -27,6 +27,7 @@ import {
   type RepeatType,
   type StorageMode,
   type TagDef,
+  type Task,
 } from "@/lib/focus-flow-model";
 import {
   createBackupSnapshotToDisk,
@@ -49,6 +50,7 @@ type AddItemsOptions = {
   tags: string[];
   repeatType: RepeatType;
   statusOverride?: ItemStatus;
+  taskId?: string;
 };
 
 function loadLocal<T>(key: string, fallback: T): T {
@@ -71,6 +73,7 @@ export function useItems() {
   const [items, setItems] = useState<Item[]>([]);
   const [projects, setProjects] = useState<Project[]>(defaultProjects);
   const [tags, setTags] = useState<TagDef[]>(defaultTags);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [savedReports, setSavedReports] = useState<{ date: string; content: string }[]>([]);
   const [sessionStats, setSessionStats] = useState<DailySessionStats>(createDefaultDailySessionStats());
   const [storageMode, setStorageMode] = useState<StorageMode>("loading");
@@ -94,9 +97,11 @@ export function useItems() {
         const localTags = loadLocal<TagDef[]>(TAGS_KEY, defaultTags);
         const localReports = loadLocal<{ date: string; content: string }[]>(REPORTS_KEY, []);
         const localStats = loadLocal<DailySessionStats>(SESSION_STATS_KEY, createDefaultDailySessionStats());
+        const localTasks = loadLocal<Task[]>("focus-flow-tasks-v1", []);
         setItems(localItems.length ? localItems : createSeedItems());
         setProjects(localProjects);
         setTags(localTags);
+        setTasks(localTasks);
         setSavedReports(localReports);
         setSessionStats(localStats);
         setStorageMode("local");
@@ -135,6 +140,7 @@ export function useItems() {
     setItems((snapshot.items as Item[]).length ? (snapshot.items as Item[]) : createSeedItems());
     setProjects((snapshot.projects as Project[]).length ? (snapshot.projects as Project[]) : defaultProjects);
     setTags((snapshot.tags as TagDef[]).length ? (snapshot.tags as TagDef[]) : defaultTags);
+    setTasks((snapshot.tasks as Task[]) || []);
     setSavedReports(snapshot.reports || []);
     if (snapshot.sessionStats) {
       setSessionStats(snapshot.sessionStats);
@@ -153,8 +159,9 @@ export function useItems() {
     saveLocal(TAGS_KEY, tags);
     saveLocal(REPORTS_KEY, savedReports);
     saveLocal(SESSION_STATS_KEY, sessionStats);
+    saveLocal("focus-flow-tasks-v1", tasks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, projects, tags, savedReports, sessionStats]);
+  }, [items, projects, tags, savedReports, sessionStats, tasks]);
 
   // --- Widget snapshot ---
   useEffect(() => {
@@ -177,6 +184,7 @@ export function useItems() {
       items,
       projects,
       tags,
+      tasks,
       reports: savedReports,
       sessionStats,
     };
@@ -189,6 +197,7 @@ export function useItems() {
       items,
       projects,
       tags,
+      tasks,
       reports: savedReports,
       sessionStats,
     };
@@ -203,6 +212,16 @@ export function useItems() {
   const getTagDef = useCallback(
     (name: string): TagDef | undefined => tags.find((t) => t.name === name),
     [tags],
+  );
+
+  const getTaskById = useCallback(
+    (id?: string): Task | undefined => tasks.find((t) => t.id === id),
+    [tasks],
+  );
+
+  const getTasksForProject = useCallback(
+    (projectId: string): Task[] => tasks.filter((t) => t.projectId === projectId),
+    [tasks],
   );
 
   // --- Item operations ---
@@ -235,6 +254,7 @@ export function useItems() {
         dueDate: options.dueDate,
         repeatType: options.repeatType,
         tags: options.tags.length ? [...options.tags] : undefined,
+        taskId: options.taskId,
         createdAt: now,
         updatedAt: now,
         rawInput: value,
@@ -324,17 +344,25 @@ export function useItems() {
           ? updatedItem.completedAt || now
           : undefined;
         const historyType = updatedItem.status === "done" ? "completed" : updatedItem.status === "archived" ? "archived" : "status_changed";
+        // 确保 Item-Task-Project 一致性：如果 taskId 引用了一个 Task，projectId 必须等于该 Task 的 projectId
+        let finalItem = updatedItem;
+        if (finalItem.taskId) {
+          const referencedTask = tasks.find((t) => t.id === finalItem.taskId);
+          if (referencedTask && finalItem.projectId !== referencedTask.projectId) {
+            finalItem = { ...finalItem, projectId: referencedTask.projectId };
+          }
+        }
         return {
-          ...updatedItem,
+          ...finalItem,
           completedAt,
           updatedAt: now,
           history: statusChanged
-            ? [...(item.history || []), { type: historyType, from: item.status, to: updatedItem.status, at: now }]
+            ? [...(item.history || []), { type: historyType, from: item.status, to: finalItem.status, at: now }]
             : [...(item.history || []), { type: "edited", at: now }],
         };
       }),
     );
-  }, []);
+  }, [tasks]);
 
   const mergeItems = useCallback((itemIds: string[], content: string): Item | null => {
     const cleanContent = content.trim();
@@ -462,6 +490,15 @@ export function useItems() {
     );
   }
 
+  // --- Sync helpers ---
+  function applyProjectSync(nextProjects: Project[]) {
+    setProjects(nextProjects);
+  }
+
+  function applyTaskSync(nextTasks: Task[]) {
+    setTasks(nextTasks);
+  }
+
   // --- Backup / Import / Reset ---
   async function refreshBackupsList() {
     const entries = await listBackupSnapshotsFromDisk();
@@ -527,6 +564,8 @@ export function useItems() {
     setProjects,
     tags,
     setTags,
+    tasks,
+    setTasks,
     savedReports,
     setSavedReports,
     sessionStats,
@@ -535,6 +574,8 @@ export function useItems() {
     backupEntries,
     getProjectById,
     getTagDef,
+    getTaskById,
+    getTasksForProject,
     addItems,
     moveItem,
     toggleMainline,
@@ -550,6 +591,8 @@ export function useItems() {
     deleteProject,
     addTag,
     deleteTag,
+    applyProjectSync,
+    applyTaskSync,
     createDiskBackup,
     setCustomDataDirectory,
     restoreDefaultDataDirectory,

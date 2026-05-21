@@ -6,6 +6,7 @@ export type PersistedSnapshot = {
   items: unknown[];
   projects: unknown[];
   tags: unknown[];
+  tasks?: unknown[];
   reports: { date: string; content: string }[];
   sessionStats?: DailySessionStats;
 };
@@ -52,7 +53,7 @@ export async function loadSnapshotFromDisk(): Promise<PersistedSnapshot | null> 
       return JSON.parse(fallbackText) as PersistedSnapshot;
     }
     const text = await readTextFile(filePath);
-    return JSON.parse(text) as PersistedSnapshot;
+    return normalizeSnapshot(JSON.parse(text));
   } catch (error) {
     console.error("Failed to load snapshot from disk", error);
     return null;
@@ -277,6 +278,13 @@ async function savePersistenceSettings(settings: PersistenceSettings): Promise<v
   await mkdir(dir, { recursive: true });
   const filePath = await join(dir, SETTINGS_FILE);
   await writeTextFile(filePath, JSON.stringify(settings, null, 2));
+}
+
+function normalizeSnapshot(raw: PersistedSnapshot): PersistedSnapshot {
+  return {
+    ...raw,
+    tasks: raw.tasks ?? [],
+  };
 }
 
 function parseBackupFileName(name: string): Pick<BackupEntry, "reason" | "createdAt"> {

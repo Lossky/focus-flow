@@ -18,6 +18,7 @@ import {
   RestReminderPanel,
   TagManagementModal,
 } from "@/components/focus-flow/management-modals";
+import { NotionSettingsModal } from "@/components/focus-flow/notion-settings-modal";
 import { QuickCapture } from "@/components/focus-flow/quick-capture";
 import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-flow/task-views";
 import { CalendarView } from "@/components/focus-flow/calendar-view";
@@ -30,6 +31,8 @@ import {
   type ToastState,
   type ViewMode,
 } from "@/lib/focus-flow-model";
+import { loadNotionConfig, saveNotionConfig, isNotionConfigComplete, type NotionConfig } from "@/lib/notion-config";
+import { fetchNotionPages, reconcileProjects, reconcileTasks, checkSyncAvailability } from "@/lib/notion-sync";
 import { useItems } from "@/hooks/use-items";
 import { usePomodoro } from "@/hooks/use-pomodoro";
 import { useDataActions } from "@/hooks/use-data-actions";
@@ -62,7 +65,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.15";
+const APP_VERSION = "0.1.16";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -110,6 +113,7 @@ export default function Home() {
     items,
     projects,
     tags,
+    tasks,
     savedReports,
     setSavedReports,
     sessionStats,
@@ -129,6 +133,8 @@ export default function Home() {
     deleteProject: deleteProjectHook,
     addTag: addTagHook,
     deleteTag: deleteTagHook,
+    applyProjectSync: applyProjectSyncHook,
+    applyTaskSync: applyTaskSyncHook,
     createDiskBackup: createDiskBackupHook,
     setCustomDataDirectory: setCustomDataDirectoryHook,
     restoreDefaultDataDirectory: restoreDefaultDataDirectoryHook,
@@ -320,6 +326,62 @@ export default function Home() {
     },
     showToast,
   );
+
+  // --- Notion sync state ---
+  const [notionConfig, setNotionConfig] = useState<NotionConfig | null>(null);
+  const [isSyncingProjects, setIsSyncingProjects] = useState(false);
+  const [isSyncingTasks, setIsSyncingTasks] = useState(false);
+
+  useEffect(() => {
+    setNotionConfig(loadNotionConfig());
+  }, []);
+
+  const handleSaveNotionConfig = useCallback((config: NotionConfig) => {
+    saveNotionConfig(config);
+    setNotionConfig(config);
+    setActiveModal(null);
+    showToast("Notion 配置已保存");
+  }, []);
+
+  const handleSyncProjects = useCallback(async () => {
+    if (!notionConfig || !isNotionConfigComplete(notionConfig)) return;
+    const availability = await checkSyncAvailability();
+    if (!availability.available) {
+      showToast(availability.reason || "同步不可用");
+      return;
+    }
+    setIsSyncingProjects(true);
+    try {
+      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.projectsDbId);
+      const { nextProjects, result } = reconcileProjects(pages, projects);
+      applyProjectSyncHook(nextProjects);
+      showToast(`项目同步完成：新增 ${result.created}，更新 ${result.updated}`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "同步失败");
+    } finally {
+      setIsSyncingProjects(false);
+    }
+  }, [notionConfig, projects, applyProjectSyncHook]);
+
+  const handleSyncTasks = useCallback(async () => {
+    if (!notionConfig || !isNotionConfigComplete(notionConfig)) return;
+    const availability = await checkSyncAvailability();
+    if (!availability.available) {
+      showToast(availability.reason || "同步不可用");
+      return;
+    }
+    setIsSyncingTasks(true);
+    try {
+      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.tasksDbId);
+      const { nextTasks, result } = reconcileTasks(pages, tasks, projects);
+      applyTaskSyncHook(nextTasks);
+      showToast(`Task 同步完成：新增 ${result.created}，更新 ${result.updated}，跳过 ${result.skipped}`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "同步失败");
+    } finally {
+      setIsSyncingTasks(false);
+    }
+  }, [notionConfig, tasks, projects, applyTaskSyncHook]);
 
   const toggleCollapsedTask = useCallback((id: string) => {
     setCollapsedTaskIds((prev) => (prev.includes(id) ? prev.filter((taskId) => taskId !== id) : [...prev, id]));
@@ -619,6 +681,12 @@ export default function Home() {
             onRestoreDefault={() => dataActions.restoreDefaultDataDir()}
             onRestoreBackup={dataActions.restoreDiskBackup}
             onReset={dataActions.resetAllData}
+            onShowNotionSettings={() => setActiveModal("notion-settings")}
+            onSyncProjects={() => void handleSyncProjects()}
+            onSyncTasks={() => void handleSyncTasks()}
+            isSyncingProjects={isSyncingProjects}
+            isSyncingTasks={isSyncingTasks}
+            notionConfigComplete={isNotionConfigComplete(notionConfig)}
           />
         </div>
       </header>
@@ -658,6 +726,7 @@ export default function Home() {
             <QuickCapture
               projects={projects}
               tags={tags}
+              tasks={tasks}
               addItemsHook={addItemsHook}
               addTagHook={addTagHook}
               textareaRef={captureInputRef}
@@ -753,7 +822,10 @@ export default function Home() {
         <RestReminderPanel taskContent={restReminderTask} onTakeRest={acknowledgeRestReminder} onDismiss={dismissRestReminder} />
       )}
       {editingItem && (
-        <EditItemModal item={editingItem} projects={projects} tags={tags} onClose={() => setEditingItem(null)} onSave={saveItemEdit} />
+        <EditItemModal item={editingItem} projects={projects} tags={tags} tasks={tasks} onClose={() => setEditingItem(null)} onSave={saveItemEdit} />
+      )}
+      {activeModal === "notion-settings" && (
+        <NotionSettingsModal initialConfig={notionConfig} onClose={() => setActiveModal(null)} onSave={handleSaveNotionConfig} />
       )}
     </div>
     </FocusFlowProvider>

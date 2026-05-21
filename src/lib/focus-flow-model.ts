@@ -21,8 +21,20 @@ export type DailySessionStats = {
   lastRestAt?: string;
 };
 
-export type Project = { id: string; name: string; color: string };
+export type Project = { id: string; name: string; color: string; notionPageId?: string };
 export type TagDef = { id: string; name: string; color: string };
+
+export type Task = {
+  id: string;
+  name: string;
+  projectId: string;
+  notionPageId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export const DEFAULT_TASK_ID = "__default__";
+export const DEFAULT_TASK_NAME = "未分类";
 
 export type Item = {
   id: string;
@@ -50,6 +62,7 @@ export type Item = {
   isMainline?: boolean;
   parentId?: string;
   depth?: number;
+  taskId?: string;
   history?: ItemHistoryEntry[];
 };
 
@@ -62,6 +75,7 @@ export type ExportPayload = {
   items: Item[];
   projects: Project[];
   tags: TagDef[];
+  tasks?: Task[];
   reports: { date: string; content: string }[];
   sessionStats?: DailySessionStats;
 };

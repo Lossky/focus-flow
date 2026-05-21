@@ -19,11 +19,17 @@ type ToolbarMenuProps = {
   onRestoreDefault: () => void;
   onRestoreBackup: (path: string) => void;
   onReset: () => void;
+  onShowNotionSettings?: () => void;
+  onSyncProjects?: () => void;
+  onSyncTasks?: () => void;
+  isSyncingProjects?: boolean;
+  isSyncingTasks?: boolean;
+  notionConfigComplete?: boolean;
 };
 
 type MenuGroup = {
   label: string;
-  items: { label: string; onClick: () => void; tone?: "default" | "green" | "amber" | "red" }[];
+  items: { label: string; onClick: () => void; tone?: "default" | "green" | "amber" | "red"; disabled?: boolean }[];
 };
 
 export function ToolbarMenu({
@@ -41,6 +47,12 @@ export function ToolbarMenu({
   onRestoreDefault,
   onRestoreBackup,
   onReset,
+  onShowNotionSettings,
+  onSyncProjects,
+  onSyncTasks,
+  isSyncingProjects,
+  isSyncingTasks,
+  notionConfigComplete,
 }: ToolbarMenuProps) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -92,6 +104,9 @@ export function ToolbarMenu({
     {
       label: "设置",
       items: [
+        { label: "Notion 设置", onClick: () => onShowNotionSettings?.() },
+        { label: "同步项目", onClick: () => onSyncProjects?.(), tone: "green", disabled: !notionConfigComplete || isSyncingProjects },
+        { label: "同步 Task", onClick: () => onSyncTasks?.(), tone: "green", disabled: !notionConfigComplete || isSyncingTasks },
         { label: "复制数据路径", onClick: onCopyPath },
         { label: "选择数据目录", onClick: onChooseDir },
         { label: "恢复默认目录", onClick: onRestoreDefault },
@@ -134,8 +149,9 @@ export function ToolbarMenu({
                 {group.items.map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => { close(); item.onClick(); }}
-                    className={`w-full rounded-lg px-2.5 py-1.5 text-left text-xs transition ${toneClass[item.tone || "default"]}`}
+                    onClick={() => { if (!item.disabled) { close(); item.onClick(); } }}
+                    disabled={item.disabled}
+                    className={`w-full rounded-lg px-2.5 py-1.5 text-left text-xs transition ${toneClass[item.tone || "default"]} ${item.disabled ? "cursor-not-allowed opacity-40" : ""}`}
                   >
                     {item.label}
                   </button>

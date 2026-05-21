@@ -1,19 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { formatTime, statusLabel, type Item, type ItemStatus, type Priority, type Project, type RepeatType, type TagDef } from "@/lib/focus-flow-model";
+import { useState, useMemo } from "react";
+import { DEFAULT_TASK_ID, DEFAULT_TASK_NAME, formatTime, statusLabel, type Item, type ItemStatus, type Priority, type Project, type RepeatType, type TagDef, type Task } from "@/lib/focus-flow-model";
 import { Modal, Select } from "./ui";
 
 type EditItemModalProps = {
   item: Item;
   projects: Project[];
   tags: TagDef[];
+  tasks?: Task[];
   onClose: () => void;
   onSave: (item: Item) => void;
 };
 
-export function EditItemModal({ item, projects, tags, onClose, onSave }: EditItemModalProps) {
+export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSave }: EditItemModalProps) {
   const [draft, setDraft] = useState<Item>(item);
+
+  const tasksForProject = useMemo(() => tasks.filter((t) => t.projectId === (draft.projectId || "default")), [tasks, draft.projectId]);
+  const currentTaskId = draft.taskId || DEFAULT_TASK_ID;
 
   const toggleTag = (name: string) => setDraft((prev) => ({
     ...prev,
@@ -42,11 +46,39 @@ export function EditItemModal({ item, projects, tags, onClose, onSave }: EditIte
           />
         </label>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
           <Select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })} options={[["high", "高"], ["medium", "中"], ["low", "低"]]} />
           <Select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ItemStatus })} options={Object.entries(statusLabel)} />
-          <Select value={draft.projectId || "default"} onChange={(event) => setDraft({ ...draft, projectId: event.target.value })} options={projects.map((project) => [project.id, project.name])} />
+          <Select value={draft.projectId || "default"} onChange={(event) => setDraft({ ...draft, projectId: event.target.value, taskId: undefined })} options={projects.map((project) => [project.id, project.name])} />
+          <Select value={currentTaskId} onChange={(event) => setDraft({ ...draft, taskId: event.target.value === DEFAULT_TASK_ID ? undefined : event.target.value })} options={[[DEFAULT_TASK_ID, DEFAULT_TASK_NAME], ...tasksForProject.map((t): [string, string] => [t.id, t.name])]} />
         </div>
+
+        {/* 完成时间（仅 done/archived 状态显示） */}
+        {(draft.status === "done" || draft.status === "archived") && (
+          <label className="space-y-1">
+            <span className="block text-xs text-zinc-400">完成时间</span>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={draft.completedAt ? draft.completedAt.slice(0, 10) : ""}
+                onChange={(event) => {
+                  if (!event.target.value) {
+                    setDraft({ ...draft, completedAt: undefined });
+                  } else {
+                    // 保留时间部分，只改日期
+                    const timePart = draft.completedAt?.slice(10) || "T12:00:00.000Z";
+                    setDraft({ ...draft, completedAt: event.target.value + timePart });
+                  }
+                }}
+                className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+              />
+              {draft.completedAt && (
+                <span className="flex items-center text-xs text-zinc-500">{new Date(draft.completedAt).toLocaleDateString("zh-CN")}</span>
+              )}
+            </div>
+            <p className="text-[10px] text-zinc-600">可修改为实际完成的日期（影响日历视图统计）</p>
+          </label>
+        )}
 
         <div className="grid gap-3 md:grid-cols-3">
           <label className="space-y-1">
