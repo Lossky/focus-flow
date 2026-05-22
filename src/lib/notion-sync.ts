@@ -46,38 +46,45 @@ export async function fetchNotionPages(apiKey: string, databaseId: string, optio
   while (hasMore) {
     let data: Record<string, unknown>;
 
+    // 统一通过代理或直接 fetch（Tauri 环境用 plugin-http 绕过 CORS）
+    const filters: Record<string, unknown>[] = [
+      { property: "Archive", checkbox: { equals: false } },
+    ];
+    if (options?.statusProperty && options?.statusGroup) {
+      filters.push({ property: options.statusProperty, status: { equals: options.statusGroup } });
+    }
+    const requestBody: Record<string, unknown> = {
+      page_size: 100,
+      filter: filters.length === 1 ? filters[0] : { and: filters },
+    };
+    if (startCursor) requestBody.start_cursor = startCursor;
+
     if (useTauri) {
-      // Tauri 环境直接调用 Notion API（无 CORS 限制）
-      const filters: Record<string, unknown>[] = [
-        { property: "Archive", checkbox: { equals: false } },
-      ];
-      if (options?.statusProperty && options?.statusGroup) {
-        filters.push({ property: options.statusProperty, status: { equals: options.statusGroup } });
+      // Tauri 环境：用 @tauri-apps/plugin-http 的 fetch 绕过 CORS
+      try {
+        const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
+        const response = await tauriFetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody) as unknown as BodyInit,
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) throw new Error("API Key 无效或已过期");
+          if (response.status === 404) throw new Error("数据库 ID 不存在");
+          if (response.status === 429) throw new Error("请求过于频繁，请稍后重试");
+          throw new Error(`Notion API 错误: ${response.status}`);
+        }
+
+        data = await response.json() as Record<string, unknown>;
+      } catch (err) {
+        if (err instanceof Error && (err.message.includes("API Key") || err.message.includes("数据库") || err.message.includes("频繁") || err.message.includes("Notion API"))) throw err;
+        throw new Error(`网络连接失败: ${err instanceof Error ? err.message : "未知错误"}`);
       }
-      const body: Record<string, unknown> = {
-        page_size: 100,
-        filter: filters.length === 1 ? filters[0] : { and: filters },
-      };
-      if (startCursor) body.start_cursor = startCursor;
-
-      const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Notion-Version": "2022-06-28",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) throw new Error("API Key 无效或已过期");
-        if (response.status === 404) throw new Error("数据库 ID 不存在");
-        if (response.status === 429) throw new Error("请求过于频繁，请稍后重试");
-        throw new Error(`Notion API 错误: ${response.status}`);
-      }
-
-      data = await response.json();
     } else {
       // 浏览器环境通过 API route 代理
       const response = await fetch("/api/notion-proxy", {

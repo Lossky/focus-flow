@@ -10,6 +10,7 @@
     "core:window:allow-set-size",
     "dialog:allow-open",
     "notification:default",
+    "http:default",
     "fs:allow-exists",
     "fs:allow-read-dir",
     "fs:allow-read-text-file",
