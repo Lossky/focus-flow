@@ -22,6 +22,7 @@ import { NotionSettingsModal } from "@/components/focus-flow/notion-settings-mod
 import { QuickCapture } from "@/components/focus-flow/quick-capture";
 import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-flow/task-views";
 import { CalendarView } from "@/components/focus-flow/calendar-view";
+import { QuadrantView } from "@/components/focus-flow/quadrant-view";
 import { TodayMainline } from "@/components/focus-flow/today-mainline";
 import { ToolbarMenu } from "@/components/focus-flow/toolbar-menu";
 import {
@@ -760,6 +761,12 @@ export default function Home() {
               >
                 日历视图
               </button>
+              <button
+                onClick={() => setViewMode("quadrant")}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "quadrant" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
+              >
+                四象限
+              </button>
             </div>
 
             {viewMode === "flow" ? (
@@ -774,6 +781,8 @@ export default function Home() {
               />
             ) : viewMode === "calendar" ? (
               <CalendarView items={items} getProjectById={getProjectById} />
+            ) : viewMode === "quadrant" ? (
+              <QuadrantView items={items} />
             ) : (
               <ProjectOverview items={items} projects={projects} />
             )}

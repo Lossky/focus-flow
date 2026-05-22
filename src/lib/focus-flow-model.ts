@@ -3,7 +3,7 @@ export type ItemStatus = "inbox" | "today" | "batch" | "review" | "done" | "arch
 export type ItemSource = "manual" | "feishu" | "ai" | "obsidian" | "doc" | "other";
 export type Priority = "high" | "medium" | "low";
 export type RepeatType = "none" | "daily" | "weekly";
-export type ViewMode = "flow" | "board" | "calendar";
+export type ViewMode = "flow" | "board" | "calendar" | "quadrant";
 export type StorageMode = "loading" | "disk" | "local";
 export type ItemHistoryType = "created" | "status_changed" | "edited" | "completed" | "archived" | "merged";
 export type ItemHistoryEntry = {
@@ -63,6 +63,8 @@ export type Item = {
   parentId?: string;
   depth?: number;
   taskId?: string;
+  important?: boolean;
+  urgent?: boolean;
   history?: ItemHistoryEntry[];
 };
 

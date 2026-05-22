@@ -162,6 +162,18 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
           </div>
         </div>
 
+        {/* 重要/紧急 四象限标记 */}
+        <div className="flex items-center gap-4">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" checked={!!draft.important} onChange={(e) => setDraft({ ...draft, important: e.target.checked || undefined })} className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-blue-500 focus:ring-blue-500/30" />
+            <span className="text-xs text-zinc-300">重要</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" checked={!!draft.urgent} onChange={(e) => setDraft({ ...draft, urgent: e.target.checked || undefined })} className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-red-500 focus:ring-red-500/30" />
+            <span className="text-xs text-zinc-300">紧急</span>
+          </label>
+        </div>
+
         <label className="space-y-1">
           <span className="block text-xs text-zinc-400">处理结果</span>
           <textarea
