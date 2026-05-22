@@ -457,11 +457,12 @@ export function useItems() {
     );
   }
 
-  function deleteProject(projectId: string) {
+  function deleteProject(projectId: string, migrateToProjectId?: string) {
+    const targetId = migrateToProjectId || "default";
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
     setItems((prev) =>
       prev.map((item) =>
-        item.projectId === projectId ? { ...item, projectId: "default", updatedAt: new Date().toISOString() } : item,
+        item.projectId === projectId ? { ...item, projectId: targetId, updatedAt: new Date().toISOString() } : item,
       ),
     );
   }

@@ -352,7 +352,10 @@ export default function Home() {
     }
     setIsSyncingProjects(true);
     try {
-      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.projectsDbId);
+      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.projectsDbId, {
+        statusProperty: "Status",
+        statusGroup: "In progress",
+      });
       const { nextProjects, result } = reconcileProjects(pages, projects);
       applyProjectSyncHook(nextProjects);
       showToast(`项目同步完成：新增 ${result.created}，更新 ${result.updated}`);
@@ -372,7 +375,10 @@ export default function Home() {
     }
     setIsSyncingTasks(true);
     try {
-      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.tasksDbId);
+      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.tasksDbId, {
+        statusProperty: "Status/状态",
+        statusGroup: "In progress",
+      });
       const { nextTasks, result } = reconcileTasks(pages, tasks, projects);
       applyTaskSyncHook(nextTasks);
       showToast(`Task 同步完成：新增 ${result.created}，更新 ${result.updated}，跳过 ${result.skipped}`);
@@ -411,10 +417,9 @@ export default function Home() {
     showToast("项目已创建");
   };
 
-  const deleteProject = (projectId: string) => {
-    if (!confirm("确认删除这个项目？该项目下任务会回到默认项目。")) return;
-    deleteProjectHook(projectId);
-    showToast("项目已删除");
+  const deleteProject = (projectId: string, migrateToProjectId?: string) => {
+    deleteProjectHook(projectId, migrateToProjectId);
+    showToast("项目已删除，任务已迁移");
   };
 
   const renameProject = (projectId: string, newName: string) => {
@@ -782,6 +787,7 @@ export default function Home() {
       {activeModal === "project" && (
         <ProjectManagementModal
           projects={projects}
+          tasks={tasks}
           newProjectName={newProjectName}
           setNewProjectName={setNewProjectName}
           addProject={addProject}

@@ -11,6 +11,7 @@ export type SyncProjectsResult = {
   created: number;
   updated: number;
   unchanged: number;
+  removed: number;
 };
 
 export type SyncTasksResult = {
@@ -18,6 +19,7 @@ export type SyncTasksResult = {
   updated: number;
   skipped: number;
   unchanged: number;
+  removed: number;
 };
 
 async function isTauriRuntime(): Promise<boolean> {
@@ -26,55 +28,96 @@ async function isTauriRuntime(): Promise<boolean> {
 }
 
 export async function checkSyncAvailability(): Promise<{ available: boolean; reason?: string }> {
-  if (await isTauriRuntime()) return { available: true };
-  return { available: false, reason: "Notion 同步仅在桌面端可用（浏览器环境受 CORS 限制）" };
+  // 开发模式下允许浏览器环境同步（通过 API route 代理）
+  return { available: true };
 }
 
-export async function fetchNotionPages(apiKey: string, databaseId: string): Promise<NotionPage[]> {
+export type FetchOptions = {
+  statusProperty?: string;
+  statusGroup?: string;
+};
+
+export async function fetchNotionPages(apiKey: string, databaseId: string, options?: FetchOptions): Promise<NotionPage[]> {
   const pages: NotionPage[] = [];
   let startCursor: string | undefined;
   let hasMore = true;
+  const useTauri = await isTauriRuntime();
 
   while (hasMore) {
-    const body: Record<string, unknown> = {
-      page_size: 100,
-      filter: { property: "Archive", checkbox: { equals: false } },
-    };
-    if (startCursor) body.start_cursor = startCursor;
+    let data: Record<string, unknown>;
 
-    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    if (useTauri) {
+      // Tauri 环境直接调用 Notion API（无 CORS 限制）
+      const filters: Record<string, unknown>[] = [
+        { property: "Archive", checkbox: { equals: false } },
+      ];
+      if (options?.statusProperty && options?.statusGroup) {
+        filters.push({ property: options.statusProperty, status: { equals: options.statusGroup } });
+      }
+      const body: Record<string, unknown> = {
+        page_size: 100,
+        filter: filters.length === 1 ? filters[0] : { and: filters },
+      };
+      if (startCursor) body.start_cursor = startCursor;
 
-    if (!response.ok) {
-      if (response.status === 401) throw new Error("API Key 无效或已过期");
-      if (response.status === 404) throw new Error("数据库 ID 不存在");
-      if (response.status === 429) throw new Error("请求过于频繁，请稍后重试");
-      throw new Error(`Notion API 错误: ${response.status}`);
+      const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Notion-Version": "2022-06-28",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) throw new Error("API Key 无效或已过期");
+        if (response.status === 404) throw new Error("数据库 ID 不存在");
+        if (response.status === 429) throw new Error("请求过于频繁，请稍后重试");
+        throw new Error(`Notion API 错误: ${response.status}`);
+      }
+
+      data = await response.json();
+    } else {
+      // 浏览器环境通过 API route 代理
+      const response = await fetch("/api/notion-proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          apiKey,
+          databaseId,
+          startCursor,
+          statusProperty: options?.statusProperty,
+          statusGroup: options?.statusGroup,
+        }),
+      });
+
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        if (response.status === 401) throw new Error("API Key 无效或已过期");
+        if (response.status === 404) throw new Error("数据库 ID 不存在");
+        if (response.status === 429) throw new Error("请求过于频繁，请稍后重试");
+        throw new Error((errBody as Record<string, string>).error || `同步失败: ${response.status}`);
+      }
+
+      data = await response.json();
     }
 
-    const data = await response.json();
-
-    for (const result of data.results) {
+    for (const result of (data.results as Array<Record<string, unknown>>)) {
       // Extract name from title property
       let name = "";
-      for (const [, prop] of Object.entries(result.properties)) {
-        if ((prop as Record<string, unknown>).type === "title") {
-          const titleParts = (prop as Record<string, unknown[]>).title || [];
-          name = titleParts.map((t: unknown) => (t as Record<string, string>).plain_text || "").join("");
+      const properties = result.properties as Record<string, Record<string, unknown>>;
+      for (const [, prop] of Object.entries(properties)) {
+        if (prop.type === "title") {
+          const titleParts = (prop.title as Array<Record<string, string>>) || [];
+          name = titleParts.map((t) => t.plain_text || "").join("");
           break;
         }
       }
 
       // Extract project relation ids from "项目" property
       const projectRelationIds: string[] = [];
-      const projectProp = result.properties["项目"] as Record<string, unknown> | undefined;
+      const projectProp = properties["项目"];
       if (projectProp && projectProp.type === "relation") {
         const relations = (projectProp.relation as Array<{ id: string }>) || [];
         for (const rel of relations) {
@@ -83,12 +126,12 @@ export async function fetchNotionPages(apiKey: string, databaseId: string): Prom
       }
 
       if (name) {
-        pages.push({ id: result.id, name, projectRelationIds });
+        pages.push({ id: result.id as string, name, projectRelationIds });
       }
     }
 
-    hasMore = data.has_more;
-    startCursor = data.next_cursor || undefined;
+    hasMore = (data.has_more as boolean) || false;
+    startCursor = (data.next_cursor as string) || undefined;
   }
 
   return pages;
@@ -98,7 +141,7 @@ export function reconcileProjects(
   notionPages: NotionPage[],
   localProjects: Project[],
 ): { nextProjects: Project[]; result: SyncProjectsResult } {
-  const result: SyncProjectsResult = { created: 0, updated: 0, unchanged: 0 };
+  const result: SyncProjectsResult = { created: 0, updated: 0, unchanged: 0, removed: 0 };
   const nextProjects = [...localProjects];
 
   for (const page of notionPages) {
@@ -128,17 +171,16 @@ export function reconcileTasks(
   notionPages: NotionPage[],
   localTasks: Task[],
   localProjects: Project[],
+  itemTaskIds?: Set<string>,
 ): { nextTasks: Task[]; result: SyncTasksResult } {
-  const result: SyncTasksResult = { created: 0, updated: 0, skipped: 0, unchanged: 0 };
+  const result: SyncTasksResult = { created: 0, updated: 0, skipped: 0, unchanged: 0, removed: 0 };
   const nextTasks = [...localTasks];
   const now = new Date().toISOString();
 
   for (const page of notionPages) {
-    // 取第一个关联项目的 Notion page id
     const relationId = page.projectRelationIds[0];
     if (!relationId) { result.skipped++; continue; }
 
-    // 通过 relation 的 notionPageId 查找本地 Project
     const localProject = localProjects.find(p => p.notionPageId === relationId);
     if (!localProject) { result.skipped++; continue; }
 

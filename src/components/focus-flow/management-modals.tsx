@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { colors, formatTime, statusLabel, type Item, type Project, type TagDef } from "@/lib/focus-flow-model";
+import { colors, formatTime, statusLabel, type Item, type Project, type TagDef, type Task } from "@/lib/focus-flow-model";
 import { Modal } from "./ui";
 
 type Report = { date: string; content: string };
@@ -9,6 +9,7 @@ type ProjectSummary = { project: Project; total: number; done: number; undone: n
 
 export function ProjectManagementModal({
   projects,
+  tasks,
   newProjectName,
   setNewProjectName,
   addProject,
@@ -18,17 +19,21 @@ export function ProjectManagementModal({
   onClose,
 }: {
   projects: Project[];
+  tasks: Task[];
   newProjectName: string;
   setNewProjectName: (name: string) => void;
   addProject: () => void;
   renameProject: (projectId: string, newName: string) => void;
   updateProjectColor: (projectId: string, color: string) => void;
-  deleteProject: (projectId: string) => void;
+  deleteProject: (projectId: string, migrateToProjectId?: string) => void;
   onClose: () => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [migrateTargetId, setMigrateTargetId] = useState<string>("default");
 
   const startEdit = (project: Project) => {
     setEditingId(project.id);
@@ -49,72 +54,126 @@ export function ProjectManagementModal({
   };
 
   return (
-    <Modal title="管理项目" onClose={onClose}>
-      <div className="space-y-2">
-        {projects.map((project) => (
-          <div key={project.id} className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
+    <Modal title="项目与 Task 管理" onClose={onClose} wide>
+      <div className="space-y-3">
+        {projects.map((project) => {
+          const projectTasks = tasks.filter(t => t.projectId === project.id);
+          const isExpanded = expandedProjectId === project.id;
+          const isEditing = editingId === project.id;
+
+          return (
+            <div key={project.id} className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80">
+              {/* 项目行 */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                {/* 色块 */}
                 <button
                   type="button"
                   onClick={() => setColorPickerId(colorPickerId === project.id ? null : project.id)}
-                  className="h-4 w-4 shrink-0 rounded-full border border-white/20 transition hover:scale-110"
+                  className="h-3.5 w-3.5 shrink-0 rounded-full ring-2 ring-white/10 transition hover:ring-white/30"
                   style={{ backgroundColor: project.color }}
-                  title="点击更换颜色"
                 />
-                {editingId === project.id ? (
-                  <input
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); if (e.key === "Escape") cancelEdit(); }}
-                    autoFocus
-                    className="min-w-0 flex-1 rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1 text-sm outline-none focus:border-zinc-400"
-                  />
-                ) : (
-                  <span className="truncate">{project.name}</span>
-                )}
+                {/* 名称 */}
+                <div className="min-w-0 flex-1">
+                  {isEditing ? (
+                    <input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); if (e.key === "Escape") cancelEdit(); }}
+                      autoFocus
+                      className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1 text-sm outline-none focus:border-teal-400/60"
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-medium text-zinc-100">{project.name}</span>
+                      <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] ${project.notionPageId ? "bg-sky-500/10 text-sky-300" : "bg-zinc-800 text-zinc-500"}`}>
+                        {project.notionPageId ? "Notion" : "本地"}
+                      </span>
+                      {projectTasks.length > 0 && (
+                        <span className="shrink-0 text-[10px] text-zinc-500">{projectTasks.length} task</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* 操作 */}
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {isEditing ? (
+                    <>
+                      <button onClick={confirmEdit} className="rounded px-2 py-1 text-[11px] text-emerald-400 hover:bg-emerald-950/40">保存</button>
+                      <button onClick={cancelEdit} className="rounded px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800">取消</button>
+                    </>
+                  ) : (
+                    <>
+                      {projectTasks.length > 0 && (
+                        <button onClick={() => setExpandedProjectId(isExpanded ? null : project.id)} className="rounded p-1 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300">
+                          <svg className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4.5 3 7.5 6 4.5 9" /></svg>
+                        </button>
+                      )}
+                      <button onClick={() => startEdit(project)} className="rounded p-1 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-300">
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11.5 2.5l2 2M4 10l-1 3 3-1 7.5-7.5-2-2L4 10z" /></svg>
+                      </button>
+                      {project.id !== "default" && !project.notionPageId && (
+                        <button onClick={() => { setDeletingId(project.id); setMigrateTargetId("default"); }} className="rounded p-1 text-zinc-500 transition hover:bg-red-950/40 hover:text-red-400">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4h10M6 4V3h4v1M5 4v9h6V4" /></svg>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="ml-3 flex shrink-0 items-center gap-2">
-                {editingId === project.id ? (
-                  <>
-                    <button onClick={confirmEdit} className="text-xs text-emerald-400 hover:text-emerald-300">确认</button>
-                    <button onClick={cancelEdit} className="text-xs text-zinc-400 hover:text-zinc-300">取消</button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEdit(project)} className="text-xs text-zinc-400 hover:text-zinc-200">编辑</button>
-                    {project.id !== "default" && (
-                      <button onClick={() => deleteProject(project.id)} className="text-xs text-red-400">删除</button>
-                    )}
-                  </>
-                )}
-              </div>
+              {/* 色板 */}
+              {colorPickerId === project.id && (
+                <div className="flex flex-wrap gap-1.5 border-t border-zinc-800 px-4 py-2.5">
+                  {colors.map((c) => (
+                    <button key={c} type="button" onClick={() => { updateProjectColor(project.id, c); setColorPickerId(null); }} className={`h-5 w-5 rounded-full border-2 transition hover:scale-110 ${project.color === c ? "border-white" : "border-transparent"}`} style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+              )}
+              {/* 删除确认 + 迁移选择 */}
+              {deletingId === project.id && (
+                <div className="border-t border-red-900/30 bg-red-950/10 px-4 py-3">
+                  <p className="mb-2 text-xs text-red-200">删除后，该项目下的任务将迁移到：</p>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={migrateTargetId}
+                      onChange={(e) => setMigrateTargetId(e.target.value)}
+                      className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-200 outline-none"
+                    >
+                      {projects.filter(p => p.id !== project.id).map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <button onClick={() => { deleteProject(project.id, migrateTargetId); setDeletingId(null); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500">确认删除</button>
+                    <button onClick={() => setDeletingId(null)} className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800">取消</button>
+                  </div>
+                </div>
+              )}
+              {/* Tasks 展开 */}
+              {isExpanded && projectTasks.length > 0 && (
+                <div className="border-t border-zinc-800 bg-zinc-900/40 px-4 py-2.5">
+                  <div className="space-y-1">
+                    {projectTasks.map(task => (
+                      <div key={task.id} className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition hover:bg-zinc-800/60">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400/60" />
+                        <span className="min-w-0 flex-1 truncate text-zinc-300">{task.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            {colorPickerId === project.id && (
-              <div className="mt-2 flex flex-wrap gap-1.5 rounded-md border border-zinc-700 bg-zinc-900 p-2">
-                {colors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => { updateProjectColor(project.id, c); setColorPickerId(null); }}
-                    className={`h-5 w-5 rounded-full border-2 transition hover:scale-110 ${project.color === c ? "border-white" : "border-transparent"}`}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
+      {/* 新增项目 */}
       <div className="mt-4 flex gap-2">
         <input
           value={newProjectName}
           onChange={(event) => setNewProjectName(event.target.value)}
-          placeholder="新项目名称"
-          className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600"
+          placeholder="新建本地项目…"
+          className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400/50"
           onKeyDown={(event) => event.key === "Enter" && addProject()}
         />
-        <button onClick={addProject} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">添加</button>
+        <button onClick={addProject} className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-teal-500">添加</button>
       </div>
     </Modal>
   );
