@@ -14,8 +14,6 @@ import {
   type Project,
 } from "@/lib/focus-flow-model";
 
-const MAX_DISPLAY_COUNT = 5;
-
 type CalendarViewProps = {
   items: Item[];
   getProjectById: (id?: string) => Project;
@@ -271,14 +269,11 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
     return result;
   }, [createdItems, completedItems]);
 
-  const visibleItems = displayItems.slice(0, MAX_DISPLAY_COUNT);
-  const overflowCount = displayItems.length - MAX_DISPLAY_COUNT;
-
   return (
-    <div className={`flex min-h-[160px] flex-col rounded-xl border p-2.5 transition ${
+    <div className={`flex h-[200px] flex-col rounded-xl border p-2.5 transition ${
       isToday ? "border-teal-400/50 bg-teal-950/20" : hasData ? "border-white/10 bg-white/[0.02]" : "border-dashed border-white/[0.06] bg-transparent"
     }`}>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className={`text-xs font-medium ${isToday ? "text-teal-200" : "text-zinc-200"}`}>{dayLabel}</span>
           <span className="text-[10px] text-zinc-500">周{weekdayLabel}</span>
@@ -286,16 +281,15 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
         {isToday && <span className="rounded-full bg-teal-400/20 px-1.5 py-0.5 text-[9px] font-medium text-teal-200">今天</span>}
       </div>
       {hasData && (
-        <div className="mb-2 flex gap-2 text-[10px]">
+        <div className="mb-2 flex shrink-0 gap-2 text-[10px]">
           {(filter === "all" || filter === "created") && createdItems.length > 0 && <span className="text-sky-300">+{createdItems.length} 新增</span>}
           {(filter === "all" || filter === "completed") && completedItems.length > 0 && <span className="text-emerald-300">✓{completedItems.length} 完成</span>}
         </div>
       )}
-      <div className="flex flex-1 flex-col gap-0.5">
-        {visibleItems.map(({ item, type }) => (
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto scrollbar-thin">
+        {displayItems.map(({ item, type }) => (
           <TaskRow key={`${item.id}-${type}`} item={item} type={type} />
         ))}
-        {overflowCount > 0 && <span className="mt-auto px-1 text-[10px] text-zinc-500">+{overflowCount} 条</span>}
         {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[10px] text-zinc-600">无记录</span></div>}
       </div>
     </div>
