@@ -139,7 +139,7 @@ function QuadrantCard({ quadrant, items, beginDrag, draggingId, isOver }: Quadra
       </div>
 
       {/* List */}
-      <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
+      <div className="flex-1 space-y-1.5 overflow-y-auto p-2 scrollbar-thin">
         {items.length === 0 ? (
           <div className="flex h-full min-h-[120px] items-center justify-center">
             <p className="text-[11px] text-zinc-600">{isOver ? "松开放到这里" : "拖动任务到这里"}</p>

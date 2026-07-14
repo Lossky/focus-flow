@@ -68,7 +68,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.20";
+const APP_VERSION = "0.1.21";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -735,7 +735,7 @@ export default function Home() {
                 toggleCollapsedTask={toggleCollapsedTask}
               />
             ) : viewMode === "calendar" ? (
-              <CalendarView items={items} />
+              <CalendarView items={items} getProjectById={getProjectById} />
             ) : viewMode === "quadrant" ? (
               <QuadrantView items={items} />
             ) : (

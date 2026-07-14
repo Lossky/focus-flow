@@ -7,20 +7,21 @@ import {
   getItemsForDay,
   getWeekDayLabel,
   getWeekDays,
+  getTodayKey,
   isSameDay,
   type CalendarFilter,
   type Item,
+  type Project,
 } from "@/lib/focus-flow-model";
-
-const MAX_DISPLAY_COUNT = 5;
 
 type CalendarViewProps = {
   items: Item[];
+  getProjectById: (id?: string) => Project;
 };
 
 type CalendarScope = "week" | "month";
 
-export function CalendarView({ items }: CalendarViewProps) {
+export function CalendarView({ items, getProjectById }: CalendarViewProps) {
   const [scope, setScope] = useState<CalendarScope>("week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
@@ -45,9 +46,9 @@ export function CalendarView({ items }: CalendarViewProps) {
 
       {/* Content */}
       {scope === "week" ? (
-        <WeekGrid items={items} weekOffset={weekOffset} filter={filter} today={today} />
+        <WeekGrid items={items} weekOffset={weekOffset} filter={filter} today={today} getProjectById={getProjectById} />
       ) : (
-        <MonthGrid items={items} monthOffset={monthOffset} filter={filter} today={today} />
+        <MonthGrid items={items} monthOffset={monthOffset} filter={filter} today={today} getProjectById={getProjectById} />
       )}
     </div>
   );
@@ -145,7 +146,7 @@ function FilterBar({ filter, onChange }: { filter: CalendarFilter; onChange: (f:
 // WeekGrid
 // ---------------------------------------------------------------------------
 
-function WeekGrid({ items, weekOffset, filter, today }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date }) {
+function WeekGrid({ items, weekOffset, filter, today, getProjectById }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date; getProjectById: (id?: string) => Project }) {
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const weekHasData = useMemo(() => weekDays.some((date) => {
     const { created, completed } = getItemsForDay(items, date, "all");
@@ -188,7 +189,7 @@ function getMonthDays(monthOffset: number): Date[] {
   return days;
 }
 
-function MonthGrid({ items, monthOffset, filter, today }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date }) {
+function MonthGrid({ items, monthOffset, filter, today, getProjectById }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date; getProjectById: (id?: string) => Project }) {
   const monthDays = useMemo(() => getMonthDays(monthOffset), [monthOffset]);
 
   // 补齐前面的空格（让第一天对齐到正确的星期列）
@@ -259,7 +260,6 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
   const dayLabel = formatDayLabel(date);
   const weekdayLabel = getWeekDayLabel(date);
   const hasData = createdItems.length > 0 || completedItems.length > 0;
-  const [expanded, setExpanded] = useState(false);
 
   const displayItems = useMemo(() => {
     const seen = new Set<string>();
@@ -269,14 +269,11 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
     return result;
   }, [createdItems, completedItems]);
 
-  const visibleItems = expanded ? displayItems : displayItems.slice(0, MAX_DISPLAY_COUNT);
-  const overflowCount = displayItems.length - MAX_DISPLAY_COUNT;
-
   return (
-    <div className={`flex min-h-[160px] flex-col rounded-xl border p-2.5 transition ${
+    <div className={`flex h-[200px] flex-col rounded-xl border p-2.5 transition ${
       isToday ? "border-teal-400/50 bg-teal-950/20" : hasData ? "border-white/10 bg-white/[0.02]" : "border-dashed border-white/[0.06] bg-transparent"
     }`}>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className={`text-xs font-medium ${isToday ? "text-teal-200" : "text-zinc-200"}`}>{dayLabel}</span>
           <span className="text-[10px] text-zinc-500">周{weekdayLabel}</span>
@@ -284,23 +281,15 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
         {isToday && <span className="rounded-full bg-teal-400/20 px-1.5 py-0.5 text-[9px] font-medium text-teal-200">今天</span>}
       </div>
       {hasData && (
-        <div className="mb-2 flex gap-2 text-[10px]">
+        <div className="mb-2 flex shrink-0 gap-2 text-[10px]">
           {(filter === "all" || filter === "created") && createdItems.length > 0 && <span className="text-sky-300">+{createdItems.length} 新增</span>}
           {(filter === "all" || filter === "completed") && completedItems.length > 0 && <span className="text-emerald-300">✓{completedItems.length} 完成</span>}
         </div>
       )}
-      <div className={`flex flex-1 flex-col gap-0.5 ${expanded ? "max-h-[360px] overflow-y-auto pr-0.5" : ""}`}>
-        {visibleItems.map(({ item, type }) => (
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto scrollbar-thin">
+        {displayItems.map(({ item, type }) => (
           <TaskRow key={`${item.id}-${type}`} item={item} type={type} />
         ))}
-        {overflowCount > 0 && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="mt-auto self-start rounded px-1 py-0.5 text-[10px] text-zinc-500 transition hover:bg-white/10 hover:text-zinc-300"
-          >
-            {expanded ? "收起" : `+${overflowCount} 条 展开`}
-          </button>
-        )}
         {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[10px] text-zinc-600">无记录</span></div>}
       </div>
     </div>
