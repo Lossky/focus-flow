@@ -1,6 +1,6 @@
 {
   "name": "focus-flow",
-  "version": "0.1.16",
+  "version": "0.1.20",
   "private": false,
   "description": "Local-first macOS task flow app built with Next.js and Tauri.",
   "scripts": {
@@ -14,7 +14,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2",
+    "@tauri-apps/api": "^2.11.0",
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-fs": "^2",
     "@tauri-apps/plugin-http": "^2.5.9",

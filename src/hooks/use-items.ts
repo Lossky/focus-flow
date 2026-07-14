@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useThrottledCallback } from "./use-debounce";
 import {
   classifyInput,
   colors,
@@ -29,6 +30,11 @@ import {
   type TagDef,
   type Task,
 } from "@/lib/focus-flow-model";
+import {
+  mergeObsidianCaptureItems,
+  parseObsidianCaptureMarkdown,
+  type ObsidianCaptureEntry,
+} from "@/lib/obsidian-sync";
 import {
   createBackupSnapshotToDisk,
   listBackupSnapshotsFromDisk,
@@ -69,6 +75,53 @@ function saveLocal(key: string, value: unknown) {
   } catch {}
 }
 
+const DEFAULT_OBSIDIAN_VAULT_DIR = "/Users/ls/Downloads/同步空间/obsidian/bdy";
+const OBSIDIAN_CAPTURE_DIR = "捕获台";
+
+async function isTauriRuntime() {
+  if (typeof window === "undefined") return false;
+  return "__TAURI_INTERNALS__" in window;
+}
+
+async function loadObsidianCaptureEntries(): Promise<ObsidianCaptureEntry[]> {
+  if (!(await isTauriRuntime())) return [];
+
+  try {
+    const [{ join }, { exists, readDir, readTextFile }] = await Promise.all([
+      import("@tauri-apps/api/path"),
+      import("@tauri-apps/plugin-fs"),
+    ]);
+
+    const captureDir = await join(DEFAULT_OBSIDIAN_VAULT_DIR, OBSIDIAN_CAPTURE_DIR);
+    if (!(await exists(captureDir))) return [];
+
+    const entries = await readDir(captureDir);
+    const markdownFiles = entries.filter((entry) => entry.isFile && entry.name.endsWith(".md"));
+    const parsed = await Promise.all(markdownFiles.map(async (entry) => {
+      const filePath = await join(captureDir, entry.name);
+      const text = await readTextFile(filePath);
+      return parseObsidianCaptureMarkdown(text, { sourcePath: filePath });
+    }));
+
+    return parsed.flat();
+  } catch (error) {
+    console.error("Failed to load Obsidian capture entries", error);
+    return [];
+  }
+}
+
+async function syncObsidianCaptures(existingItems: Item[]) {
+  const entries = await loadObsidianCaptureEntries();
+  if (!entries.length) return { nextItems: existingItems, importedCount: 0, skippedCount: 0 };
+
+  const result = mergeObsidianCaptureItems(existingItems, entries, { projectId: "default" });
+  return {
+    nextItems: result.nextItems,
+    importedCount: result.imported.length,
+    skippedCount: result.skipped.length,
+  };
+}
+
 export function useItems() {
   const [items, setItems] = useState<Item[]>([]);
   const [projects, setProjects] = useState<Project[]>(defaultProjects);
@@ -78,6 +131,7 @@ export function useItems() {
   const [sessionStats, setSessionStats] = useState<DailySessionStats>(createDefaultDailySessionStats());
   const [storageMode, setStorageMode] = useState<StorageMode>("loading");
   const [backupEntries, setBackupEntries] = useState<BackupEntry[]>([]);
+  const [isSyncingObsidian, setIsSyncingObsidian] = useState(false);
   const initialLoadDone = useRef(false);
 
   // --- Initial load ---
@@ -88,22 +142,36 @@ export function useItems() {
       const diskSnapshot = await loadSnapshotFromDisk();
       if (cancelled) return;
 
+      const nextSnapshot: PersistedSnapshot = diskSnapshot || {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        items: loadLocal<Item[]>(STORAGE_KEY, []),
+        projects: loadLocal<Project[]>(PROJECTS_KEY, defaultProjects),
+        tags: loadLocal<TagDef[]>(TAGS_KEY, defaultTags),
+        tasks: loadLocal<Task[]>("focus-flow-tasks-v1", []),
+        reports: loadLocal<{ date: string; content: string }[]>(REPORTS_KEY, []),
+        sessionStats: loadLocal<DailySessionStats>(SESSION_STATS_KEY, createDefaultDailySessionStats()),
+      };
+
+      const baseItems = (nextSnapshot.items as Item[]).length ? (nextSnapshot.items as Item[]) : createSeedItems();
+      const { nextItems, importedCount } = await syncObsidianCaptures(baseItems);
+      if (cancelled) return;
+
+      const mergedSnapshot = {
+        ...nextSnapshot,
+        items: importedCount ? nextItems : baseItems,
+      };
+
       if (diskSnapshot) {
-        applySnapshot(diskSnapshot);
+        applySnapshot(mergedSnapshot);
         setStorageMode("disk");
       } else {
-        const localItems = loadLocal<Item[]>(STORAGE_KEY, []);
-        const localProjects = loadLocal<Project[]>(PROJECTS_KEY, defaultProjects);
-        const localTags = loadLocal<TagDef[]>(TAGS_KEY, defaultTags);
-        const localReports = loadLocal<{ date: string; content: string }[]>(REPORTS_KEY, []);
-        const localStats = loadLocal<DailySessionStats>(SESSION_STATS_KEY, createDefaultDailySessionStats());
-        const localTasks = loadLocal<Task[]>("focus-flow-tasks-v1", []);
-        setItems(localItems.length ? localItems : createSeedItems());
-        setProjects(localProjects);
-        setTags(localTags);
-        setTasks(localTasks);
-        setSavedReports(localReports);
-        setSessionStats(localStats);
+        setItems(mergedSnapshot.items as Item[]);
+        setProjects(mergedSnapshot.projects as Project[]);
+        setTags(mergedSnapshot.tags as TagDef[]);
+        setTasks((mergedSnapshot.tasks as Task[]) || []);
+        setSavedReports(mergedSnapshot.reports || []);
+        setSessionStats(mergedSnapshot.sessionStats || createDefaultDailySessionStats());
         setStorageMode("local");
       }
 
@@ -147,9 +215,8 @@ export function useItems() {
     }
   }
 
-  // --- Persist on change ---
-  useEffect(() => {
-    if (!initialLoadDone.current) return;
+  // --- Persist on change (throttled to avoid excessive disk writes) ---
+  const persistSnapshot = useThrottledCallback(() => {
     const snapshot = buildSnapshot();
     if (storageMode === "disk") {
       void saveSnapshotToDisk(snapshot);
@@ -160,6 +227,11 @@ export function useItems() {
     saveLocal(REPORTS_KEY, savedReports);
     saveLocal(SESSION_STATS_KEY, sessionStats);
     saveLocal("focus-flow-tasks-v1", tasks);
+  }, 800);
+
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    persistSnapshot();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, projects, tags, savedReports, sessionStats, tasks]);
 
@@ -319,6 +391,14 @@ export function useItems() {
     setItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, projectId, updatedAt: new Date().toISOString() } : item,
+      ),
+    );
+  }, []);
+
+  const setItemQuadrant = useCallback((id: string, important: boolean, urgent: boolean) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, important, urgent, updatedAt: new Date().toISOString() } : item,
       ),
     );
   }, []);
@@ -500,6 +580,19 @@ export function useItems() {
     setTasks(nextTasks);
   }
 
+  async function syncObsidianCapturesNow(): Promise<{ importedCount: number; skippedCount: number }> {
+    setIsSyncingObsidian(true);
+    try {
+      const result = await syncObsidianCaptures(items);
+      if (result.importedCount > 0) {
+        setItems(result.nextItems);
+      }
+      return { importedCount: result.importedCount, skippedCount: result.skippedCount };
+    } finally {
+      setIsSyncingObsidian(false);
+    }
+  }
+
   // --- Backup / Import / Reset ---
   async function refreshBackupsList() {
     const entries = await listBackupSnapshotsFromDisk();
@@ -573,6 +666,7 @@ export function useItems() {
     setSessionStats,
     storageMode,
     backupEntries,
+    isSyncingObsidian,
     getProjectById,
     getTagDef,
     getTaskById,
@@ -582,6 +676,7 @@ export function useItems() {
     toggleMainline,
     removeItem,
     changeItemProject,
+    setItemQuadrant,
     updateItemTags,
     saveItemEdit,
     mergeItems,
@@ -594,6 +689,7 @@ export function useItems() {
     deleteTag,
     applyProjectSync,
     applyTaskSync,
+    syncObsidianCaptures: syncObsidianCapturesNow,
     createDiskBackup,
     setCustomDataDirectory,
     restoreDefaultDataDirectory,

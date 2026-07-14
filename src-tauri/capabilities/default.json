@@ -11,6 +11,12 @@
     "dialog:allow-open",
     "notification:default",
     "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://api.notion.com/**" }
+      ]
+    },
     "fs:allow-exists",
     "fs:allow-read-dir",
     "fs:allow-read-text-file",

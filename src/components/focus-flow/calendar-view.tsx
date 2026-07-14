@@ -7,23 +7,20 @@ import {
   getItemsForDay,
   getWeekDayLabel,
   getWeekDays,
-  getTodayKey,
   isSameDay,
   type CalendarFilter,
   type Item,
-  type Project,
 } from "@/lib/focus-flow-model";
 
 const MAX_DISPLAY_COUNT = 5;
 
 type CalendarViewProps = {
   items: Item[];
-  getProjectById: (id?: string) => Project;
 };
 
 type CalendarScope = "week" | "month";
 
-export function CalendarView({ items, getProjectById }: CalendarViewProps) {
+export function CalendarView({ items }: CalendarViewProps) {
   const [scope, setScope] = useState<CalendarScope>("week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
@@ -48,9 +45,9 @@ export function CalendarView({ items, getProjectById }: CalendarViewProps) {
 
       {/* Content */}
       {scope === "week" ? (
-        <WeekGrid items={items} weekOffset={weekOffset} filter={filter} today={today} getProjectById={getProjectById} />
+        <WeekGrid items={items} weekOffset={weekOffset} filter={filter} today={today} />
       ) : (
-        <MonthGrid items={items} monthOffset={monthOffset} filter={filter} today={today} getProjectById={getProjectById} />
+        <MonthGrid items={items} monthOffset={monthOffset} filter={filter} today={today} />
       )}
     </div>
   );
@@ -148,7 +145,7 @@ function FilterBar({ filter, onChange }: { filter: CalendarFilter; onChange: (f:
 // WeekGrid
 // ---------------------------------------------------------------------------
 
-function WeekGrid({ items, weekOffset, filter, today, getProjectById }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date; getProjectById: (id?: string) => Project }) {
+function WeekGrid({ items, weekOffset, filter, today }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date }) {
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const weekHasData = useMemo(() => weekDays.some((date) => {
     const { created, completed } = getItemsForDay(items, date, "all");
@@ -191,7 +188,7 @@ function getMonthDays(monthOffset: number): Date[] {
   return days;
 }
 
-function MonthGrid({ items, monthOffset, filter, today, getProjectById }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date; getProjectById: (id?: string) => Project }) {
+function MonthGrid({ items, monthOffset, filter, today }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date }) {
   const monthDays = useMemo(() => getMonthDays(monthOffset), [monthOffset]);
 
   // 补齐前面的空格（让第一天对齐到正确的星期列）
@@ -262,6 +259,7 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
   const dayLabel = formatDayLabel(date);
   const weekdayLabel = getWeekDayLabel(date);
   const hasData = createdItems.length > 0 || completedItems.length > 0;
+  const [expanded, setExpanded] = useState(false);
 
   const displayItems = useMemo(() => {
     const seen = new Set<string>();
@@ -271,7 +269,7 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
     return result;
   }, [createdItems, completedItems]);
 
-  const visibleItems = displayItems.slice(0, MAX_DISPLAY_COUNT);
+  const visibleItems = expanded ? displayItems : displayItems.slice(0, MAX_DISPLAY_COUNT);
   const overflowCount = displayItems.length - MAX_DISPLAY_COUNT;
 
   return (
@@ -291,11 +289,18 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
           {(filter === "all" || filter === "completed") && completedItems.length > 0 && <span className="text-emerald-300">✓{completedItems.length} 完成</span>}
         </div>
       )}
-      <div className="flex flex-1 flex-col gap-0.5">
+      <div className={`flex flex-1 flex-col gap-0.5 ${expanded ? "max-h-[360px] overflow-y-auto pr-0.5" : ""}`}>
         {visibleItems.map(({ item, type }) => (
           <TaskRow key={`${item.id}-${type}`} item={item} type={type} />
         ))}
-        {overflowCount > 0 && <span className="mt-auto px-1 text-[10px] text-zinc-500">+{overflowCount} 条</span>}
+        {overflowCount > 0 && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-auto self-start rounded px-1 py-0.5 text-[10px] text-zinc-500 transition hover:bg-white/10 hover:text-zinc-300"
+          >
+            {expanded ? "收起" : `+${overflowCount} 条 展开`}
+          </button>
+        )}
         {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[10px] text-zinc-600">无记录</span></div>}
       </div>
     </div>

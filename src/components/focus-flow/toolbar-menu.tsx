@@ -22,8 +22,10 @@ type ToolbarMenuProps = {
   onShowNotionSettings?: () => void;
   onSyncProjects?: () => void;
   onSyncTasks?: () => void;
+  onSyncObsidianCaptures?: () => void;
   isSyncingProjects?: boolean;
   isSyncingTasks?: boolean;
+  isSyncingObsidian?: boolean;
   notionConfigComplete?: boolean;
 };
 
@@ -50,8 +52,10 @@ export function ToolbarMenu({
   onShowNotionSettings,
   onSyncProjects,
   onSyncTasks,
+  onSyncObsidianCaptures,
   isSyncingProjects,
   isSyncingTasks,
+  isSyncingObsidian,
   notionConfigComplete,
 }: ToolbarMenuProps) {
   const [open, setOpen] = useState(false);
@@ -96,6 +100,7 @@ export function ToolbarMenu({
         { label: "导出备份", onClick: onExport },
         { label: "导入备份", onClick: onImportClick },
         { label: "创建磁盘备份", onClick: onBackup, tone: "green" },
+        { label: "同步 Obsidian 捕获台", onClick: () => onSyncObsidianCaptures?.(), tone: "green", disabled: !onSyncObsidianCaptures || isSyncingObsidian },
         ...(backupEntries.length > 0
           ? [{ label: "恢复最近备份", onClick: () => onRestoreBackup(backupEntries[0].path), tone: "amber" as const }]
           : []),

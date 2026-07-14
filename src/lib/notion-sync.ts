@@ -11,7 +11,6 @@ export type SyncProjectsResult = {
   created: number;
   updated: number;
   unchanged: number;
-  removed: number;
 };
 
 export type SyncTasksResult = {
@@ -19,7 +18,6 @@ export type SyncTasksResult = {
   updated: number;
   skipped: number;
   unchanged: number;
-  removed: number;
 };
 
 async function isTauriRuntime(): Promise<boolean> {
@@ -148,7 +146,7 @@ export function reconcileProjects(
   notionPages: NotionPage[],
   localProjects: Project[],
 ): { nextProjects: Project[]; result: SyncProjectsResult } {
-  const result: SyncProjectsResult = { created: 0, updated: 0, unchanged: 0, removed: 0 };
+  const result: SyncProjectsResult = { created: 0, updated: 0, unchanged: 0 };
   const nextProjects = [...localProjects];
 
   for (const page of notionPages) {
@@ -178,9 +176,8 @@ export function reconcileTasks(
   notionPages: NotionPage[],
   localTasks: Task[],
   localProjects: Project[],
-  itemTaskIds?: Set<string>,
 ): { nextTasks: Task[]; result: SyncTasksResult } {
-  const result: SyncTasksResult = { created: 0, updated: 0, skipped: 0, unchanged: 0, removed: 0 };
+  const result: SyncTasksResult = { created: 0, updated: 0, skipped: 0, unchanged: 0 };
   const nextTasks = [...localTasks];
   const now = new Date().toISOString();
 

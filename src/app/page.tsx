@@ -20,6 +20,7 @@ import {
 } from "@/components/focus-flow/management-modals";
 import { NotionSettingsModal } from "@/components/focus-flow/notion-settings-modal";
 import { QuickCapture } from "@/components/focus-flow/quick-capture";
+import { ViewTabs } from "@/components/focus-flow/view-tabs";
 import { FlowView, ProjectOverview, type FlowSection } from "@/components/focus-flow/task-views";
 import { CalendarView } from "@/components/focus-flow/calendar-view";
 import { QuadrantView } from "@/components/focus-flow/quadrant-view";
@@ -32,11 +33,12 @@ import {
   type ToastState,
   type ViewMode,
 } from "@/lib/focus-flow-model";
-import { loadNotionConfig, saveNotionConfig, isNotionConfigComplete, type NotionConfig } from "@/lib/notion-config";
-import { fetchNotionPages, reconcileProjects, reconcileTasks, checkSyncAvailability } from "@/lib/notion-sync";
+import { type NotionConfig } from "@/lib/notion-config";
 import { useItems } from "@/hooks/use-items";
+import { useNotionSync } from "@/hooks/use-notion-sync";
 import { usePomodoro } from "@/hooks/use-pomodoro";
 import { useDataActions } from "@/hooks/use-data-actions";
+import { useDebouncedValue } from "@/hooks/use-debounce";
 
 // ---------------------------------------------------------------------------
 // Motivation quotes
@@ -66,7 +68,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.16";
+const APP_VERSION = "0.1.20";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -109,6 +111,9 @@ export default function Home() {
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const captureInputRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // --- Debounced search (avoids re-filtering on every keystroke) ---
+  const debouncedSearch = useDebouncedValue(searchText, 150);
+
   // --- Data hook ---
   const {
     items,
@@ -121,6 +126,7 @@ export default function Home() {
     setSessionStats,
     storageMode,
     backupEntries,
+    isSyncingObsidian,
     getProjectById,
     getTagDef,
     addItems: addItemsHook,
@@ -128,6 +134,7 @@ export default function Home() {
     toggleMainline: toggleMainlineHook,
     removeItem: removeItemHook,
     changeItemProject: changeItemProjectHook,
+    setItemQuadrant: setItemQuadrantHook,
     updateItemTags: updateItemTagsHook,
     saveItemEdit: saveItemEditHook,
     addProject: addProjectHook,
@@ -136,6 +143,7 @@ export default function Home() {
     deleteTag: deleteTagHook,
     applyProjectSync: applyProjectSyncHook,
     applyTaskSync: applyTaskSyncHook,
+    syncObsidianCaptures: syncObsidianCapturesHook,
     createDiskBackup: createDiskBackupHook,
     setCustomDataDirectory: setCustomDataDirectoryHook,
     restoreDefaultDataDirectory: restoreDefaultDataDirectoryHook,
@@ -190,8 +198,8 @@ export default function Home() {
 
   const filteredItems = useMemo(() => {
     let result = items.filter((i) => i.status !== "done" && i.status !== "archived");
-    if (searchText.trim()) {
-      const q = searchText.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       result = result.filter(
         (i) =>
           i.content.toLowerCase().includes(q) ||
@@ -203,7 +211,7 @@ export default function Home() {
       result = result.filter((i) => (i.tags || []).includes(filterTag));
     }
     return result;
-  }, [items, searchText, filterTag, getProjectById]);
+  }, [items, debouncedSearch, filterTag, getProjectById]);
 
   const allUsedTags = useMemo(() => {
     const set = new Set<string>();
@@ -281,9 +289,10 @@ export default function Home() {
   const activeQuote = MOTIVATION_QUOTES[quoteIndex];
 
   // --- Effects ---
+  // --- Toast with auto-dismiss + fade-out ---
   useEffect(() => {
     if (!toast.show) return;
-    const timer = setTimeout(() => setToast({ show: false, text: "" }), 1800);
+    const timer = setTimeout(() => setToast({ show: false, text: "" }), 2200);
     return () => clearTimeout(timer);
   }, [toast]);
 
@@ -312,7 +321,7 @@ export default function Home() {
   }, [collapsedTaskIds]);
 
   // --- Handlers ---
-  const showToast = (text: string) => setToast({ show: true, text });
+  const showToast = useCallback((text: string) => setToast({ show: true, text }), []);
 
   // --- Data actions hook ---
   const dataActions = useDataActions(
@@ -328,67 +337,34 @@ export default function Home() {
     showToast,
   );
 
-  // --- Notion sync state ---
-  const [notionConfig, setNotionConfig] = useState<NotionConfig | null>(null);
-  const [isSyncingProjects, setIsSyncingProjects] = useState(false);
-  const [isSyncingTasks, setIsSyncingTasks] = useState(false);
-
-  useEffect(() => {
-    setNotionConfig(loadNotionConfig());
-  }, []);
+  // --- Notion sync (extracted to hook) ---
+  const {
+    notionConfig,
+    isConfigComplete: notionConfigComplete,
+    isSyncingProjects,
+    isSyncingTasks,
+    saveConfig: saveNotionConfigHook,
+    syncProjects: handleSyncProjects,
+    syncTasks: handleSyncTasks,
+  } = useNotionSync({
+    projects,
+    tasks,
+    applyProjectSync: applyProjectSyncHook,
+    applyTaskSync: applyTaskSyncHook,
+    showToast,
+  });
 
   const handleSaveNotionConfig = useCallback((config: NotionConfig) => {
-    saveNotionConfig(config);
-    setNotionConfig(config);
+    saveNotionConfigHook(config);
     setActiveModal(null);
-    showToast("Notion 配置已保存");
-  }, []);
+  }, [saveNotionConfigHook]);
 
-  const handleSyncProjects = useCallback(async () => {
-    if (!notionConfig || !isNotionConfigComplete(notionConfig)) return;
-    const availability = await checkSyncAvailability();
-    if (!availability.available) {
-      showToast(availability.reason || "同步不可用");
-      return;
-    }
-    setIsSyncingProjects(true);
-    try {
-      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.projectsDbId, {
-        statusProperty: "Status",
-        statusGroup: "In progress",
-      });
-      const { nextProjects, result } = reconcileProjects(pages, projects);
-      applyProjectSyncHook(nextProjects);
-      showToast(`项目同步完成：新增 ${result.created}，更新 ${result.updated}`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "同步失败");
-    } finally {
-      setIsSyncingProjects(false);
-    }
-  }, [notionConfig, projects, applyProjectSyncHook]);
-
-  const handleSyncTasks = useCallback(async () => {
-    if (!notionConfig || !isNotionConfigComplete(notionConfig)) return;
-    const availability = await checkSyncAvailability();
-    if (!availability.available) {
-      showToast(availability.reason || "同步不可用");
-      return;
-    }
-    setIsSyncingTasks(true);
-    try {
-      const pages = await fetchNotionPages(notionConfig.apiKey, notionConfig.tasksDbId, {
-        statusProperty: "Status/状态",
-        statusGroup: "In progress",
-      });
-      const { nextTasks, result } = reconcileTasks(pages, tasks, projects);
-      applyTaskSyncHook(nextTasks);
-      showToast(`Task 同步完成：新增 ${result.created}，更新 ${result.updated}，跳过 ${result.skipped}`);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "同步失败");
-    } finally {
-      setIsSyncingTasks(false);
-    }
-  }, [notionConfig, tasks, projects, applyTaskSyncHook]);
+  const handleSyncObsidianCaptures = useCallback(async () => {
+    const { importedCount, skippedCount } = await syncObsidianCapturesHook();
+    showToast(importedCount > 0
+      ? `Obsidian 捕获台已同步：新增 ${importedCount}，跳过 ${skippedCount}`
+      : `Obsidian 捕获台已是最新：跳过 ${skippedCount}`);
+  }, [showToast, syncObsidianCapturesHook]);
 
   const toggleCollapsedTask = useCallback((id: string) => {
     setCollapsedTaskIds((prev) => (prev.includes(id) ? prev.filter((taskId) => taskId !== id) : [...prev, id]));
@@ -409,7 +385,7 @@ export default function Home() {
       return;
     }
     showToast(`已记下 ${next.length} 条任务，稍后去 Inbox 处理`);
-  }, [addItemsHook]);
+  }, [addItemsHook, showToast]);
 
   const addProject = () => {
     if (!newProjectName.trim()) return;
@@ -469,9 +445,10 @@ export default function Home() {
     if (!confirm("确认删除这条任务？")) return;
     removeItemHook(id);
     showToast("任务已删除");
-  }, [removeItemHook]);
+  }, [removeItemHook, showToast]);
 
   const changeItemProject = changeItemProjectHook;
+  const setItemQuadrant = setItemQuadrantHook;
 
   // --- Pomodoro handlers (from hook) ---
   function acknowledgeRestReminder() {
@@ -540,11 +517,12 @@ export default function Home() {
       removeItem,
       toggleMainline,
       changeItemProject,
+      setItemQuadrant,
       updateItemTags,
       startPomodoro,
       openEdit: setEditingItem,
     }),
-    [projects, tags, getProjectById, getTagDef, moveItem, removeItem, toggleMainline, changeItemProject, updateItemTags, startPomodoro],
+    [projects, tags, getProjectById, getTagDef, moveItem, removeItem, toggleMainline, changeItemProject, setItemQuadrant, updateItemTags, startPomodoro],
   );
 
   // --- Corner mode render ---
@@ -690,9 +668,11 @@ export default function Home() {
             onShowNotionSettings={() => setActiveModal("notion-settings")}
             onSyncProjects={() => void handleSyncProjects()}
             onSyncTasks={() => void handleSyncTasks()}
+            onSyncObsidianCaptures={() => void handleSyncObsidianCaptures()}
             isSyncingProjects={isSyncingProjects}
             isSyncingTasks={isSyncingTasks}
-            notionConfigComplete={isNotionConfigComplete(notionConfig)}
+            isSyncingObsidian={isSyncingObsidian}
+            notionConfigComplete={notionConfigComplete}
           />
         </div>
       </header>
@@ -742,32 +722,7 @@ export default function Home() {
 
           {/* Row 2: Tab switcher + content */}
           <section>
-            <div className="mb-4 flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1 w-fit">
-              <button
-                onClick={() => setViewMode("flow")}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "flow" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
-              >
-                分流处理
-              </button>
-              <button
-                onClick={() => setViewMode("board")}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "board" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
-              >
-                项目总览
-              </button>
-              <button
-                onClick={() => setViewMode("calendar")}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "calendar" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
-              >
-                日历视图
-              </button>
-              <button
-                onClick={() => setViewMode("quadrant")}
-                className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${viewMode === "quadrant" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
-              >
-                四象限
-              </button>
-            </div>
+            <ViewTabs active={viewMode} onChange={setViewMode} />
 
             {viewMode === "flow" ? (
               <FlowView
@@ -780,7 +735,7 @@ export default function Home() {
                 toggleCollapsedTask={toggleCollapsedTask}
               />
             ) : viewMode === "calendar" ? (
-              <CalendarView items={items} getProjectById={getProjectById} />
+              <CalendarView items={items} />
             ) : viewMode === "quadrant" ? (
               <QuadrantView items={items} />
             ) : (

@@ -547,6 +547,63 @@ export function addDaysToDate(value: string | undefined, days: number) {
   return toDateInputValue(date);
 }
 
+// ---------------------------------------------------------------------------
+// 四象限（Eisenhower）派生
+//
+// 设计依据（第一性原理）：
+// - 用户已经通过 priority / isMainline / dueDate 表达了轻重缓急，
+//   要求再手动标 important/urgent 是重复录入，也是原视图鸡肋的根因。
+// - 因此当 item 没有显式 important/urgent 时，从已有信号自动推导，
+//   让矩阵零额外操作即可有意义；拖拽到某象限则写入显式值作为覆盖。
+//
+// 推导规则（均为假设，可按反馈调整）：
+// - 重要：显式 important，或 priority === "high"，或 isMainline
+// - 紧急：显式 urgent，或有截止日期且在 URGENT_WINDOW_DAYS 天内（含逾期/今天）
+// ---------------------------------------------------------------------------
+
+export const URGENT_WINDOW_DAYS = 2;
+
+export type QuadrantKey = "iu" | "in" | "nu" | "nn";
+
+export type EffectiveQuadrant = {
+  important: boolean;
+  urgent: boolean;
+  key: QuadrantKey;
+  /** 重要性是否来自显式设置（true）还是系统推导（false） */
+  importantExplicit: boolean;
+  /** 紧急性是否来自显式设置（true）还是系统推导（false） */
+  urgentExplicit: boolean;
+};
+
+function daysUntilDue(value?: string): number | undefined {
+  if (!value) return undefined;
+  const due = parseLocalDate(value);
+  due.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((due.getTime() - today.getTime()) / 86400000);
+}
+
+export function getEffectiveQuadrant(item: Item): EffectiveQuadrant {
+  const importantExplicit = typeof item.important === "boolean";
+  const urgentExplicit = typeof item.urgent === "boolean";
+
+  const important = importantExplicit
+    ? (item.important as boolean)
+    : item.priority === "high" || !!item.isMainline;
+
+  let urgent: boolean;
+  if (urgentExplicit) {
+    urgent = item.urgent as boolean;
+  } else {
+    const days = daysUntilDue(item.dueDate);
+    urgent = days !== undefined && days <= URGENT_WINDOW_DAYS;
+  }
+
+  const key: QuadrantKey = important && urgent ? "iu" : important ? "in" : urgent ? "nu" : "nn";
+  return { important, urgent, key, importantExplicit, urgentExplicit };
+}
+
 export function formatSeconds(seconds: number) {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
   const remainingSeconds = (seconds % 60).toString().padStart(2, "0");

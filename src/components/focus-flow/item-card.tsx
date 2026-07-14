@@ -3,7 +3,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatDate, formatTime, getAgingLevel, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus } from "@/lib/focus-flow-model";
-import { useFocusFlow } from "@/contexts/focus-flow-context";
+import { useFocusFlowActions, useFocusFlow } from "@/contexts/focus-flow-context";
 import { Chip } from "./ui";
 
 // 模块级变量，作为 dataTransfer 的后备方案
@@ -42,7 +42,7 @@ const secondaryActionMap: Partial<Record<ItemStatus, { label: string; to: ItemSt
 };
 
 export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems = [], childCount = 0, isChildrenCollapsed = false, onToggleChildren, isFocusMode = false, isPomodoroActive = false }: ItemCardProps) {
-  const { getProjectById, getTagDef, openEdit } = useFocusFlow();
+  const { getProjectById, getTagDef, openEdit } = useFocusFlowActions();
   const project = getProjectById(item.projectId);
   const isMainline = item.isMainline && item.status !== "done" && item.status !== "archived";
   const primaryAction = primaryActionMap[item.status];
