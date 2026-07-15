@@ -7,21 +7,18 @@ import {
   getItemsForDay,
   getWeekDayLabel,
   getWeekDays,
-  getTodayKey,
   isSameDay,
   type CalendarFilter,
   type Item,
-  type Project,
 } from "@/lib/focus-flow-model";
 
 type CalendarViewProps = {
   items: Item[];
-  getProjectById: (id?: string) => Project;
 };
 
 type CalendarScope = "week" | "month";
 
-export function CalendarView({ items, getProjectById }: CalendarViewProps) {
+export function CalendarView({ items }: CalendarViewProps) {
   const [scope, setScope] = useState<CalendarScope>("week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
@@ -46,9 +43,9 @@ export function CalendarView({ items, getProjectById }: CalendarViewProps) {
 
       {/* Content */}
       {scope === "week" ? (
-        <WeekGrid items={items} weekOffset={weekOffset} filter={filter} today={today} getProjectById={getProjectById} />
+        <WeekGrid items={items} weekOffset={weekOffset} filter={filter} today={today} />
       ) : (
-        <MonthGrid items={items} monthOffset={monthOffset} filter={filter} today={today} getProjectById={getProjectById} />
+        <MonthGrid items={items} monthOffset={monthOffset} filter={filter} today={today} />
       )}
     </div>
   );
@@ -146,7 +143,7 @@ function FilterBar({ filter, onChange }: { filter: CalendarFilter; onChange: (f:
 // WeekGrid
 // ---------------------------------------------------------------------------
 
-function WeekGrid({ items, weekOffset, filter, today, getProjectById }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date; getProjectById: (id?: string) => Project }) {
+function WeekGrid({ items, weekOffset, filter, today }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date }) {
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const weekHasData = useMemo(() => weekDays.some((date) => {
     const { created, completed } = getItemsForDay(items, date, "all");
@@ -189,7 +186,7 @@ function getMonthDays(monthOffset: number): Date[] {
   return days;
 }
 
-function MonthGrid({ items, monthOffset, filter, today, getProjectById }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date; getProjectById: (id?: string) => Project }) {
+function MonthGrid({ items, monthOffset, filter, today }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date }) {
   const monthDays = useMemo(() => getMonthDays(monthOffset), [monthOffset]);
 
   // 补齐前面的空格（让第一天对齐到正确的星期列）
@@ -215,7 +212,7 @@ function MonthGrid({ items, monthOffset, filter, today, getProjectById }: { item
       {/* Weekday header */}
       <div className="mb-1 grid grid-cols-7 gap-1">
         {["一", "二", "三", "四", "五", "六", "日"].map((d) => (
-          <div key={d} className="text-center text-[10px] text-zinc-500">周{d}</div>
+          <div key={d} className="text-center text-[11px] text-zinc-500">周{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
@@ -236,12 +233,12 @@ function MonthGrid({ items, monthOffset, filter, today, getProjectById }: { item
 function MonthDayCell({ date, isToday, createdCount, completedCount, filter }: { date: Date; isToday: boolean; createdCount: number; completedCount: number; filter: CalendarFilter }) {
   const hasData = createdCount > 0 || completedCount > 0;
   return (
-    <div className={`flex min-h-[48px] flex-col items-center justify-center rounded-lg border p-1 text-center transition ${
+    <div className={`flex min-h-[52px] flex-col items-center justify-center rounded-lg border p-1 text-center transition ${
       isToday ? "border-teal-400/50 bg-teal-950/20" : hasData ? "border-white/[0.08] bg-white/[0.02]" : "border-transparent"
     }`}>
-      <span className={`text-xs ${isToday ? "font-semibold text-teal-200" : "text-zinc-300"}`}>{date.getDate()}</span>
+      <span className={`text-sm ${isToday ? "font-semibold text-teal-200" : "text-zinc-300"}`}>{date.getDate()}</span>
       {hasData && (
-        <div className="mt-0.5 flex gap-1 text-[9px]">
+        <div className="mt-0.5 flex gap-1 text-[11px]">
           {(filter === "all" || filter === "created") && createdCount > 0 && <span className="text-sky-400">+{createdCount}</span>}
           {(filter === "all" || filter === "completed") && completedCount > 0 && <span className="text-emerald-400">✓{completedCount}</span>}
         </div>
@@ -270,18 +267,18 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
   }, [createdItems, completedItems]);
 
   return (
-    <div className={`flex h-[200px] flex-col rounded-xl border p-2.5 transition ${
+    <div className={`flex h-[220px] flex-col rounded-xl border p-2.5 transition ${
       isToday ? "border-teal-400/50 bg-teal-950/20" : hasData ? "border-white/10 bg-white/[0.02]" : "border-dashed border-white/[0.06] bg-transparent"
     }`}>
       <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className={`text-xs font-medium ${isToday ? "text-teal-200" : "text-zinc-200"}`}>{dayLabel}</span>
-          <span className="text-[10px] text-zinc-500">周{weekdayLabel}</span>
+          <span className={`text-sm font-medium ${isToday ? "text-teal-200" : "text-zinc-200"}`}>{dayLabel}</span>
+          <span className="text-[11px] text-zinc-500">周{weekdayLabel}</span>
         </div>
-        {isToday && <span className="rounded-full bg-teal-400/20 px-1.5 py-0.5 text-[9px] font-medium text-teal-200">今天</span>}
+        {isToday && <span className="rounded-full bg-teal-400/20 px-1.5 py-0.5 text-[10px] font-medium text-teal-200">今天</span>}
       </div>
       {hasData && (
-        <div className="mb-2 flex shrink-0 gap-2 text-[10px]">
+        <div className="mb-2 flex shrink-0 gap-2 text-[11px]">
           {(filter === "all" || filter === "created") && createdItems.length > 0 && <span className="text-sky-300">+{createdItems.length} 新增</span>}
           {(filter === "all" || filter === "completed") && completedItems.length > 0 && <span className="text-emerald-300">✓{completedItems.length} 完成</span>}
         </div>
@@ -290,7 +287,7 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
         {displayItems.map(({ item, type }) => (
           <TaskRow key={`${item.id}-${type}`} item={item} type={type} />
         ))}
-        {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[10px] text-zinc-600">无记录</span></div>}
+        {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[11px] text-zinc-600">无记录</span></div>}
       </div>
     </div>
   );
@@ -314,28 +311,29 @@ function TaskRow({ item, type }: { item: Item; type: "created" | "completed" }) 
 
   return (
     <div
-      className="group/row relative flex items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight"
+      className="group/row relative flex items-start gap-1.5 rounded px-1.5 py-1 pr-6 text-[13px] leading-snug transition hover:bg-white/[0.04]"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <span
-        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: type === "completed" ? "#34d399" : "#38bdf8" }}
       />
-      <span className="min-w-0 flex-1 truncate text-zinc-300" style={{ textOverflow: "'..'" }}>{item.content}</span>
+      <span className="line-clamp-2 min-w-0 flex-1 break-words text-zinc-200">{item.content}</span>
       <button
         onClick={() => void copy()}
-        className={`shrink-0 rounded p-0.5 transition ${copied ? "text-emerald-400" : "text-zinc-600 opacity-0 group-hover/row:opacity-100 hover:text-zinc-300"}`}
+        className={`absolute right-1 top-1 rounded p-0.5 transition ${copied ? "text-emerald-400" : "text-zinc-500 opacity-0 group-hover/row:opacity-100 hover:text-zinc-200"}`}
+        title="复制内容"
       >
         {copied ? (
-          <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5 6.5 12 13 4" /></svg>
+          <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5 6.5 12 13 4" /></svg>
         ) : (
-          <svg className="h-2.5 w-2.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="5" width="8" height="8" rx="1.5" /><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" /></svg>
+          <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="5" width="8" height="8" rx="1.5" /><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" /></svg>
         )}
       </button>
-      {/* 即时 tooltip */}
-      {hovered && (
-        <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 max-w-[220px] rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-[11px] leading-4 text-zinc-100 shadow-xl">
+      {/* 即时 tooltip：仅当内容较长时才有额外价值 */}
+      {hovered && item.content.length > 24 && (
+        <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 max-w-[280px] rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs leading-5 text-zinc-100 shadow-xl">
           {item.content}
         </div>
       )}

@@ -76,16 +76,16 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-            {isMainline && <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.14em] text-amber-100">Mainline</span>}
-            {isPomodoroActive && <span className="rounded-full border border-amber-200/50 bg-amber-200/15 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.14em] text-amber-100">专注中</span>}
-            <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] ${priority.chipClass}`}>P{priority.label}</span>
-            {depth > 0 && <span className="rounded-full border border-sky-300/30 bg-sky-300/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.14em] text-sky-200">L{depth + 1} 子任务</span>}
+            {isMainline && <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-amber-100">Mainline</span>}
+            {isPomodoroActive && <span className="rounded-full border border-amber-200/50 bg-amber-200/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-amber-100">专注中</span>}
+            <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${priority.chipClass}`}>P{priority.label}</span>
+            {depth > 0 && <span className="rounded-full border border-sky-300/30 bg-sky-300/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-sky-200">L{depth + 1} 子任务</span>}
             {childCount > 0 && (
-              <button type="button" onClick={() => onToggleChildren?.(item.id)} className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.14em] text-emerald-200 transition hover:bg-emerald-300/20">
+              <button type="button" onClick={() => onToggleChildren?.(item.id)} className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-emerald-200 transition hover:bg-emerald-300/20">
                 {isChildrenCollapsed ? "展开" : "收起"} {childCount} 子项
               </button>
             )}
-            <span className="rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.14em]" style={{ backgroundColor: `${project.color}22`, color: project.color }}>{project.name}</span>
+            <span className="rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em]" style={{ backgroundColor: `${project.color}22`, color: project.color }}>{project.name}</span>
             <span className="text-[11px] text-zinc-600">{statusLabel[item.status]}</span>
           </div>
           {ancestorPath ? (

@@ -197,16 +197,16 @@ function QuadrantTaskCard({ item, beginDrag, isDragging }: QuadrantTaskCardProps
         </div>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        {pinned && <span className="text-[9px] text-zinc-500" title="已手动固定到此象限">📌</span>}
-        {isMainline && <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-amber-100">主线</span>}
-        {isToday && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[9px] text-amber-200">Today</span>}
-        <span className="rounded-full px-1.5 py-0.5 text-[9px]" style={{ backgroundColor: `${project.color}22`, color: project.color }}>{project.name}</span>
-        <span className="text-[9px] text-zinc-600">{statusLabel[item.status]}</span>
+        {pinned && <span className="text-[10px] text-zinc-500" title="已手动固定到此象限">📌</span>}
+        {isMainline && <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-100">主线</span>}
+        {isToday && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200">Today</span>}
+        <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: `${project.color}22`, color: project.color }}>{project.name}</span>
+        <span className="text-[10px] text-zinc-600">{statusLabel[item.status]}</span>
         {item.dueDate && (
-          <span className={`text-[9px] ${overdue ? "text-red-300" : "text-zinc-500"}`}>截止 {formatDate(item.dueDate)}</span>
+          <span className={`text-[10px] ${overdue ? "text-red-300" : "text-zinc-500"}`}>截止 {formatDate(item.dueDate)}</span>
         )}
         {(item.tags || []).slice(0, 2).map((tag) => (
-          <span key={tag} className="rounded-full px-1.5 py-0.5 text-[9px] text-zinc-100" style={{ backgroundColor: getTagDef(tag)?.color || "#3f3f46" }}>#{tag}</span>
+          <span key={tag} className="rounded-full px-1.5 py-0.5 text-[10px] text-zinc-100" style={{ backgroundColor: getTagDef(tag)?.color || "#3f3f46" }}>#{tag}</span>
         ))}
       </div>
     </article>
