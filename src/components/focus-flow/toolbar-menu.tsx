@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { BackupEntry } from "@/lib/persistence";
+import { useAnchoredMenu } from "@/hooks/use-anchored-menu";
 
 type ToolbarMenuProps = {
   backupEntries: BackupEntry[];
@@ -60,26 +61,7 @@ export function ToolbarMenu({
 }: ToolbarMenuProps) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (!open || !btnRef.current) return;
-    const update = () => {
-      const r = btnRef.current!.getBoundingClientRect();
-      const menuW = 220;
-      setPos({
-        top: r.bottom + 4,
-        left: Math.max(8, Math.min(r.right - menuW, window.innerWidth - menuW - 8)),
-      });
-    };
-    update();
-    window.addEventListener("scroll", update, true);
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update, true);
-      window.removeEventListener("resize", update);
-    };
-  }, [open]);
+  const menuStyle = useAnchoredMenu(open, btnRef, { width: 220, gap: 4, align: "right", preferredHeight: 360 });
 
   const close = () => setOpen(false);
 
@@ -144,8 +126,8 @@ export function ToolbarMenu({
         <>
           <div className="fixed inset-0 z-[998]" onClick={close} />
           <div
-            className="fixed z-[999] w-[220px] rounded-xl border border-zinc-700 bg-zinc-900 p-1.5 shadow-2xl"
-            style={{ top: pos.top, left: pos.left }}
+            className="z-[999] overflow-y-auto rounded-xl border border-white/10 bg-zinc-900 p-1.5 shadow-2xl scrollbar-thin"
+            style={menuStyle}
           >
             {groups.map((group, gi) => (
               <div key={group.label}>

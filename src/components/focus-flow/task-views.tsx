@@ -40,7 +40,7 @@ export function FlowView({
           return (
             <div
               key={section.key}
-              className={`rounded-2xl border p-4 transition-colors duration-200 ${isDragOver ? "border-amber-400/50 bg-amber-950/15" : "border-zinc-800 bg-zinc-900/60"}`}
+              className={`rounded-2xl border p-4 transition-colors duration-200 ${isDragOver ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/60"}`}
               onDragOver={(e) => { e.preventDefault(); setDragOverLane(section.key); }}
               onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setDragOverLane(null); }}
               onDrop={(e) => {
@@ -55,7 +55,7 @@ export function FlowView({
                   <h3 className="text-lg font-semibold">{section.title}</h3>
                   <p className="mt-1 text-sm text-zinc-400">{section.hint}</p>
                 </div>
-                <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-300">{visibleSectionItems.length} 条</span>
+                <span className="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">{visibleSectionItems.length} 条</span>
               </div>
               <div className="space-y-2 stagger-children">
                 {visibleSectionItems.length === 0 ? (
@@ -107,7 +107,7 @@ export function ProjectOverview({ items, projects }: { items: Item[]; projects: 
           const batchCount = projectItems.filter((i) => i.status === "batch").length;
 
           return (
-            <div key={project.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+            <div key={project.id} className="rounded-2xl border border-white/10 bg-zinc-900/60 p-4">
               {/* Header */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">

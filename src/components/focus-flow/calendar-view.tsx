@@ -333,7 +333,7 @@ function TaskRow({ item, type }: { item: Item; type: "created" | "completed" }) 
       </button>
       {/* 即时 tooltip：仅当内容较长时才有额外价值 */}
       {hovered && item.content.length > 24 && (
-        <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 max-w-[280px] rounded-md border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs leading-5 text-zinc-100 shadow-xl">
+        <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 max-w-[280px] rounded-md border border-white/15 bg-zinc-900 px-2.5 py-1.5 text-xs leading-5 text-zinc-100 shadow-xl">
           {item.content}
         </div>
       )}

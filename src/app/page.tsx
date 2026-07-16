@@ -68,7 +68,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.22";
+const APP_VERSION = "0.1.23";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -530,7 +530,7 @@ export default function Home() {
     return (
       <div className="min-h-screen text-zinc-50">
         {toast.show && (
-          <div className="animate-toast-in fixed right-3 top-3 z-[60] flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/95 px-3 py-2 text-xs text-zinc-100 shadow-2xl backdrop-blur-sm">
+          <div className="animate-toast-in fixed right-3 top-3 z-[60] flex items-center gap-2 rounded-xl border border-white/15 bg-zinc-900/95 px-3 py-2 text-xs text-zinc-100 shadow-2xl backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
             {toast.text}
           </div>
@@ -560,7 +560,7 @@ export default function Home() {
     <div className="min-h-screen text-zinc-50">
       {/* Toast */}
       {toast.show && (
-        <div className="animate-toast-in fixed right-6 top-16 z-[60] flex items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/95 px-4 py-3 text-sm text-zinc-100 shadow-2xl backdrop-blur-sm">
+        <div className="animate-toast-in fixed right-6 top-16 z-[60] flex items-center gap-2 rounded-xl border border-white/15 bg-zinc-900/95 px-4 py-3 text-sm text-zinc-100 shadow-2xl backdrop-blur-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
           {toast.text}
         </div>
@@ -577,7 +577,7 @@ export default function Home() {
           {/* Brand */}
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-semibold tracking-tight text-teal-100">Focus Flow</h1>
-            <span className="rounded-full border border-zinc-700 px-2 py-0.5 text-[10px] tabular-nums text-zinc-500">v{APP_VERSION}</span>
+            <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] tabular-nums text-zinc-500">v{APP_VERSION}</span>
           </div>
 
           {/* Search — grows to fill */}
@@ -642,9 +642,9 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-5 pb-2 sm:px-6">
           {/* Tags */}
           <div className="flex items-center gap-1.5">
-            <button onClick={() => setFilterTag("all")} className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] ${filterTag === "all" ? "border-white text-white" : "border-zinc-700 text-zinc-400"}`}>全部</button>
+            <button onClick={() => setFilterTag("all")} className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] ${filterTag === "all" ? "border-white text-white" : "border-white/15 text-zinc-400"}`}>全部</button>
             {allUsedTags.map((tag) => (
-              <button key={tag} onClick={() => setFilterTag(tag)} className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] ${filterTag === tag ? "border-white text-white" : "border-zinc-700 text-zinc-400"}`}>#{tag}</button>
+              <button key={tag} onClick={() => setFilterTag(tag)} className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] ${filterTag === tag ? "border-white text-white" : "border-white/15 text-zinc-400"}`}>#{tag}</button>
             ))}
           </div>
           <span className="mx-1 h-3 w-px shrink-0 bg-zinc-700" />

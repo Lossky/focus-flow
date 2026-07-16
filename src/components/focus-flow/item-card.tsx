@@ -1,9 +1,10 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatDate, formatTime, getAgingLevel, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus } from "@/lib/focus-flow-model";
 import { useFocusFlowActions, useFocusFlow } from "@/contexts/focus-flow-context";
+import { useAnchoredMenu } from "@/hooks/use-anchored-menu";
 import { Chip } from "./ui";
 
 // 模块级变量，作为 dataTransfer 的后备方案
@@ -150,26 +151,7 @@ function ActionBar({
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (!open || !btnRef.current) return;
-    const update = () => {
-      const r = btnRef.current!.getBoundingClientRect();
-      const panelW = 360;
-      setPos({
-        top: r.bottom + 6,
-        left: Math.max(8, Math.min(r.left, window.innerWidth - panelW - 8)),
-      });
-    };
-    update();
-    window.addEventListener("scroll", update, true);
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update, true);
-      window.removeEventListener("resize", update);
-    };
-  }, [open]);
+  const panelStyle = useAnchoredMenu(open, btnRef, { width: 360, gap: 6, align: "left", preferredHeight: 320 });
 
   return (
     <div className="mt-2">
@@ -198,8 +180,8 @@ function ActionBar({
           <div className="fixed inset-0 z-[998]" onClick={() => setOpen(false)} />
           <div
             ref={panelRef}
-            className="fixed z-[999] w-[360px] max-w-[calc(100vw-1rem)] space-y-2.5 rounded-lg border border-zinc-700 bg-zinc-900 p-3 shadow-2xl"
-            style={{ top: pos.top, left: pos.left }}
+            className="z-[999] max-w-[calc(100vw-1rem)] space-y-2.5 overflow-y-auto rounded-lg border border-white/10 bg-zinc-900 p-3 shadow-2xl scrollbar-thin"
+            style={panelStyle}
           >
             <div className="flex flex-wrap gap-1.5">
               <button onClick={() => { toggleMainline(item.id); setOpen(false); }} className={`rounded-lg border px-2.5 py-1.5 text-[11px] transition ${isMainline ? "border-amber-300/50 bg-amber-300/10 text-amber-100" : "border-white/10 text-zinc-300 hover:bg-white/10"}`}>{isMainline ? "取消主线" : "设为主线"}</button>

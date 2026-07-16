@@ -89,7 +89,7 @@ export function Modal({ title, children, onClose, wide = false }: { title: strin
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[80vh] overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-6 outline-none`}
+        className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900 p-6 outline-none`}
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">{title}</h3>

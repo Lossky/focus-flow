@@ -111,3 +111,25 @@ details[open] > :not(summary) {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* ---------------------------------------------------------------------------
+ * 键盘可访问性：仅在键盘聚焦（focus-visible）时显示聚焦环，
+ * 鼠标点击不显示，避免干扰视觉。统一用品牌青色，替代浏览器默认 outline。
+ * ------------------------------------------------------------------------- */
+:where(button, a, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid rgba(45, 212, 191, 0.65);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* 全局平滑过渡的基础：交互元素默认带轻微过渡，避免生硬状态切换 */
+button, a, [role="button"] {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* 可点击元素按下时的轻微回弹反馈 */
+button:active, [role="button"]:active {
+  transform: translateY(0.5px);
+}

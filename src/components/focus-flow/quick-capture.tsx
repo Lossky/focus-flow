@@ -219,7 +219,7 @@ export function QuickCapture({
               placeholder="新建标签"
               className="flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-teal-400/70"
             />
-            <button onClick={createQuickTag} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">创建</button>
+            <button onClick={createQuickTag} className="rounded-xl border border-white/15 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">创建</button>
           </div>
         </div>
       </details>

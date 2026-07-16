@@ -26,7 +26,7 @@ const QUADRANTS: QuadrantDef[] = [
   { key: "iu", important: true, urgent: true, title: "重要且紧急", subtitle: "立即做 · 转 Today", color: "#fb7185", bgClass: "bg-rose-950/15", borderClass: "border-rose-500/30", headerClass: "bg-rose-500/10" },
   { key: "in", important: true, urgent: false, title: "重要不紧急", subtitle: "排期做 · 别拖成紧急", color: "#60a5fa", bgClass: "bg-blue-950/15", borderClass: "border-blue-500/30", headerClass: "bg-blue-500/10" },
   { key: "nu", important: false, urgent: true, title: "不重要但紧急", subtitle: "快速处理 · 批量清掉", color: "#fbbf24", bgClass: "bg-amber-950/15", borderClass: "border-amber-500/30", headerClass: "bg-amber-500/10" },
-  { key: "nn", important: false, urgent: false, title: "不重要不紧急", subtitle: "能删就删 · 少投入", color: "#a1a1aa", bgClass: "bg-zinc-900/30", borderClass: "border-zinc-700/50", headerClass: "bg-zinc-700/20" },
+  { key: "nn", important: false, urgent: false, title: "不重要不紧急", subtitle: "能删就删 · 少投入", color: "#a1a1aa", bgClass: "bg-zinc-900/30", borderClass: "border-white/15/50", headerClass: "bg-zinc-700/20" },
 ];
 
 const QUADRANT_FLAGS: Record<QuadrantKey, { important: boolean; urgent: boolean }> = {
@@ -80,7 +80,7 @@ export function QuadrantView({ items }: QuadrantViewProps) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-lg border border-zinc-700/60 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-400">
+      <div className="rounded-lg border border-white/15/60 bg-zinc-900/50 px-3 py-2 text-xs text-zinc-400">
         象限根据<strong className="text-zinc-200">优先级</strong>、<strong className="text-zinc-200">主线</strong>和<strong className="text-zinc-200">截止日期</strong>自动归类
         {autoCount > 0 && <>（当前 <strong className="text-zinc-200">{autoCount}</strong> 条为自动推断）</>}
         ，拖动卡片可手动固定到某个象限。

@@ -32,7 +32,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
           <textarea
             value={draft.content}
             onChange={(event) => setDraft({ ...draft, content: event.target.value })}
-            className="min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-zinc-600"
+            className="min-h-28 w-full rounded-xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-white/15"
           />
         </label>
 
@@ -42,7 +42,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
             value={draft.output || ""}
             onChange={(event) => setDraft({ ...draft, output: event.target.value || undefined })}
             placeholder="例如：输出郑州产业大脑培训资料目录和第一版正文"
-            className="min-h-20 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-zinc-600"
+            className="min-h-20 w-full rounded-xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-white/15"
           />
         </label>
 
@@ -70,7 +70,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
                     setDraft({ ...draft, completedAt: event.target.value + timePart });
                   }
                 }}
-                className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/15"
               />
               {draft.completedAt && (
                 <span className="flex items-center text-xs text-zinc-500">{new Date(draft.completedAt).toLocaleDateString("zh-CN")}</span>
@@ -88,9 +88,9 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
                 type="date"
                 value={draft.plannedFor || ""}
                 onChange={(event) => setDraft({ ...draft, plannedFor: event.target.value || undefined })}
-                className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/15"
               />
-              {draft.plannedFor && <button onClick={() => setDraft({ ...draft, plannedFor: undefined })} className="rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800">清除</button>}
+              {draft.plannedFor && <button onClick={() => setDraft({ ...draft, plannedFor: undefined })} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800">清除</button>}
             </div>
           </label>
           <label className="space-y-1">
@@ -100,9 +100,9 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
                 type="date"
                 value={draft.dueDate || ""}
                 onChange={(event) => setDraft({ ...draft, dueDate: event.target.value || undefined })}
-                className="min-w-0 flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/15"
               />
-              {draft.dueDate && <button onClick={() => setDraft({ ...draft, dueDate: undefined })} className="rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800">清除</button>}
+              {draft.dueDate && <button onClick={() => setDraft({ ...draft, dueDate: undefined })} className="rounded-xl border border-white/10 px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800">清除</button>}
             </div>
           </label>
           <label className="space-y-1">
@@ -120,7 +120,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
               value={draft.estimateMinutes || ""}
               onChange={(event) => setDraft({ ...draft, estimateMinutes: event.target.value ? Number(event.target.value) : undefined })}
               placeholder="例如：90"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+              className="w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/15"
             />
           </label>
           <label className="space-y-1">
@@ -129,7 +129,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
               value={draft.blockedBy || ""}
               onChange={(event) => setDraft({ ...draft, blockedBy: event.target.value || undefined })}
               placeholder="例如：等客户确认范围"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+              className="w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/15"
             />
           </label>
           <label className="space-y-1">
@@ -138,7 +138,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
               value={draft.waitingFor || ""}
               onChange={(event) => setDraft({ ...draft, waitingFor: event.target.value || undefined })}
               placeholder="例如：研发 / 客户 / 领导"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-zinc-600"
+              className="w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-white/15"
             />
           </label>
         </div>
@@ -165,11 +165,11 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
         {/* 重要/紧急 四象限标记 */}
         <div className="flex items-center gap-4">
           <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" checked={!!draft.important} onChange={(e) => setDraft({ ...draft, important: e.target.checked || undefined })} className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-blue-500 focus:ring-blue-500/30" />
+            <input type="checkbox" checked={!!draft.important} onChange={(e) => setDraft({ ...draft, important: e.target.checked || undefined })} className="h-4 w-4 rounded border-white/15 bg-zinc-900 text-blue-500 focus:ring-blue-500/30" />
             <span className="text-xs text-zinc-300">重要</span>
           </label>
           <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" checked={!!draft.urgent} onChange={(e) => setDraft({ ...draft, urgent: e.target.checked || undefined })} className="h-4 w-4 rounded border-zinc-600 bg-zinc-900 text-red-500 focus:ring-red-500/30" />
+            <input type="checkbox" checked={!!draft.urgent} onChange={(e) => setDraft({ ...draft, urgent: e.target.checked || undefined })} className="h-4 w-4 rounded border-white/15 bg-zinc-900 text-red-500 focus:ring-red-500/30" />
             <span className="text-xs text-zinc-300">紧急</span>
           </label>
         </div>
@@ -180,12 +180,12 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
             value={draft.result || ""}
             onChange={(event) => setDraft({ ...draft, result: event.target.value || undefined })}
             placeholder="完成后可记录关键结果，便于日报/周报复盘"
-            className="min-h-20 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-zinc-600"
+            className="min-h-20 w-full rounded-xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-white/15"
           />
         </label>
 
         {draft.history?.length ? (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3">
+          <div className="rounded-xl border border-white/10 bg-zinc-950/60 p-3">
             <div className="mb-2 text-sm text-zinc-400">最近流转</div>
             <div className="space-y-1 text-xs text-zinc-500">
               {draft.history.slice(-5).reverse().map((entry, index) => (
@@ -197,8 +197,8 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
           </div>
         ) : null}
 
-        <div className="flex justify-end gap-2 border-t border-zinc-800 pt-4">
-          <button onClick={onClose} className="rounded-xl border border-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">取消</button>
+        <div className="flex justify-end gap-2 border-t border-white/10 pt-4">
+          <button onClick={onClose} className="rounded-xl border border-white/10 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">取消</button>
           <button onClick={() => onSave(draft)} className="rounded-xl bg-teal-200 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-teal-100">保存</button>
         </div>
       </div>

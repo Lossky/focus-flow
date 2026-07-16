@@ -62,7 +62,7 @@ export function ProjectManagementModal({
           const isEditing = editingId === project.id;
 
           return (
-            <div key={project.id} className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/80">
+            <div key={project.id} className="overflow-hidden rounded-xl border border-white/10 bg-zinc-950/80">
               {/* 项目行 */}
               <div className="flex items-center gap-3 px-4 py-3">
                 {/* 色块 */}
@@ -80,7 +80,7 @@ export function ProjectManagementModal({
                       onChange={(e) => setEditingName(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") confirmEdit(); if (e.key === "Escape") cancelEdit(); }}
                       autoFocus
-                      className="w-full rounded-md border border-zinc-600 bg-zinc-900 px-2 py-1 text-sm outline-none focus:border-teal-400/60"
+                      className="w-full rounded-md border border-white/15 bg-zinc-900 px-2 py-1 text-sm outline-none focus:border-teal-400/60"
                     />
                   ) : (
                     <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export function ProjectManagementModal({
               </div>
               {/* 色板 */}
               {colorPickerId === project.id && (
-                <div className="flex flex-wrap gap-1.5 border-t border-zinc-800 px-4 py-2.5">
+                <div className="flex flex-wrap gap-1.5 border-t border-white/10 px-4 py-2.5">
                   {colors.map((c) => (
                     <button key={c} type="button" onClick={() => { updateProjectColor(project.id, c); setColorPickerId(null); }} className={`h-5 w-5 rounded-full border-2 transition hover:scale-110 ${project.color === c ? "border-white" : "border-transparent"}`} style={{ backgroundColor: c }} />
                   ))}
@@ -136,20 +136,20 @@ export function ProjectManagementModal({
                     <select
                       value={migrateTargetId}
                       onChange={(e) => setMigrateTargetId(e.target.value)}
-                      className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-200 outline-none"
+                      className="flex-1 rounded-lg border border-white/15 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-200 outline-none"
                     >
                       {projects.filter(p => p.id !== project.id).map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
                     <button onClick={() => { deleteProject(project.id, migrateTargetId); setDeletingId(null); }} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500">确认删除</button>
-                    <button onClick={() => setDeletingId(null)} className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800">取消</button>
+                    <button onClick={() => setDeletingId(null)} className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800">取消</button>
                   </div>
                 </div>
               )}
               {/* Tasks 展开 */}
               {isExpanded && projectTasks.length > 0 && (
-                <div className="border-t border-zinc-800 bg-zinc-900/40 px-4 py-2.5">
+                <div className="border-t border-white/10 bg-zinc-900/40 px-4 py-2.5">
                   <div className="space-y-1">
                     {projectTasks.map(task => (
                       <div key={task.id} className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs transition hover:bg-zinc-800/60">
@@ -170,7 +170,7 @@ export function ProjectManagementModal({
           value={newProjectName}
           onChange={(event) => setNewProjectName(event.target.value)}
           placeholder="新建本地项目…"
-          className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400/50"
+          className="flex-1 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2.5 text-sm outline-none transition focus:border-teal-400/50"
           onKeyDown={(event) => event.key === "Enter" && addProject()}
         />
         <button onClick={addProject} className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-teal-500">添加</button>
@@ -199,11 +199,11 @@ export function TagManagementModal({
     setNewTagName("");
   };
 
-  return <Modal title="标签管理" onClose={onClose}><div className="space-y-2">{tags.map((tag) => <div key={tag.id} className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: tag.color }} /><span>#{tag.name}</span></div><button onClick={() => deleteTag(tag.name)} className="text-xs text-red-400">删除</button></div>)}</div><div className="mt-4 flex gap-2"><input value={newTagName} onChange={(event) => setNewTagName(event.target.value)} placeholder="新标签名称" className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-zinc-600" onKeyDown={(event) => event.key === "Enter" && createTag()} /><button onClick={createTag} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">添加</button></div></Modal>;
+  return <Modal title="标签管理" onClose={onClose}><div className="space-y-2">{tags.map((tag) => <div key={tag.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-zinc-950 px-4 py-3"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: tag.color }} /><span>#{tag.name}</span></div><button onClick={() => deleteTag(tag.name)} className="text-xs text-red-400">删除</button></div>)}</div><div className="mt-4 flex gap-2"><input value={newTagName} onChange={(event) => setNewTagName(event.target.value)} placeholder="新标签名称" className="flex-1 rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-white/15" onKeyDown={(event) => event.key === "Enter" && createTag()} /><button onClick={createTag} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black">添加</button></div></Modal>;
 }
 
 export function ProjectSummaryModal({ projectSummary, onClose }: { projectSummary: ProjectSummary[]; onClose: () => void }) {
-  return <Modal title="项目任务汇总" onClose={onClose} wide><div className="space-y-6">{projectSummary.map(({ project, total, done, undone, items }) => <div key={project.id} className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} /><span className="font-medium">{project.name}</span></div><div className="flex gap-4 text-sm"><span className="text-zinc-400">总计 {total}</span><span className="text-green-400">已完成 {done}</span><span className="text-amber-400">未完成 {undone}</span></div></div><div className="mt-3 space-y-1">{items.map((item) => <div key={item.id} className={`flex items-center gap-2 text-sm ${item.status === "done" || item.status === "archived" ? "text-zinc-500 line-through" : "text-zinc-200"}`}><span>{item.status === "done" || item.status === "archived" ? "✓" : "○"}</span><span className="flex-1 truncate">{item.content}</span><span className="text-xs">{statusLabel[item.status]}</span></div>)}</div></div>)}</div></Modal>;
+  return <Modal title="项目任务汇总" onClose={onClose} wide><div className="space-y-6">{projectSummary.map(({ project, total, done, undone, items }) => <div key={project.id} className="rounded-xl border border-white/10 bg-zinc-950 p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} /><span className="font-medium">{project.name}</span></div><div className="flex gap-4 text-sm"><span className="text-zinc-400">总计 {total}</span><span className="text-green-400">已完成 {done}</span><span className="text-amber-400">未完成 {undone}</span></div></div><div className="mt-3 space-y-1">{items.map((item) => <div key={item.id} className={`flex items-center gap-2 text-sm ${item.status === "done" || item.status === "archived" ? "text-zinc-500 line-through" : "text-zinc-200"}`}><span>{item.status === "done" || item.status === "archived" ? "✓" : "○"}</span><span className="flex-1 truncate">{item.content}</span><span className="text-xs">{statusLabel[item.status]}</span></div>)}</div></div>)}</div></Modal>;
 }
 
 export function ReportModal({
@@ -219,7 +219,7 @@ export function ReportModal({
   copyDailyReport: () => void;
   onClose: () => void;
 }) {
-  return <Modal title="今日日报" onClose={onClose} wide><div className="mb-3 flex justify-end gap-2"><button onClick={saveDailyReport} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">保存日报</button><button onClick={copyDailyReport} className="rounded-xl border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">复制 Markdown</button></div><pre className="whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-200">{dailyReport}</pre>{savedReports.length > 0 && <div className="mt-4"><div className="mb-2 text-sm text-zinc-400">历史日报</div><div className="space-y-2">{savedReports.map((report) => <details key={report.date} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><summary className="cursor-pointer text-sm text-zinc-300">{report.date}</summary><pre className="mt-3 whitespace-pre-wrap text-xs text-zinc-400">{report.content}</pre></details>)}</div></div>}</Modal>;
+  return <Modal title="今日日报" onClose={onClose} wide><div className="mb-3 flex justify-end gap-2"><button onClick={saveDailyReport} className="rounded-xl border border-white/15 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">保存日报</button><button onClick={copyDailyReport} className="rounded-xl border border-white/15 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">复制 Markdown</button></div><pre className="whitespace-pre-wrap rounded-xl border border-white/10 bg-zinc-950 p-4 text-sm text-zinc-200">{dailyReport}</pre>{savedReports.length > 0 && <div className="mt-4"><div className="mb-2 text-sm text-zinc-400">历史日报</div><div className="space-y-2">{savedReports.map((report) => <details key={report.date} className="rounded-xl border border-white/10 bg-zinc-950 p-3"><summary className="cursor-pointer text-sm text-zinc-300">{report.date}</summary><pre className="mt-3 whitespace-pre-wrap text-xs text-zinc-400">{report.content}</pre></details>)}</div></div>}</Modal>;
 }
 
 export function CompletedHistoryModal({
@@ -239,7 +239,7 @@ export function CompletedHistoryModal({
         {recentItems.length ? recentItems.map((item) => {
           const project = getProjectById(item.projectId);
           return (
-            <article key={item.id} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+            <article key={item.id} className="rounded-xl border border-white/10 bg-zinc-950 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-200">
@@ -257,11 +257,11 @@ export function CompletedHistoryModal({
             </article>
           );
         }) : (
-          <p className="rounded-xl border border-dashed border-zinc-800 px-4 py-5 text-sm text-zinc-500">还没有完成历史。完成任务后，这里会自动记录。</p>
+          <p className="rounded-xl border border-dashed border-white/10 px-4 py-5 text-sm text-zinc-500">还没有完成历史。完成任务后，这里会自动记录。</p>
         )}
       </div>
       {completedHistoryItems.length > recentItems.length && (
-        <details className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+        <details className="mt-4 rounded-xl border border-white/10 bg-zinc-950 p-3">
           <summary className="flex cursor-pointer items-center justify-between text-sm text-zinc-300">
             <span>展开全部历史</span>
             <svg className="h-4 w-4 shrink-0 text-zinc-500 transition-transform [[open]>&]:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
@@ -270,7 +270,7 @@ export function CompletedHistoryModal({
             {completedHistoryItems.slice(12).map((item) => {
               const project = getProjectById(item.projectId);
               return (
-                <article key={item.id} className="rounded-xl border border-zinc-800 bg-black/20 px-3 py-2.5">
+                <article key={item.id} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="truncate text-sm text-zinc-100">{item.content}</span>
                     <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : "无完成时间"}</span>

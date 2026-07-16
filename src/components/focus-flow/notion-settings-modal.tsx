@@ -32,7 +32,7 @@ export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSe
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="ntn_xxxxxxxxxxxxx"
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-zinc-600"
+            className="w-full rounded-xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-white/15"
           />
         </label>
 
@@ -43,7 +43,7 @@ export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSe
             value={projectsDbId}
             onChange={(e) => setProjectsDbId(e.target.value)}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-zinc-600"
+            className="w-full rounded-xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-white/15"
           />
         </label>
 
@@ -54,7 +54,7 @@ export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSe
             value={tasksDbId}
             onChange={(e) => setTasksDbId(e.target.value)}
             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-zinc-600"
+            className="w-full rounded-xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm outline-none focus:border-white/15"
           />
         </label>
 

@@ -80,7 +80,7 @@ export function BouncingQuote({ quote, onClose }: BouncingQuoteProps) {
       <button
         data-close-quote
         onClick={onClose}
-        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 text-[10px] text-zinc-400 opacity-0 transition hover:bg-zinc-700 hover:text-zinc-200 [div:hover>&]:opacity-100"
+        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-zinc-800 text-[10px] text-zinc-400 opacity-0 transition hover:bg-zinc-700 hover:text-zinc-200 [div:hover>&]:opacity-100"
       >
         ✕
       </button>
