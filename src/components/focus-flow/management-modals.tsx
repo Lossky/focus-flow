@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { colors, formatTime, statusLabel, type Item, type Project, type TagDef, type Task } from "@/lib/focus-flow-model";
+import { LifecycleModal } from "./lifecycle-modal";
 import { Modal } from "./ui";
 
 type Report = { date: string; content: string };
@@ -226,15 +227,19 @@ export function CompletedHistoryModal({
   completedHistoryItems,
   getProjectById,
   onClose,
+  onEdit,
 }: {
   completedHistoryItems: Item[];
   getProjectById: (id?: string) => Project;
   onClose: () => void;
+  onEdit?: (item: Item) => void;
 }) {
   const recentItems = completedHistoryItems.slice(0, 12);
+  const [lifecycleItem, setLifecycleItem] = useState<Item | null>(null);
+
   return (
     <Modal title="完成历史" onClose={onClose} wide>
-      <p className="text-sm text-zinc-400">这里只在你需要回看时打开，不会占着主屏幕。</p>
+      <p className="text-sm text-zinc-400">这里只在你需要回看时打开，不会占着主屏幕。误操作完成的任务可以点「编辑」改回状态。</p>
       <div className="mt-4 space-y-2">
         {recentItems.length ? recentItems.map((item) => {
           const project = getProjectById(item.projectId);
@@ -247,7 +252,23 @@ export function CompletedHistoryModal({
                   </span>
                   <span className="truncate text-sm text-zinc-100">{item.content}</span>
                 </div>
-                <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : "无完成时间"}</span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    onClick={() => setLifecycleItem(item)}
+                    className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[10px] text-sky-200 transition hover:bg-sky-400/20"
+                  >
+                    周期
+                  </button>
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(item)}
+                      className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-zinc-300 transition hover:bg-white/10"
+                    >
+                      编辑
+                    </button>
+                  )}
+                  <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : "无完成时间"}</span>
+                </div>
               </div>
               <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] text-zinc-500">
                 <span style={{ color: project.color }}>{project.name}</span>
@@ -273,7 +294,23 @@ export function CompletedHistoryModal({
                 <article key={item.id} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="truncate text-sm text-zinc-100">{item.content}</span>
-                    <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : "无完成时间"}</span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button
+                        onClick={() => setLifecycleItem(item)}
+                        className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[10px] text-sky-200 transition hover:bg-sky-400/20"
+                      >
+                        周期
+                      </button>
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(item)}
+                          className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-zinc-300 transition hover:bg-white/10"
+                        >
+                          编辑
+                        </button>
+                      )}
+                      <span className="text-[11px] text-zinc-500">{item.completedAt ? formatTime(item.completedAt) : ""}</span>
+                    </div>
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] text-zinc-500">
                     <span style={{ color: project.color }}>{project.name}</span>
@@ -285,6 +322,7 @@ export function CompletedHistoryModal({
           </div>
         </details>
       )}
+      {lifecycleItem && <LifecycleModal item={lifecycleItem} onClose={() => setLifecycleItem(null)} />}
     </Modal>
   );
 }

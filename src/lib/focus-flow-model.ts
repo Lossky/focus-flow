@@ -514,6 +514,28 @@ export function formatTime(value?: string) {
   return new Date(value).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+/**
+ * 格式化为相对时间（中文）。
+ * 用于流转时间线，让用户快速感知距离现在多久。
+ */
+export function formatRelativeTime(value?: string): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "刚刚";
+  if (diffMin < 60) return `${diffMin} 分钟前`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} 小时前`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay} 天前`;
+  if (diffDay < 30) return `${Math.floor(diffDay / 7)} 周前`;
+  if (diffDay < 365) return `${Math.floor(diffDay / 30)} 个月前`;
+  return `${Math.floor(diffDay / 365)} 年前`;
+}
+
 function parseLocalDate(value: string) {
   const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (dateOnly) return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));

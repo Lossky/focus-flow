@@ -5,7 +5,14 @@ import { createPortal } from "react-dom";
 import { formatDate, formatTime, getAgingLevel, isDateBeforeToday, priorityTone, repeatLabel, sourceLabel, statusLabel, type Item, type ItemStatus } from "@/lib/focus-flow-model";
 import { useFocusFlowActions, useFocusFlow } from "@/contexts/focus-flow-context";
 import { useAnchoredMenu } from "@/hooks/use-anchored-menu";
+import { LifecycleModal } from "./lifecycle-modal";
 import { Chip } from "./ui";
+
+// 用于将生命周期弹窗提升到 body 层级，避免被卡片 overflow/z-index 遮挡
+function LifecyclePortal({ item, onClose }: { item: Item; onClose: () => void }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(<LifecycleModal item={item} onClose={onClose} />, document.body);
+}
 
 // 模块级变量，作为 dataTransfer 的后备方案
 // 某些 WebView 环境下 dataTransfer 在拖拽过程中可能丢失数据
@@ -44,6 +51,7 @@ const secondaryActionMap: Partial<Record<ItemStatus, { label: string; to: ItemSt
 
 export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems = [], childCount = 0, isChildrenCollapsed = false, onToggleChildren, isFocusMode = false, isPomodoroActive = false }: ItemCardProps) {
   const { getProjectById, getTagDef, openEdit } = useFocusFlowActions();
+  const [showLifecycle, setShowLifecycle] = useState(false);
   const project = getProjectById(item.projectId);
   const isMainline = item.isMainline && item.status !== "done" && item.status !== "archived";
   const primaryAction = primaryActionMap[item.status];
@@ -98,7 +106,13 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
           ) : null}
           <p className={`text-sm leading-5 ${isMainline ? "text-amber-50" : "text-zinc-100"}`}>{item.content}</p>
         </div>
-        <button onClick={() => openEdit(item)} className="shrink-0 rounded-full border border-white/10 px-2 py-1 text-[11px] text-zinc-300 opacity-80 transition hover:bg-white/10 hover:opacity-100">编辑</button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button onClick={() => setShowLifecycle(true)} className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-1 text-[11px] text-sky-200 opacity-80 transition hover:bg-sky-400/20 hover:opacity-100" title="查看生命周期">
+            <svg className="mr-0.5 inline-block h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="8" cy="3" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="8" cy="13" r="1.5" /><path d="M8 4.5v2M8 9.5v2" /></svg>
+            周期
+          </button>
+          <button onClick={() => openEdit(item)} className="rounded-full border border-white/10 px-2 py-1 text-[11px] text-zinc-300 opacity-80 transition hover:bg-white/10 hover:opacity-100">编辑</button>
+        </div>
       </div>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -129,6 +143,9 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
           <span className="mr-2 text-emerald-400">处理结果</span>{item.result}
         </div>
       )}
+
+      {/* 生命周期弹窗（Portal 到 body，确保居中无遮挡） */}
+      {showLifecycle && <LifecyclePortal item={item} onClose={() => setShowLifecycle(false)} />}
 
       <ActionBar
         item={item}

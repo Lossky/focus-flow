@@ -68,7 +68,7 @@ const MOTIVATION_QUOTES = [
 ];
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.23";
+const APP_VERSION = "0.1.24";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -786,6 +786,7 @@ export default function Home() {
           completedHistoryItems={completedHistoryItems}
           getProjectById={getProjectById}
           onClose={() => setActiveModal(null)}
+          onEdit={(item) => { setActiveModal(null); setEditingItem(item); }}
         />
       )}
       {showRestReminder && (
