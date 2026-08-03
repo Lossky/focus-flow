@@ -5,7 +5,6 @@ import { FocusFlowProvider } from "@/contexts/focus-flow-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { enterCornerWindowMode, exitCornerWindowMode } from "@/lib/window-controls";
 import { AlwaysOnTopToggle } from "@/components/focus-flow/always-on-top-toggle";
-import { BouncingQuote } from "@/components/focus-flow/bouncing-quote";
 import { CornerMiniWindow } from "@/components/focus-flow/corner-mini-window";
 import { EditItemModal } from "@/components/focus-flow/edit-item-modal";
 import { FloatingPomodoro } from "@/components/focus-flow/floating-pomodoro";
@@ -40,35 +39,8 @@ import { usePomodoro } from "@/hooks/use-pomodoro";
 import { useDataActions } from "@/hooks/use-data-actions";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 
-// ---------------------------------------------------------------------------
-// Motivation quotes
-// ---------------------------------------------------------------------------
-
-const MOTIVATION_QUOTES = [
-  { zh: "未经审视的人生不值得过。", en: "The unexamined life is not worth living.", author: "苏格拉底" },
-  { zh: "知人者智，自知者明。", en: "Knowing others is intelligence; knowing yourself is true wisdom.", author: "老子" },
-  { zh: "我思故我在。", en: "I think, therefore I am.", author: "笛卡尔" },
-  { zh: "他人即地狱。", en: "Hell is other people.", author: "萨特" },
-  { zh: "人是生而自由的，却无往不在枷锁之中。", en: "Man is born free, and everywhere he is in chains.", author: "卢梭" },
-  { zh: "凡不能毁灭我的，必使我更强大。", en: "What does not kill me makes me stronger.", author: "尼采" },
-  { zh: "世界上只有一种英雄主义，就是认清生活的真相后依然热爱它。", en: "There is only one heroism: to see the world as it is, and to love it.", author: "罗曼·罗兰" },
-  { zh: "人不是因为没有信念而失败，而是因为不能把信念化成行动。", en: "People fail not because they lack belief, but because they cannot turn belief into action.", author: "巴巴拉·格雷斯" },
-  { zh: "吾生也有涯，而知也无涯。", en: "Life is finite, but knowledge is infinite.", author: "庄子" },
-  { zh: "天行健，君子以自强不息。", en: "As heaven maintains vigor through movements, a gentleman should constantly strive for self-perfection.", author: "《周易》" },
-  { zh: "千里之行，始于足下。", en: "A journey of a thousand miles begins with a single step.", author: "老子" },
-  { zh: "学而不思则罔，思而不学则殆。", en: "Learning without thought is labor lost; thought without learning is perilous.", author: "孔子" },
-  { zh: "真正的智慧是知道自己的无知。", en: "True wisdom is in knowing you know nothing.", author: "苏格拉底" },
-  { zh: "不要去追一匹马，用追马的时间种草。", en: "Do not chase a horse; spend that time planting grass.", author: "谚语" },
-  { zh: "你无法在回顾中连接点滴，只能在展望中连接它们。", en: "You can't connect the dots looking forward; you can only connect them looking backwards.", author: "乔布斯" },
-  { zh: "简单是终极的复杂。", en: "Simplicity is the ultimate sophistication.", author: "达·芬奇" },
-  { zh: "行动是治愈恐惧的良药。", en: "Action is the foundational key to all success.", author: "毕加索" },
-  { zh: "把每一天当作生命的最后一天来过。", en: "Live each day as if it were your last.", author: "马可·奥勒留" },
-  { zh: "完成比完美更重要。", en: "Done is better than perfect.", author: "谢丽尔·桑德伯格" },
-  { zh: "专注意味着对一千件好事说不。", en: "Focus means saying no to a thousand good things.", author: "乔布斯" },
-];
-
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.24";
+const APP_VERSION = "0.1.25";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
@@ -89,8 +61,7 @@ export default function Home() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [newTagName, setNewTagName] = useState("");
-  const [quoteIndex, setQuoteIndex] = useState(() => new Date().getDate() % MOTIVATION_QUOTES.length);
-  const [showQuote, setShowQuote] = useState(true);
+
   const [collapsedTaskIds, setCollapsedTaskIds] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -286,7 +257,6 @@ export default function Home() {
   const activePomodoroTaskId = isFocusMode ? pomodoro.taskId : undefined;
   const isTaskFocusMode = isFocusMode && !!activePomodoroTaskId;
   const focusProject = focusItem ? getProjectById(focusItem.projectId) : undefined;
-  const activeQuote = MOTIVATION_QUOTES[quoteIndex];
 
   // --- Effects ---
   // --- Toast with auto-dismiss + fade-out ---
@@ -305,13 +275,6 @@ export default function Home() {
     };
     window.addEventListener("keydown", focusCapture);
     return () => window.removeEventListener("keydown", focusCapture);
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setQuoteIndex((prev) => (prev + 1) % MOTIVATION_QUOTES.length);
-    }, 30000);
-    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -566,11 +529,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Floating bouncing quote card */}
-      {showQuote && (
-        <BouncingQuote quote={activeQuote} onClose={() => setShowQuote(false)} />
-      )}
-
       {/* ===== Compact Top Bar ===== */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-2.5 sm:px-6">
@@ -610,14 +568,6 @@ export default function Home() {
               <span className="hidden rounded-full border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-300 sm:inline">浏览器</span>
             ) : null}
             <AlwaysOnTopToggle onStatus={showToast} />
-            {!showQuote && (
-              <button
-                onClick={() => setShowQuote(true)}
-                className="rounded-full border border-teal-500/40 bg-teal-500/10 px-2.5 py-1 text-[10px] text-teal-200 transition hover:bg-teal-500/20"
-              >
-                名言
-              </button>
-            )}
             <button
               onClick={() => void reloadData()}
               disabled={isRefreshing}
