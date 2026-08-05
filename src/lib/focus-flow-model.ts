@@ -1,5 +1,5 @@
 export type ItemType = "task" | "candidate" | "draft" | "note";
-export type ItemStatus = "inbox" | "today" | "batch" | "review" | "done" | "archived";
+export type ItemStatus = "inbox" | "today" | "blocked" | "shelved" | "done" | "archived";
 export type ItemSource = "manual" | "feishu" | "ai" | "obsidian" | "doc" | "other";
 export type Priority = "high" | "medium" | "low";
 export type RepeatType = "none" | "daily" | "weekly";
@@ -109,14 +109,53 @@ export type WidgetSnapshot = {
   counts: {
     inbox: number;
     today: number;
-    review: number;
-    batch: number;
+    blocked: number;
+    shelved: number;
     mainline: number;
   };
   todayItems: WidgetSnapshotItem[];
   mainlineItems: WidgetSnapshotItem[];
   nextItem?: WidgetSnapshotItem;
 };
+
+// ---------------------------------------------------------------------------
+// 状态迁移：v0.1.25 之前的 review / batch 状态已废弃
+//
+// 设计依据：review（待审）和 batch（批处理）语义重叠——都表达"不急"，
+// 实际使用中被闲置。改为 blocked（等外部，自己推不动）和 shelved（冷藏，不确定要不要做），
+// 这两个才是真实存在且现有状态无法表达的中间态。
+//
+// 映射规则：
+// - review → inbox：待审本质是"还没决定"，回收件箱重新判断
+// - batch  → shelved：批处理本质是"不急但留着"，最接近搁置
+// ---------------------------------------------------------------------------
+
+const LEGACY_STATUS_MAP: Record<string, ItemStatus> = {
+  review: "inbox",
+  batch: "shelved",
+};
+
+/** 把单个 item 的历史遗留状态迁移到当前状态模型。返回新对象或原对象（无变化时） */
+export function migrateItemStatus(item: Item): Item {
+  const mappedStatus = LEGACY_STATUS_MAP[item.status as string];
+  const history = item.history?.map((entry) => {
+    const from = entry.from ? LEGACY_STATUS_MAP[entry.from as string] ?? entry.from : entry.from;
+    const to = entry.to ? LEGACY_STATUS_MAP[entry.to as string] ?? entry.to : entry.to;
+    return from === entry.from && to === entry.to ? entry : { ...entry, from, to };
+  });
+  const historyChanged = history?.some((entry, i) => entry !== item.history?.[i]);
+  if (!mappedStatus && !historyChanged) return item;
+  return {
+    ...item,
+    status: mappedStatus ?? item.status,
+    ...(historyChanged ? { history } : {}),
+  };
+}
+
+/** 批量迁移，用于加载快照时 */
+export function migrateItems(items: Item[]): Item[] {
+  return items.map(migrateItemStatus);
+}
 
 export function getTodayKey(date = new Date()) {
   const year = date.getFullYear();
@@ -149,7 +188,7 @@ export const defaultTags: TagDef[] = [
 ];
 export const colors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#3b82f6", "#8b5cf6", "#ec4899", "#71717a"];
 
-export const statusLabel: Record<ItemStatus, string> = { inbox: "Inbox", today: "Today", batch: "Batch", review: "Review", done: "Done", archived: "Archived" };
+export const statusLabel: Record<ItemStatus, string> = { inbox: "Inbox", today: "Today", blocked: "阻塞中", shelved: "搁置", done: "Done", archived: "Archived" };
 export const sourceLabel: Record<ItemSource, string> = { manual: "手动", feishu: "飞书", ai: "AI", obsidian: "Obsidian", doc: "文档", other: "其他" };
 export const repeatLabel: Record<RepeatType, string> = { none: "不重复", daily: "每日", weekly: "每周" };
 export const priorityLabel: Record<Priority, string> = { high: "高优先级", medium: "中优先级", low: "低优先级" };
@@ -181,7 +220,7 @@ export type ProjectPressure = {
   project: Project;
   openCount: number;
   todayCount: number;
-  reviewCount: number;
+  blockedStatusCount: number;
   blockedCount: number;
   agingCount: number;
   totalEstimateMinutes: number;
@@ -259,9 +298,10 @@ export function getAgingLevel(item: Item, now = new Date()): AgingSignal | undef
   const days = daysSince(item.updatedAt || item.createdAt, now);
   const thresholds: Partial<Record<ItemStatus, { warning: number; danger: number; label: string }>> = {
     inbox: { warning: 3, danger: 7, label: "Inbox 超过 3 天未分流" },
-    review: { warning: 5, danger: 7, label: "Review 超过 5 天未决策" },
     today: { warning: 2, danger: 4, label: "Today 连续多天未完成" },
-    batch: { warning: 14, danger: 21, label: "Batch 长期未处理" },
+    blocked: { warning: 5, danger: 10, label: "阻塞未解除，建议催进度" },
+    // 搁置是刻意冷藏，阈值放很宽，只在超长时间未回顾时提醒
+    shelved: { warning: 60, danger: 90, label: "搁置很久了，考虑归档或重启" },
   };
   const threshold = thresholds[item.status];
   if (!threshold || days < threshold.warning) return undefined;
@@ -273,17 +313,17 @@ export function summarizeProjectPressure(items: Item[], projects: Project[], now
   return projects.map((project) => {
     const projectItems = items.filter((item) => (item.projectId || "default") === project.id && isOpenItem(item));
     const todayCount = projectItems.filter((item) => item.status === "today").length;
-    const reviewCount = projectItems.filter((item) => item.status === "review").length;
+    const blockedStatusCount = projectItems.filter((item) => item.status === "blocked").length;
     const blockedCount = projectItems.filter((item) => item.blockedBy?.trim() || item.waitingFor?.trim()).length;
     const agingCount = projectItems.filter((item) => getAgingLevel(item, now)).length;
     const totalEstimateMinutes = projectItems.reduce((sum, item) => sum + (item.estimateMinutes || 0), 0);
-    const score = projectItems.length + todayCount + reviewCount + blockedCount * 2 + agingCount + Math.floor(totalEstimateMinutes / 120);
+    const score = projectItems.length + todayCount + blockedStatusCount + blockedCount * 2 + agingCount + Math.floor(totalEstimateMinutes / 120);
     const pressureLevel: ProjectPressure["pressureLevel"] = score >= 6 ? "high" : score >= 3 ? "medium" : "low";
     return {
       project,
       openCount: projectItems.length,
       todayCount,
-      reviewCount,
+      blockedStatusCount,
       blockedCount,
       agingCount,
       totalEstimateMinutes,
@@ -355,11 +395,11 @@ export function createSeedItems(): Item[] {
     },
     {
       id: crypto.randomUUID(), content: "评审 PRD v2 初稿", source: "ai", type: "draft", status: "done", priority: "medium", projectId: "default",
-      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(1), updatedAt: daysAgo(1), completedAt: daysAgo(1), history: [{ type: "created", to: "review", at: daysAgo(1) }, { type: "completed", from: "review", to: "done", at: daysAgo(1) }],
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(1), updatedAt: daysAgo(1), completedAt: daysAgo(1), history: [{ type: "created", to: "inbox", at: daysAgo(1) }, { type: "completed", from: "inbox", to: "done", at: daysAgo(1) }],
     },
     // 2 天前创建
     {
-      id: crypto.randomUUID(), content: "设计新的数据导出方案", source: "manual", type: "task", status: "review", priority: "medium", projectId: "default",
+      id: crypto.randomUUID(), content: "设计新的数据导出方案", source: "manual", type: "task", status: "blocked", priority: "medium", projectId: "default",
       tags: ["PRD"], repeatType: "none", createdAt: daysAgo(2), updatedAt: daysAgo(1), history: [{ type: "created", to: "inbox", at: daysAgo(2) }],
     },
     {
@@ -376,8 +416,8 @@ export function createSeedItems(): Item[] {
       tags: ["会议"], repeatType: "none", createdAt: daysAgo(3), updatedAt: daysAgo(3), completedAt: daysAgo(3), history: [{ type: "created", to: "today", at: daysAgo(3) }, { type: "completed", from: "today", to: "done", at: daysAgo(3) }],
     },
     {
-      id: crypto.randomUUID(), content: "更新项目文档结构", source: "manual", type: "task", status: "batch", priority: "low", projectId: "default",
-      tags: [], repeatType: "none", createdAt: daysAgo(3), updatedAt: daysAgo(2), history: [{ type: "created", to: "batch", at: daysAgo(3) }],
+      id: crypto.randomUUID(), content: "更新项目文档结构", source: "manual", type: "task", status: "shelved", priority: "low", projectId: "default",
+      tags: [], repeatType: "none", createdAt: daysAgo(3), updatedAt: daysAgo(2), history: [{ type: "created", to: "shelved", at: daysAgo(3) }],
     },
     // 4 天前
     {
@@ -386,7 +426,7 @@ export function createSeedItems(): Item[] {
     },
     {
       id: crypto.randomUUID(), content: "Code review: 权限模块重构", source: "manual", type: "task", status: "done", priority: "medium", projectId: "default",
-      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(4), updatedAt: daysAgo(4), completedAt: daysAgo(4), history: [{ type: "created", to: "review", at: daysAgo(4) }, { type: "completed", from: "review", to: "done", at: daysAgo(4) }],
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(4), updatedAt: daysAgo(4), completedAt: daysAgo(4), history: [{ type: "created", to: "inbox", at: daysAgo(4) }, { type: "completed", from: "inbox", to: "done", at: daysAgo(4) }],
     },
     // 5 天前
     {
@@ -408,7 +448,7 @@ export function createSeedItems(): Item[] {
     },
     {
       id: crypto.randomUUID(), content: "制定技术选型文档", source: "manual", type: "task", status: "done", priority: "low", projectId: "default",
-      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(6), updatedAt: daysAgo(5), completedAt: daysAgo(5), history: [{ type: "created", to: "inbox", at: daysAgo(6) }, { type: "completed", from: "batch", to: "done", at: daysAgo(5) }],
+      tags: ["PRD"], repeatType: "none", createdAt: daysAgo(6), updatedAt: daysAgo(5), completedAt: daysAgo(5), history: [{ type: "created", to: "inbox", at: daysAgo(6) }, { type: "completed", from: "shelved", to: "done", at: daysAgo(5) }],
     },
   ];
 }
@@ -503,7 +543,7 @@ export function classifyInput(text: string): NonNullable<Item["aiSuggestion"]> {
   const taskWords = ["整理", "跟进", "输出", "处理", "发", "确认", "推进", "写一版"];
   const noteWords = ["想法", "灵感", "记录", "备忘"];
   const highWords = ["今天", "尽快", "马上", "必须"];
-  if (draftWords.some((word) => value.includes(word))) return { type: "draft", status: "review", reason: "检测到草稿/纪要类关键词，建议先进入待审区。" };
+  if (draftWords.some((word) => value.includes(word))) return { type: "draft", status: "inbox", reason: "检测到草稿/纪要类关键词，先进入 Inbox 判断。" };
   if (taskWords.some((word) => value.includes(word)) || lower.includes("todo")) return { type: "task", status: highWords.some((word) => value.includes(word)) ? "today" : "inbox", reason: highWords.some((word) => value.includes(word)) ? "带有时效信号，建议今天处理。" : "先进入 Inbox，后续再手动分流到 Today / Batch。" };
   if (noteWords.some((word) => value.includes(word))) return { type: "note", status: "archived", reason: "更像记录，不建议直接进入待办。" };
   return { type: "candidate", status: "inbox", reason: "暂时无法确定，先作为候选项进入 Inbox。" };
@@ -669,8 +709,8 @@ export function createWidgetSnapshot({ items, projects, storageMode }: { items: 
     counts: {
       inbox: items.filter((item) => item.status === "inbox").length,
       today: todayItems.length,
-      review: items.filter((item) => item.status === "review").length,
-      batch: items.filter((item) => item.status === "batch").length,
+      blocked: items.filter((item) => item.status === "blocked").length,
+      shelved: items.filter((item) => item.status === "shelved").length,
       mainline: mainlineItems.length,
     },
     todayItems: todayItems.slice(0, 6),

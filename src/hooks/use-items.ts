@@ -11,6 +11,7 @@ import {
   defaultProjects,
   defaultTags,
   getTodayKey,
+  migrateItems,
   parseTaskInput,
   PROJECTS_KEY,
   REPORTS_KEY,
@@ -166,7 +167,7 @@ export function useItems() {
         applySnapshot(mergedSnapshot);
         setStorageMode("disk");
       } else {
-        setItems(mergedSnapshot.items as Item[]);
+        setItems(migrateItems(mergedSnapshot.items as Item[]));
         setProjects(mergedSnapshot.projects as Project[]);
         setTags(mergedSnapshot.tags as TagDef[]);
         setTasks((mergedSnapshot.tasks as Task[]) || []);
@@ -196,7 +197,7 @@ export function useItems() {
     const localTags = loadLocal<TagDef[]>(TAGS_KEY, defaultTags);
     const localReports = loadLocal<{ date: string; content: string }[]>(REPORTS_KEY, []);
     const localStats = loadLocal<DailySessionStats>(SESSION_STATS_KEY, createDefaultDailySessionStats());
-    setItems(localItems.length ? localItems : createSeedItems());
+    setItems(localItems.length ? migrateItems(localItems) : createSeedItems());
     setProjects(localProjects);
     setTags(localTags);
     setSavedReports(localReports);
@@ -205,7 +206,8 @@ export function useItems() {
   }
 
   function applySnapshot(snapshot: PersistedSnapshot) {
-    setItems((snapshot.items as Item[]).length ? (snapshot.items as Item[]) : createSeedItems());
+    // 迁移历史遗留状态（review/batch → inbox/shelved）
+    setItems((snapshot.items as Item[]).length ? migrateItems(snapshot.items as Item[]) : createSeedItems());
     setProjects((snapshot.projects as Project[]).length ? (snapshot.projects as Project[]) : defaultProjects);
     setTags((snapshot.tags as TagDef[]).length ? (snapshot.tags as TagDef[]) : defaultTags);
     setTasks((snapshot.tasks as Task[]) || []);
@@ -463,7 +465,7 @@ export function useItems() {
         content: cleanContent,
         source: "manual",
         type: "task",
-        status: "review",
+        status: "inbox",
         priority: topPriority,
         projectId: sourceItems[0].projectId || "default",
         repeatType: "none",
@@ -474,7 +476,7 @@ export function useItems() {
         mergedFrom: sourceItems.map((item) => item.id),
         createdAt: now,
         updatedAt: now,
-        history: [{ type: "merged", to: "review", at: now, note: `由 ${sourceItems.length} 条任务合并` }],
+        history: [{ type: "merged", to: "inbox", at: now, note: `由 ${sourceItems.length} 条任务合并` }],
       };
       createdItem = mergedItem;
       return [

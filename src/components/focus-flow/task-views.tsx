@@ -23,17 +23,37 @@ export function FlowView({
   collapsedTaskIds,
   toggleCollapsedTask,
 }: FlowViewProps) {
-  const orderedSections = [sections.find((section) => section.key === "today"), ...sections.filter((section) => section.key !== "today")].filter(Boolean) as FlowSection[];
   const itemById = new Map(items.map((item) => [item.id, item]));
   const childCounts = buildChildCountMap(items);
   const collapsedSet = new Set(collapsedTaskIds);
   const [dragOverLane, setDragOverLane] = useState<ItemStatus | null>(null);
+  const [shelvedOpen, setShelvedOpen] = useState(false);
+
+  // 日常视野只有 Inbox + 阻塞；搁置是收纳抽屉，默认折叠
+  const laneSections = sections.filter((s) => s.key === "inbox" || s.key === "blocked");
+  const shelvedSection = sections.find((s) => s.key === "shelved");
+  const shelvedItems = items.filter((item) => item.status === "shelved");
+  const visibleShelvedItems = filterVisibleTreeItems(shelvedItems, collapsedSet);
+
+  const renderCard = (item: Item) => (
+    <ItemCard
+      key={item.id}
+      item={item}
+      parentItem={item.parentId ? itemById.get(item.parentId) : undefined}
+      ancestorItems={getAncestorItems(item, itemById)}
+      childCount={childCounts.get(item.id) || 0}
+      isChildrenCollapsed={collapsedSet.has(item.id)}
+      onToggleChildren={toggleCollapsedTask}
+      isFocusMode={isFocusMode}
+      isPomodoroActive={activePomodoroTaskId === item.id}
+    />
+  );
 
   return (
     <section className="space-y-4">
-      <p className="text-sm text-zinc-500">Inbox、Review 和 Batch 不必同时处理，挑当前最需要清理的入口就好。拖拽卡片可以在泳道间移动。</p>
-      <div className="grid gap-4 xl:grid-cols-3">
-        {orderedSections.filter((section) => section.key !== "today").map((section) => {
+      <p className="text-sm text-zinc-500">Inbox 是待判断的入口，阻塞区放等别人的事。拖拽卡片可以在区块间移动。</p>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {laneSections.map((section) => {
           const sectionItems = items.filter((item) => item.status === section.key);
           const visibleSectionItems = filterVisibleTreeItems(sectionItems, collapsedSet);
           const isDragOver = dragOverLane === section.key;
@@ -63,25 +83,55 @@ export function FlowView({
                     {isDragOver ? "松开放到这里" : "这里还没有内容。"}
                   </div>
                 ) : (
-                  visibleSectionItems.map((item) => (
-                    <ItemCard
-                      key={item.id}
-                      item={item}
-                      parentItem={item.parentId ? itemById.get(item.parentId) : undefined}
-                      ancestorItems={getAncestorItems(item, itemById)}
-                      childCount={childCounts.get(item.id) || 0}
-                      isChildrenCollapsed={collapsedSet.has(item.id)}
-                      onToggleChildren={toggleCollapsedTask}
-                      isFocusMode={isFocusMode}
-                      isPomodoroActive={activePomodoroTaskId === item.id}
-                    />
-                  ))
+                  visibleSectionItems.map(renderCard)
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* 搁置抽屉：默认折叠，不占日常视野 */}
+      {shelvedSection && (
+        <div
+          className={`rounded-2xl border transition-colors duration-200 ${dragOverLane === "shelved" ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/40"}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOverLane("shelved"); }}
+          onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setDragOverLane(null); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOverLane(null);
+            const draggedId = e.dataTransfer.getData("text/plain") || getActiveDragId();
+            if (draggedId) moveItem(draggedId, "shelved");
+          }}
+        >
+          <button
+            onClick={() => setShelvedOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <svg className={`h-3.5 w-3.5 shrink-0 text-zinc-500 transition-transform ${shelvedOpen ? "rotate-90" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4.5 3 7.5 6 4.5 9" /></svg>
+              <div>
+                <h3 className="text-sm font-medium text-zinc-300">{shelvedSection.title}</h3>
+                {shelvedOpen && <p className="mt-0.5 text-xs text-zinc-500">{shelvedSection.hint}</p>}
+              </div>
+            </div>
+            <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-zinc-400">
+              {dragOverLane === "shelved" ? "松开搁置" : `${shelvedItems.length} 条`}
+            </span>
+          </button>
+          {shelvedOpen && (
+            <div className="space-y-2 border-t border-white/10 p-4 stagger-children">
+              {visibleShelvedItems.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 px-4 py-5 text-center text-sm text-zinc-500">
+                  搁置区是空的。不确定要不要做的任务可以拖到这里。
+                </div>
+              ) : (
+                visibleShelvedItems.map(renderCard)
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -103,8 +153,8 @@ export function ProjectOverview({ items, projects }: { items: Item[]; projects: 
           const open = projectItems.filter((i) => i.status !== "done" && i.status !== "archived");
           const todayCount = projectItems.filter((i) => i.status === "today").length;
           const inboxCount = projectItems.filter((i) => i.status === "inbox").length;
-          const reviewCount = projectItems.filter((i) => i.status === "review").length;
-          const batchCount = projectItems.filter((i) => i.status === "batch").length;
+          const blockedCount = projectItems.filter((i) => i.status === "blocked").length;
+          const shelvedCount = projectItems.filter((i) => i.status === "shelved").length;
 
           return (
             <div key={project.id} className="rounded-2xl border border-white/10 bg-zinc-900/60 p-4">
@@ -129,8 +179,8 @@ export function ProjectOverview({ items, projects }: { items: Item[]; projects: 
                 <div className="flex gap-2 text-zinc-500">
                   {todayCount > 0 && <span>Today {todayCount}</span>}
                   {inboxCount > 0 && <span>Inbox {inboxCount}</span>}
-                  {reviewCount > 0 && <span>Review {reviewCount}</span>}
-                  {batchCount > 0 && <span>Batch {batchCount}</span>}
+                  {blockedCount > 0 && <span className="text-red-300/70">阻塞 {blockedCount}</span>}
+                  {shelvedCount > 0 && <span>搁置 {shelvedCount}</span>}
                 </div>
               </div>
 

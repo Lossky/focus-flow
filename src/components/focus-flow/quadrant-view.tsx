@@ -39,8 +39,9 @@ const QUADRANT_FLAGS: Record<QuadrantKey, { important: boolean; urgent: boolean 
 export function QuadrantView({ items }: QuadrantViewProps) {
   const { setItemQuadrant, openEdit } = useFocusFlowActions();
 
+  // 搁置是刻意冷藏的，不参与四象限决策
   const openItems = useMemo(
-    () => items.filter((i) => i.status !== "done" && i.status !== "archived"),
+    () => items.filter((i) => i.status !== "done" && i.status !== "archived" && i.status !== "shelved"),
     [items],
   );
 

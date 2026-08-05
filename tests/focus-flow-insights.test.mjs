@@ -40,7 +40,7 @@ test("today load sums estimate minutes and detects overload", () => {
   const result = analyzeTodayLoad([
     item({ id: "a", status: "today", estimateMinutes: 180 }),
     item({ id: "b", status: "today", estimateMinutes: 240 }),
-    item({ id: "c", status: "batch", estimateMinutes: 999 }),
+    item({ id: "c", status: "shelved", estimateMinutes: 999 }),
   ]);
 
   assert.equal(result.totalMinutes, 420);
@@ -52,15 +52,17 @@ test("aging level uses status-specific thresholds", () => {
   const now = new Date("2026-04-28T00:00:00.000Z");
 
   assert.equal(getAgingLevel(item({ status: "inbox", updatedAt: "2026-04-24T00:00:00.000Z" }), now)?.level, "warning");
-  assert.equal(getAgingLevel(item({ status: "review", updatedAt: "2026-04-20T00:00:00.000Z" }), now)?.level, "danger");
-  assert.equal(getAgingLevel(item({ status: "batch", updatedAt: "2026-04-20T00:00:00.000Z" }), now), undefined);
+  // 阻塞：5 天 warning / 10 天 danger（此处相距 8 天）
+  assert.equal(getAgingLevel(item({ status: "blocked", updatedAt: "2026-04-20T00:00:00.000Z" }), now)?.level, "warning");
+  assert.equal(getAgingLevel(item({ status: "blocked", updatedAt: "2026-04-14T00:00:00.000Z" }), now)?.level, "danger");
+  assert.equal(getAgingLevel(item({ status: "shelved", updatedAt: "2026-04-20T00:00:00.000Z" }), now), undefined);
 });
 
 test("project pressure weighs active, today, blocked, and aging tasks", () => {
   const now = new Date("2026-04-28T00:00:00.000Z");
   const summaries = summarizeProjectPressure([
     item({ id: "a", projectId: "p1", status: "today", estimateMinutes: 120, updatedAt: "2026-04-28T00:00:00.000Z" }),
-    item({ id: "b", projectId: "p1", status: "review", blockedBy: "等客户确认", updatedAt: "2026-04-20T00:00:00.000Z" }),
+    item({ id: "b", projectId: "p1", status: "blocked", blockedBy: "等客户确认", updatedAt: "2026-04-20T00:00:00.000Z" }),
     item({ id: "c", projectId: "p2", status: "done" }),
   ], [
     { id: "p1", name: "项目一", color: "#fff" },
@@ -76,8 +78,8 @@ test("project pressure weighs active, today, blocked, and aging tasks", () => {
 test("merge suggestions group similar open tasks in the same project", () => {
   const groups = suggestMergeGroups([
     item({ id: "a", content: "后台管理-重点企业维护", status: "inbox" }),
-    item({ id: "b", content: "后台管理-企业位置选择功能", status: "review" }),
-    item({ id: "c", content: "产业链后台维护放到超级管理员", status: "batch" }),
+    item({ id: "b", content: "后台管理-企业位置选择功能", status: "blocked" }),
+    item({ id: "c", content: "产业链后台维护放到超级管理员", status: "shelved" }),
     item({ id: "d", content: "写日报", projectId: "p2", status: "today" }),
   ]);
 

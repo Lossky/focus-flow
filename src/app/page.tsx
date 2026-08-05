@@ -40,13 +40,13 @@ import { useDataActions } from "@/hooks/use-data-actions";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.25";
+const APP_VERSION = "0.1.26";
 
 const SECTIONS: FlowSection[] = [
   { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
   { key: "today", title: "Today 主线", hint: "今天真正要推进的事情，尽量控制在 1 到 3 个。" },
-  { key: "review", title: "Review 待审区", hint: "AI 草稿、纪要摘要、方案初稿都先放这里。" },
-  { key: "batch", title: "Batch 批处理", hint: "不需要实时响应，但值得集中处理。" },
+  { key: "blocked", title: "阻塞中", hint: "等别人响应，自己推不动。定期回来催进度。" },
+  { key: "shelved", title: "搁置", hint: "暂时不确定要不要继续，先冷藏不占视野。" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -161,8 +161,8 @@ export default function Home() {
     return {
       inbox: items.filter((i) => i.status === "inbox").length,
       today: items.filter((i) => i.status === "today").length,
-      review: items.filter((i) => i.status === "review").length,
-      batch: items.filter((i) => i.status === "batch").length,
+      blocked: items.filter((i) => i.status === "blocked").length,
+      shelved: items.filter((i) => i.status === "shelved").length,
       mainline: open.filter((i) => i.isMainline).length,
     };
   }, [items]);
@@ -552,8 +552,8 @@ export default function Home() {
           <div className="hidden items-center gap-1 text-[11px] tabular-nums text-zinc-400 md:flex">
             <span className="rounded bg-white/[0.04] px-1.5 py-0.5">Inbox <strong className="text-zinc-200">{counts.inbox}</strong></span>
             <span className="rounded bg-white/[0.04] px-1.5 py-0.5">Today <strong className="text-amber-200">{counts.today}</strong></span>
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">Review <strong className="text-zinc-200">{counts.review}</strong></span>
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">Batch <strong className="text-zinc-200">{counts.batch}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">阻塞 <strong className="text-red-200">{counts.blocked}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">搁置 <strong className="text-zinc-400">{counts.shelved}</strong></span>
             <span className="rounded bg-white/[0.04] px-1.5 py-0.5">主线 <strong className="text-amber-200">{counts.mainline}</strong></span>
           </div>
 

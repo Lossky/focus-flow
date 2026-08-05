@@ -38,15 +38,15 @@ type PrimaryAction = { label: string; to: ItemStatus; tone: "warm" | "cool" | "q
 const primaryActionMap: Partial<Record<ItemStatus, PrimaryAction>> = {
   inbox: { label: "转 Today", to: "today", tone: "cool" },
   today: { label: "完成", to: "done", tone: "warm" },
-  review: { label: "转 Today", to: "today", tone: "cool" },
-  batch: { label: "转 Today", to: "today", tone: "cool" },
+  blocked: { label: "已解除", to: "today", tone: "cool" },
+  shelved: { label: "重启", to: "inbox", tone: "cool" },
 };
 
 const secondaryActionMap: Partial<Record<ItemStatus, { label: string; to: ItemStatus }[]>> = {
-  inbox: [{ label: "转 Batch", to: "batch" }, { label: "转 Review", to: "review" }, { label: "归档", to: "archived" }],
-  today: [{ label: "转 Batch", to: "batch" }, { label: "转 Review", to: "review" }],
-  review: [{ label: "转 Batch", to: "batch" }, { label: "归档", to: "archived" }],
-  batch: [{ label: "完成", to: "done" }, { label: "转 Review", to: "review" }],
+  inbox: [{ label: "阻塞", to: "blocked" }, { label: "搁置", to: "shelved" }, { label: "归档", to: "archived" }],
+  today: [{ label: "阻塞", to: "blocked" }, { label: "搁置", to: "shelved" }],
+  blocked: [{ label: "搁置", to: "shelved" }, { label: "归档", to: "archived" }],
+  shelved: [{ label: "转 Today", to: "today" }, { label: "归档", to: "archived" }],
 };
 
 export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems = [], childCount = 0, isChildrenCollapsed = false, onToggleChildren, isFocusMode = false, isPomodoroActive = false }: ItemCardProps) {
