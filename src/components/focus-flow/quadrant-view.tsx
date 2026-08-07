@@ -2,7 +2,8 @@
 
 import { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { formatDate, getEffectiveQuadrant, isDateBeforeToday, priorityTone, statusLabel, type Item, type QuadrantKey } from "@/lib/focus-flow-model";
+import { useI18n } from "@/contexts/i18n-context";
+import { getEffectiveQuadrant, isDateBeforeToday, priorityTone, type Item, type QuadrantKey } from "@/lib/focus-flow-model";
 import { useFocusFlowActions } from "@/contexts/focus-flow-context";
 import { usePointerDrag } from "@/hooks/use-pointer-drag";
 
@@ -37,7 +38,13 @@ const QUADRANT_FLAGS: Record<QuadrantKey, { important: boolean; urgent: boolean 
 };
 
 export function QuadrantView({ items }: QuadrantViewProps) {
+  const { locale } = useI18n();
   const { setItemQuadrant, openEdit } = useFocusFlowActions();
+  const quadrants = locale === "zh-CN" ? QUADRANTS : QUADRANTS.map((quadrant) => ({
+    ...quadrant,
+    title: { iu: "Important and urgent", in: "Important, not urgent", nu: "Urgent, not important", nn: "Neither important nor urgent" }[quadrant.key],
+    subtitle: { iu: "Do now · Move to Today", in: "Schedule it · Stay ahead", nu: "Handle quickly · Batch it", nn: "Delete if possible · Keep investment low" }[quadrant.key],
+  }));
 
   // 搁置是刻意冷藏的，不参与四象限决策
   const openItems = useMemo(
@@ -87,7 +94,7 @@ export function QuadrantView({ items }: QuadrantViewProps) {
         ，拖动卡片可手动固定到某个象限。
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        {QUADRANTS.map((q) => (
+        {quadrants.map((q) => (
           <QuadrantCard
             key={q.key}
             quadrant={q}
@@ -122,6 +129,7 @@ type QuadrantCardProps = {
 };
 
 function QuadrantCard({ quadrant, items, beginDrag, draggingId, isOver }: QuadrantCardProps) {
+  const { t } = useI18n();
   return (
     <div
       data-drop-zone={quadrant.key}
@@ -143,7 +151,7 @@ function QuadrantCard({ quadrant, items, beginDrag, draggingId, isOver }: Quadra
       <div className="flex-1 space-y-1.5 overflow-y-auto p-2 scrollbar-thin">
         {items.length === 0 ? (
           <div className="flex h-full min-h-[120px] items-center justify-center">
-            <p className="text-[11px] text-zinc-600">{isOver ? "松开放到这里" : "拖动任务到这里"}</p>
+            <p className="text-[11px] text-zinc-600">{isOver ? t("dropHere") : t("dropHere")}</p>
           </div>
         ) : (
           items.map((item) => (
@@ -163,6 +171,7 @@ type QuadrantTaskCardProps = {
 
 function QuadrantTaskCard({ item, beginDrag, isDragging }: QuadrantTaskCardProps) {
   const { getProjectById, getTagDef, moveItem } = useFocusFlowActions();
+  const { t, statusLabel, formatDate: formatLocaleDate } = useI18n();
   const project = getProjectById(item.projectId);
   const priority = priorityTone[item.priority];
   const isMainline = !!item.isMainline;
@@ -183,7 +192,7 @@ function QuadrantTaskCard({ item, beginDrag, isDragging }: QuadrantTaskCardProps
             <button
               onClick={(e) => { e.stopPropagation(); moveItem(item.id, "today"); }}
               className="rounded p-0.5 text-zinc-500 transition hover:text-amber-300"
-              title="转 Today"
+              title={t("moveToToday")}
             >
               <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8 3v10M3 8h10" /></svg>
             </button>
@@ -191,20 +200,20 @@ function QuadrantTaskCard({ item, beginDrag, isDragging }: QuadrantTaskCardProps
           <button
             onClick={(e) => { e.stopPropagation(); moveItem(item.id, "done"); }}
             className="rounded p-0.5 text-zinc-500 transition hover:text-emerald-400"
-            title="标记完成"
+              title={t("complete")}
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5 6.5 12 13 4" /></svg>
           </button>
         </div>
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        {pinned && <span className="text-[10px] text-zinc-500" title="已手动固定到此象限">📌</span>}
-        {isMainline && <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-100">主线</span>}
-        {isToday && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200">Today</span>}
+        {pinned && <span className="text-[10px] text-zinc-500" title={t("lifecycle")}>📌</span>}
+        {isMainline && <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-100">{t("mainline")}</span>}
+        {isToday && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-200">{t("today")}</span>}
         <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: `${project.color}22`, color: project.color }}>{project.name}</span>
-        <span className="text-[10px] text-zinc-600">{statusLabel[item.status]}</span>
+        <span className="text-[10px] text-zinc-600">{statusLabel(item.status)}</span>
         {item.dueDate && (
-          <span className={`text-[10px] ${overdue ? "text-red-300" : "text-zinc-500"}`}>截止 {formatDate(item.dueDate)}</span>
+          <span className={`text-[10px] ${overdue ? "text-red-300" : "text-zinc-500"}`}>{t("due")} {formatLocaleDate(item.dueDate)}</span>
         )}
         {(item.tags || []).slice(0, 2).map((tag) => (
           <span key={tag} className="rounded-full px-1.5 py-0.5 text-[10px] text-zinc-100" style={{ backgroundColor: getTagDef(tag)?.color || "#3f3f46" }}>#{tag}</span>

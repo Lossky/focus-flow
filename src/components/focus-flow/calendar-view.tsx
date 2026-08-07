@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import {
   formatDayLabel,
   formatWeekRange,
@@ -56,19 +57,20 @@ export function CalendarView({ items }: CalendarViewProps) {
 // ---------------------------------------------------------------------------
 
 function ScopeToggle({ scope, onChange }: { scope: CalendarScope; onChange: (s: CalendarScope) => void }) {
+  const { t } = useI18n();
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
       <button
         onClick={() => onChange("week")}
         className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${scope === "week" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
       >
-        周
+        {t("week")}
       </button>
       <button
         onClick={() => onChange("month")}
         className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${scope === "month" ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
       >
-        月
+        {t("month")}
       </button>
     </div>
   );
@@ -79,6 +81,7 @@ function ScopeToggle({ scope, onChange }: { scope: CalendarScope; onChange: (s: 
 // ---------------------------------------------------------------------------
 
 function WeekNav({ weekOffset, setWeekOffset }: { weekOffset: number; setWeekOffset: (fn: (v: number) => number) => void }) {
+  const { t } = useI18n();
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const weekLabel = formatWeekRange(weekDays[0], weekDays[6]);
   return (
@@ -86,7 +89,7 @@ function WeekNav({ weekOffset, setWeekOffset }: { weekOffset: number; setWeekOff
       <button onClick={() => setWeekOffset((v) => v - 1)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-300 transition hover:bg-white/10">←</button>
       <span className="min-w-[90px] text-center text-sm font-medium tabular-nums text-zinc-100">{weekLabel}</span>
       <button onClick={() => setWeekOffset((v) => v + 1)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-300 transition hover:bg-white/10">→</button>
-      <button onClick={() => setWeekOffset(() => 0)} disabled={weekOffset === 0} className="rounded-lg border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-xs text-teal-200 transition hover:bg-teal-500/20 disabled:opacity-40">本周</button>
+      <button onClick={() => setWeekOffset(() => 0)} disabled={weekOffset === 0} className="rounded-lg border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-xs text-teal-200 transition hover:bg-teal-500/20 disabled:opacity-40">{t("thisWeek")}</button>
     </div>
   );
 }
@@ -96,19 +99,20 @@ function WeekNav({ weekOffset, setWeekOffset }: { weekOffset: number; setWeekOff
 // ---------------------------------------------------------------------------
 
 function MonthNav({ monthOffset, setMonthOffset }: { monthOffset: number; setMonthOffset: (fn: (v: number) => number) => void }) {
+  const { locale, t } = useI18n();
   const targetMonth = useMemo(() => {
     const d = new Date();
     d.setDate(1);
     d.setMonth(d.getMonth() + monthOffset);
     return d;
   }, [monthOffset]);
-  const label = `${targetMonth.getFullYear()}年${targetMonth.getMonth() + 1}月`;
+  const label = new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(targetMonth);
   return (
     <div className="flex items-center gap-2">
       <button onClick={() => setMonthOffset((v) => v - 1)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-300 transition hover:bg-white/10">←</button>
       <span className="min-w-[80px] text-center text-sm font-medium text-zinc-100">{label}</span>
       <button onClick={() => setMonthOffset((v) => v + 1)} className="rounded-lg border border-white/10 px-2 py-1 text-xs text-zinc-300 transition hover:bg-white/10">→</button>
-      <button onClick={() => setMonthOffset(() => 0)} disabled={monthOffset === 0} className="rounded-lg border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-xs text-teal-200 transition hover:bg-teal-500/20 disabled:opacity-40">本月</button>
+      <button onClick={() => setMonthOffset(() => 0)} disabled={monthOffset === 0} className="rounded-lg border border-teal-500/40 bg-teal-500/10 px-2 py-1 text-xs text-teal-200 transition hover:bg-teal-500/20 disabled:opacity-40">{t("thisMonth")}</button>
     </div>
   );
 }
@@ -117,22 +121,20 @@ function MonthNav({ monthOffset, setMonthOffset }: { monthOffset: number; setMon
 // FilterBar
 // ---------------------------------------------------------------------------
 
-const FILTER_OPTIONS: { key: CalendarFilter; label: string }[] = [
-  { key: "all", label: "全部" },
-  { key: "created", label: "新增" },
-  { key: "completed", label: "完成" },
-];
+const FILTER_KEYS: CalendarFilter[] = ["all", "created", "completed"];
 
 function FilterBar({ filter, onChange }: { filter: CalendarFilter; onChange: (f: CalendarFilter) => void }) {
+  const { t } = useI18n();
+  const filterLabels: Record<CalendarFilter, string> = { all: t("all"), created: t("created"), completed: t("completed") };
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
-      {FILTER_OPTIONS.map((opt) => (
+      {FILTER_KEYS.map((key) => (
         <button
-          key={opt.key}
-          onClick={() => onChange(opt.key)}
-          className={`rounded-md px-3 py-1 text-xs font-medium transition ${filter === opt.key ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
+          key={key}
+          onClick={() => onChange(key)}
+          className={`rounded-md px-3 py-1 text-xs font-medium transition ${filter === key ? "bg-white/10 text-zinc-100 shadow-sm" : "text-zinc-400 hover:text-zinc-200"}`}
         >
-          {opt.label}
+          {filterLabels[key]}
         </button>
       ))}
     </div>
@@ -144,6 +146,7 @@ function FilterBar({ filter, onChange }: { filter: CalendarFilter; onChange: (f:
 // ---------------------------------------------------------------------------
 
 function WeekGrid({ items, weekOffset, filter, today }: { items: Item[]; weekOffset: number; filter: CalendarFilter; today: Date }) {
+  const { t } = useI18n();
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const weekHasData = useMemo(() => weekDays.some((date) => {
     const { created, completed } = getItemsForDay(items, date, "all");
@@ -153,8 +156,8 @@ function WeekGrid({ items, weekOffset, filter, today }: { items: Item[]; weekOff
   if (!weekHasData) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-6 py-12 text-center">
-        <p className="text-sm text-zinc-400">这一周没有任何任务记录</p>
-        <p className="mt-1 text-xs text-zinc-600">试试切换到其他周看看</p>
+        <p className="text-sm text-zinc-400">{t("noWeekRecords")}</p>
+        <p className="mt-1 text-xs text-zinc-600">{t("tryOtherWeek")}</p>
       </div>
     );
   }
@@ -187,6 +190,7 @@ function getMonthDays(monthOffset: number): Date[] {
 }
 
 function MonthGrid({ items, monthOffset, filter, today }: { items: Item[]; monthOffset: number; filter: CalendarFilter; today: Date }) {
+  const { locale, t } = useI18n();
   const monthDays = useMemo(() => getMonthDays(monthOffset), [monthOffset]);
 
   // 补齐前面的空格（让第一天对齐到正确的星期列）
@@ -201,8 +205,8 @@ function MonthGrid({ items, monthOffset, filter, today }: { items: Item[]; month
   if (!monthHasData) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-6 py-12 text-center">
-        <p className="text-sm text-zinc-400">这个月没有任何任务记录</p>
-        <p className="mt-1 text-xs text-zinc-600">试试切换到其他月看看</p>
+        <p className="text-sm text-zinc-400">{t("noMonthRecords")}</p>
+        <p className="mt-1 text-xs text-zinc-600">{t("tryOtherMonth")}</p>
       </div>
     );
   }
@@ -211,8 +215,8 @@ function MonthGrid({ items, monthOffset, filter, today }: { items: Item[]; month
     <div>
       {/* Weekday header */}
       <div className="mb-1 grid grid-cols-7 gap-1">
-        {["一", "二", "三", "四", "五", "六", "日"].map((d) => (
-          <div key={d} className="text-center text-[11px] text-zinc-500">周{d}</div>
+        {(locale === "zh-CN" ? ["一", "二", "三", "四", "五", "六", "日"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map((d) => (
+          <div key={d} className="text-center text-[11px] text-zinc-500">{locale === "zh-CN" ? `周${d}` : d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-1">
@@ -254,8 +258,9 @@ function MonthDayCell({ date, isToday, createdCount, completedCount, filter }: {
 function DayCell({ date, isToday, createdItems, completedItems, filter }: {
   date: Date; isToday: boolean; createdItems: Item[]; completedItems: Item[]; filter: CalendarFilter;
 }) {
+  const { locale, t } = useI18n();
   const dayLabel = formatDayLabel(date);
-  const weekdayLabel = getWeekDayLabel(date);
+  const weekdayLabel = locale === "zh-CN" ? `周${getWeekDayLabel(date)}` : new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
   const hasData = createdItems.length > 0 || completedItems.length > 0;
 
   const displayItems = useMemo(() => {
@@ -273,21 +278,21 @@ function DayCell({ date, isToday, createdItems, completedItems, filter }: {
       <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className={`text-sm font-medium ${isToday ? "text-teal-200" : "text-zinc-200"}`}>{dayLabel}</span>
-          <span className="text-[11px] text-zinc-500">周{weekdayLabel}</span>
+          <span className="text-[11px] text-zinc-500">{weekdayLabel}</span>
         </div>
-        {isToday && <span className="rounded-full bg-teal-400/20 px-1.5 py-0.5 text-[10px] font-medium text-teal-200">今天</span>}
+        {isToday && <span className="rounded-full bg-teal-400/20 px-1.5 py-0.5 text-[10px] font-medium text-teal-200">{t("todayMarker")}</span>}
       </div>
       {hasData && (
         <div className="mb-2 flex shrink-0 gap-2 text-[11px]">
-          {(filter === "all" || filter === "created") && createdItems.length > 0 && <span className="text-sky-300">+{createdItems.length} 新增</span>}
-          {(filter === "all" || filter === "completed") && completedItems.length > 0 && <span className="text-emerald-300">✓{completedItems.length} 完成</span>}
+          {(filter === "all" || filter === "created") && createdItems.length > 0 && <span className="text-sky-300">+{createdItems.length} {t("created")}</span>}
+          {(filter === "all" || filter === "completed") && completedItems.length > 0 && <span className="text-emerald-300">✓{completedItems.length} {t("completed")}</span>}
         </div>
       )}
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto scrollbar-thin">
         {displayItems.map(({ item, type }) => (
           <TaskRow key={`${item.id}-${type}`} item={item} type={type} />
         ))}
-        {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[11px] text-zinc-600">无记录</span></div>}
+        {!hasData && <div className="flex flex-1 items-center justify-center"><span className="text-[11px] text-zinc-600">{t("noRecords")}</span></div>}
       </div>
     </div>
   );

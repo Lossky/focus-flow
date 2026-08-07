@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { createPortal } from "react-dom";
 import type { BackupEntry } from "@/lib/persistence";
 import { useAnchoredMenu } from "@/hooks/use-anchored-menu";
@@ -59,6 +60,7 @@ export function ToolbarMenu({
   isSyncingObsidian,
   notionConfigComplete,
 }: ToolbarMenuProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuStyle = useAnchoredMenu(open, btnRef, { width: 220, gap: 4, align: "right", preferredHeight: 360 });
@@ -67,37 +69,37 @@ export function ToolbarMenu({
 
   const groups: MenuGroup[] = [
     {
-      label: "查看",
+      label: t("view"),
       items: [
-        { label: "日报", onClick: onShowReport },
-        { label: "项目管理", onClick: onShowProject },
-        { label: "标签管理", onClick: onShowTag },
-        { label: "完成历史", onClick: onShowHistory },
-        { label: "项目汇总", onClick: onShowSummary },
+        { label: t("report"), onClick: onShowReport },
+        { label: t("projectManagement"), onClick: onShowProject },
+        { label: t("tagManagement"), onClick: onShowTag },
+        { label: t("completedHistory"), onClick: onShowHistory },
+        { label: t("projectSummary"), onClick: onShowSummary },
       ],
     },
     {
-      label: "数据",
+      label: t("data"),
       items: [
-        { label: "导出备份", onClick: onExport },
-        { label: "导入备份", onClick: onImportClick },
-        { label: "创建磁盘备份", onClick: onBackup, tone: "green" },
-        { label: "同步 Obsidian 捕获台", onClick: () => onSyncObsidianCaptures?.(), tone: "green", disabled: !onSyncObsidianCaptures || isSyncingObsidian },
+        { label: t("exportBackup"), onClick: onExport },
+        { label: t("importBackup"), onClick: onImportClick },
+        { label: t("diskBackup"), onClick: onBackup, tone: "green" },
+        { label: t("syncObsidian"), onClick: () => onSyncObsidianCaptures?.(), tone: "green", disabled: !onSyncObsidianCaptures || isSyncingObsidian },
         ...(backupEntries.length > 0
-          ? [{ label: "恢复最近备份", onClick: () => onRestoreBackup(backupEntries[0].path), tone: "amber" as const }]
+          ? [{ label: t("restoreRecentBackup"), onClick: () => onRestoreBackup(backupEntries[0].path), tone: "amber" as const }]
           : []),
       ],
     },
     {
-      label: "设置",
+      label: t("settings"),
       items: [
-        { label: "Notion 设置", onClick: () => onShowNotionSettings?.() },
-        { label: "同步项目", onClick: () => onSyncProjects?.(), tone: "green", disabled: !notionConfigComplete || isSyncingProjects },
-        { label: "同步 Task", onClick: () => onSyncTasks?.(), tone: "green", disabled: !notionConfigComplete || isSyncingTasks },
-        { label: "复制数据路径", onClick: onCopyPath },
-        { label: "选择数据目录", onClick: onChooseDir },
-        { label: "恢复默认目录", onClick: onRestoreDefault },
-        { label: "重置所有数据", onClick: onReset, tone: "red" },
+        { label: t("notionSettings"), onClick: () => onShowNotionSettings?.() },
+        { label: t("syncProjects"), onClick: () => onSyncProjects?.(), tone: "green", disabled: !notionConfigComplete || isSyncingProjects },
+        { label: t("syncTasks"), onClick: () => onSyncTasks?.(), tone: "green", disabled: !notionConfigComplete || isSyncingTasks },
+        { label: t("copyDataPath"), onClick: onCopyPath },
+        { label: t("chooseDataDirectory"), onClick: onChooseDir },
+        { label: t("restoreDefaultDirectory"), onClick: onRestoreDefault },
+        { label: t("resetAllData"), onClick: onReset, tone: "red" },
       ],
     },
   ];
@@ -117,7 +119,7 @@ export function ToolbarMenu({
         className={`shrink-0 rounded-lg border px-2.5 py-1 text-[11px] transition ${open ? "border-white/20 bg-white/10 text-zinc-100" : "border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"}`}
       >
         <span className="flex items-center gap-1">
-          工具箱
+          {t("toolbox")}
           <svg className={`h-3 w-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
         </span>
       </button>

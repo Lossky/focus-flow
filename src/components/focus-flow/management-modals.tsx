@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { colors, formatTime, statusLabel, type Item, type Project, type TagDef, type Task } from "@/lib/focus-flow-model";
+import { useI18n } from "@/contexts/i18n-context";
+import { createPortal } from "react-dom";
+import { colors, formatTime, type Item, type Project, type TagDef, type Task } from "@/lib/focus-flow-model";
 import { LifecycleModal } from "./lifecycle-modal";
 import { Modal } from "./ui";
 
@@ -29,6 +31,7 @@ export function ProjectManagementModal({
   deleteProject: (projectId: string, migrateToProjectId?: string) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export function ProjectManagementModal({
   };
 
   return (
-    <Modal title="项目与 Task 管理" onClose={onClose} wide>
+    <Modal title={`${t("projectManagement")} · ${t("task")}`} onClose={onClose} wide>
       <div className="space-y-3">
         {projects.map((project) => {
           const projectTasks = tasks.filter(t => t.projectId === project.id);
@@ -90,7 +93,7 @@ export function ProjectManagementModal({
                         {project.notionPageId ? "Notion" : "本地"}
                       </span>
                       {projectTasks.length > 0 && (
-                        <span className="shrink-0 text-[10px] text-zinc-500">{projectTasks.length} task</span>
+                        <span className="shrink-0 text-[10px] text-zinc-500">{projectTasks.length} {t("task")}</span>
                       )}
                     </div>
                   )}
@@ -204,7 +207,8 @@ export function TagManagementModal({
 }
 
 export function ProjectSummaryModal({ projectSummary, onClose }: { projectSummary: ProjectSummary[]; onClose: () => void }) {
-  return <Modal title="项目任务汇总" onClose={onClose} wide><div className="space-y-6">{projectSummary.map(({ project, total, done, undone, items }) => <div key={project.id} className="rounded-xl border border-white/10 bg-zinc-950 p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} /><span className="font-medium">{project.name}</span></div><div className="flex gap-4 text-sm"><span className="text-zinc-400">总计 {total}</span><span className="text-green-400">已完成 {done}</span><span className="text-amber-400">未完成 {undone}</span></div></div><div className="mt-3 space-y-1">{items.map((item) => <div key={item.id} className={`flex items-center gap-2 text-sm ${item.status === "done" || item.status === "archived" ? "text-zinc-500 line-through" : "text-zinc-200"}`}><span>{item.status === "done" || item.status === "archived" ? "✓" : "○"}</span><span className="flex-1 truncate">{item.content}</span><span className="text-xs">{statusLabel[item.status]}</span></div>)}</div></div>)}</div></Modal>;
+  const { statusLabel } = useI18n();
+  return <Modal title="项目任务汇总" onClose={onClose} wide><div className="space-y-6">{projectSummary.map(({ project, total, done, undone, items }) => <div key={project.id} className="rounded-xl border border-white/10 bg-zinc-950 p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} /><span className="font-medium">{project.name}</span></div><div className="flex gap-4 text-sm"><span className="text-zinc-400">总计 {total}</span><span className="text-green-400">已完成 {done}</span><span className="text-amber-400">未完成 {undone}</span></div></div><div className="mt-3 space-y-1">{items.map((item) => <div key={item.id} className={`flex items-center gap-2 text-sm ${item.status === "done" || item.status === "archived" ? "text-zinc-500 line-through" : "text-zinc-200"}`}><span>{item.status === "done" || item.status === "archived" ? "✓" : "○"}</span><span className="flex-1 truncate">{item.content}</span><span className="text-xs">{statusLabel(item.status)}</span></div>)}</div></div>)}</div></Modal>;
 }
 
 export function ReportModal({
@@ -322,7 +326,10 @@ export function CompletedHistoryModal({
           </div>
         </details>
       )}
-      {lifecycleItem && <LifecycleModal item={lifecycleItem} onClose={() => setLifecycleItem(null)} />}
+      {lifecycleItem && typeof document !== "undefined" && createPortal(
+        <LifecycleModal item={lifecycleItem} onClose={() => setLifecycleItem(null)} />,
+        document.body,
+      )}
     </Modal>
   );
 }
@@ -336,19 +343,20 @@ export function RestReminderPanel({
   onTakeRest: () => void;
   onDismiss: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="fixed bottom-6 right-6 z-[70] w-[320px] rounded-2xl border border-amber-300/30 bg-zinc-950/95 p-4 shadow-2xl shadow-black/40 backdrop-blur">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/70">Rest Reminder</p>
+      <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/70">{t("restReminder")}</p>
       <h3 className="mt-1 text-lg font-semibold text-zinc-50">该休息一下了</h3>
       <p className="mt-2 text-sm leading-6 text-zinc-400">
         {taskContent ? `这轮专注已经结束，先离开一下：${taskContent}` : "你已经完成了一轮专注，先去休息一下吧。"}
       </p>
       <div className="mt-4 flex gap-2">
         <button onClick={onTakeRest} className="rounded-xl bg-amber-200 px-3 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-100">
-          我去休息
+          {t("takeRest")}
         </button>
         <button onClick={onDismiss} className="rounded-xl border border-white/10 px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/10">
-          稍后
+          {t("later")}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { DEFAULT_TASK_ID, DEFAULT_TASK_NAME, parseTaskInput, priorityTone, type ItemSource, type Priority, type Project, type RepeatType, type TagDef, type Task } from "@/lib/focus-flow-model";
 import { Select } from "./ui";
 
@@ -11,6 +12,7 @@ type AddItemsHook = (value: string, options: {
   projectId: string;
   tags: string[];
   repeatType: RepeatType;
+  statusOverride?: "inbox";
   taskId?: string;
 }) => { parsedTasks: { content: string; depth: number; parentIndex?: number }[]; next: unknown[] };
 
@@ -33,6 +35,7 @@ export function QuickCapture({
   textareaRef,
   showToast,
 }: QuickCaptureProps) {
+  const { t, sourceLabel, repeatLabel, priorityShortLabel } = useI18n();
   const [input, setInput] = useState("");
   const [source, setSource] = useState<ItemSource>("manual");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -71,6 +74,7 @@ export function QuickCapture({
       projectId: selectedProject,
       tags: selectedTags,
       repeatType,
+      statusOverride: "inbox",
       taskId: selectedTaskId === DEFAULT_TASK_ID ? undefined : selectedTaskId,
     });
     setInput("");
@@ -101,10 +105,11 @@ export function QuickCapture({
     <section className="rounded-[1.5rem] border border-teal-300/20 bg-teal-950/[0.18] p-4 shadow-2xl shadow-black/20 backdrop-blur">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-teal-200">Capture</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">快速录入</h2>
-          <p className="mt-1 text-sm leading-5 text-zinc-400">先收进来，稍后判断。⌘K 聚焦，⌘Enter 加入。</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-teal-200">{t("captureLabel")}</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">{t("capture")}</h2>
+          <p className="mt-1 text-sm leading-5 text-zinc-400">{t("inbox")} · {t("inboxHint")} ⌘K / ⌘Enter</p>
         </div>
+        <span className="rounded-full border border-teal-300/30 bg-teal-300/10 px-2.5 py-1 text-[11px] font-medium text-teal-100">{t("inbox")}</span>
       </div>
 
       {/* Quick settings row — always visible */}
@@ -112,7 +117,7 @@ export function QuickCapture({
         <Field label="项目">
           <Select value={selectedProject} onChange={(event) => { setSelectedProject(event.target.value); setSelectedTaskId(DEFAULT_TASK_ID); }} options={projects.map((project) => [project.id, project.name])} />
         </Field>
-        <Field label="Task">
+        <Field label={t("task")}>
           <Select value={selectedTaskId} onChange={(event) => setSelectedTaskId(event.target.value)} options={[[DEFAULT_TASK_ID, DEFAULT_TASK_NAME], ...tasksForProject.map((t): [string, string] => [t.id, t.name])]} />
         </Field>
         <Field label="优先级">
@@ -148,7 +153,7 @@ export function QuickCapture({
           <span className={canAdd ? "text-teal-200" : ""}>{canAdd ? `${pendingTasks.length} 条待收` : "输入后预览拆分"}</span>
           {hasHierarchy && <span className="text-sky-300">多级任务</span>}
           {pendingTasks.length > 1 && !hasHierarchy && <span className="text-emerald-300">多任务</span>}
-          <span className={`font-medium ${priorityMeta.summaryClass}`}>P{priorityMeta.label}</span>
+          <span className={`font-medium ${priorityMeta.summaryClass}`}>P{priorityShortLabel(priority)}</span>
           {selectedTags.map((tag) => <span key={tag}>#{tag}</span>)}
           {canConvertToHierarchy && (
             <button
@@ -160,7 +165,7 @@ export function QuickCapture({
           )}
         </div>
         <button onClick={addItems} disabled={!canAdd} className="rounded-xl bg-teal-200 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-lg shadow-teal-950/30 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500 disabled:shadow-none">
-          收进系统
+          收进 Inbox
         </button>
       </div>
 
@@ -189,10 +194,10 @@ export function QuickCapture({
         </summary>
         <div className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2">
           <Field label="来源">
-            <Select value={source} onChange={(event) => setSource(event.target.value as ItemSource)} options={[["manual", "手动"], ["feishu", "飞书"], ["ai", "AI"], ["obsidian", "Obsidian"], ["doc", "文档"], ["other", "其他"]]} />
+            <Select value={source} onChange={(event) => setSource(event.target.value as ItemSource)} options={["manual", "feishu", "ai", "obsidian", "doc", "other"].map((key) => [key, sourceLabel(key as ItemSource)])} />
           </Field>
           <Field label="重复">
-            <Select value={repeatType} onChange={(event) => setRepeatType(event.target.value as RepeatType)} options={[["none", "不重复"], ["daily", "每日"], ["weekly", "每周"]]} />
+            <Select value={repeatType} onChange={(event) => setRepeatType(event.target.value as RepeatType)} options={["none", "daily", "weekly"].map((key) => [key, repeatLabel(key as RepeatType)])} />
           </Field>
         </div>
         <div className="mt-3 border-t border-white/10 pt-3">

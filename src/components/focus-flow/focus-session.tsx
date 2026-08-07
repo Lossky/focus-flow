@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState, useMemo } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { formatSeconds, parseTaskInput, POMODORO_SECONDS, type Item, type PomodoroState, type Project } from "@/lib/focus-flow-model";
 import { PixelHeart } from "./pixel-art";
 
@@ -25,6 +26,7 @@ export const FocusSession = memo(function FocusSession({
   completeFocusItem,
   addFocusCaptureItems,
 }: FocusSessionProps) {
+  const { t } = useI18n();
   const [focusCaptureInput, setFocusCaptureInput] = useState("");
   const focusCaptureInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [breathScale, setBreathScale] = useState(1);
@@ -144,7 +146,7 @@ export const FocusSession = memo(function FocusSession({
           <aside className="rounded-2xl border border-white/10 bg-black/25 p-4 shadow-xl shadow-black/20 backdrop-blur-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">Capture</p>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">{t("captureLabel")}</p>
                 <h3 className="mt-1 text-lg font-semibold text-zinc-50">先记下来</h3>
                 <p className="mt-1 text-sm leading-5 text-zinc-400">想到新任务时，先丢进 Inbox，不打断当前这轮专注。</p>
               </div>

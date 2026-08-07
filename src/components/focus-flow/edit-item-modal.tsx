@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { DEFAULT_TASK_ID, DEFAULT_TASK_NAME, formatRelativeTime, formatTime, statusLabel, type Item, type ItemHistoryEntry, type ItemHistoryType, type ItemStatus, type Priority, type Project, type RepeatType, type TagDef, type Task } from "@/lib/focus-flow-model";
+import { useI18n } from "@/contexts/i18n-context";
+import { DEFAULT_TASK_ID, DEFAULT_TASK_NAME, formatRelativeTime, formatTime, type Item, type ItemHistoryEntry, type ItemHistoryType, type ItemStatus, type Priority, type Project, type RepeatType, type TagDef, type Task } from "@/lib/focus-flow-model";
 import { Modal, Select } from "./ui";
 
 type EditItemModalProps = {
@@ -14,6 +15,7 @@ type EditItemModalProps = {
 };
 
 export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSave }: EditItemModalProps) {
+  const { t, statusLabel } = useI18n();
   const [draft, setDraft] = useState<Item>(item);
 
   const tasksForProject = useMemo(() => tasks.filter((t) => t.projectId === (draft.projectId || "default")), [tasks, draft.projectId]);
@@ -28,7 +30,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
     <Modal title="编辑任务" onClose={onClose} wide>
       <div className="space-y-4">
         <label className="space-y-1">
-          <span className="block text-xs text-zinc-400">任务内容</span>
+          <span className="block text-xs text-zinc-400">{t("title")}</span>
           <textarea
             value={draft.content}
             onChange={(event) => setDraft({ ...draft, content: event.target.value })}
@@ -37,7 +39,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
         </label>
 
         <label className="space-y-1">
-          <span className="block text-xs text-zinc-400">目标产出物</span>
+          <span className="block text-xs text-zinc-400">{t("output")}</span>
           <textarea
             value={draft.output || ""}
             onChange={(event) => setDraft({ ...draft, output: event.target.value || undefined })}
@@ -48,7 +50,7 @@ export function EditItemModal({ item, projects, tags, tasks = [], onClose, onSav
 
         <div className="grid gap-3 md:grid-cols-4">
           <Select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value as Priority })} options={[["high", "高"], ["medium", "中"], ["low", "低"]]} />
-          <Select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ItemStatus })} options={Object.entries(statusLabel)} />
+          <Select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ItemStatus })} options={(["inbox", "today", "blocked", "shelved", "done", "archived"] as ItemStatus[]).map((status) => [status, statusLabel(status)])} />
           <Select value={draft.projectId || "default"} onChange={(event) => setDraft({ ...draft, projectId: event.target.value, taskId: undefined })} options={projects.map((project) => [project.id, project.name])} />
           <Select value={currentTaskId} onChange={(event) => setDraft({ ...draft, taskId: event.target.value === DEFAULT_TASK_ID ? undefined : event.target.value })} options={[[DEFAULT_TASK_ID, DEFAULT_TASK_NAME], ...tasksForProject.map((t): [string, string] => [t.id, t.name])]} />
         </div>
@@ -212,6 +214,7 @@ const HISTORY_TYPE_META: Record<ItemHistoryType, { label: string; color: string;
 const COLLAPSED_COUNT = 5;
 
 function ItemTimeline({ item }: { item: Item }) {
+  const { statusLabel } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const history = item.history || [];
 
@@ -245,7 +248,7 @@ function ItemTimeline({ item }: { item: Item }) {
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
                 <span className="text-xs text-zinc-400">
-                  {formatHistoryDescription(entry)}
+                  {formatHistoryDescription(entry, statusLabel)}
                 </span>
               </div>
               <div className="mt-0.5 flex items-center gap-2 text-[11px] text-zinc-600" title={formatTime(entry.at)}>
@@ -278,13 +281,13 @@ function ItemTimeline({ item }: { item: Item }) {
   );
 }
 
-function formatHistoryDescription(entry: ItemHistoryEntry): string {
+function formatHistoryDescription(entry: ItemHistoryEntry, statusLabel: (status: ItemStatus) => string): string {
   if (entry.type === "created") {
-    return entry.to ? `进入 ${statusLabel[entry.to]}` : "";
+    return entry.to ? `进入 ${statusLabel(entry.to)}` : "";
   }
   if (entry.type === "status_changed" || entry.type === "completed" || entry.type === "archived") {
-    if (entry.from && entry.to) return `${statusLabel[entry.from]} → ${statusLabel[entry.to]}`;
-    if (entry.to) return `→ ${statusLabel[entry.to]}`;
+    if (entry.from && entry.to) return `${statusLabel(entry.from)} → ${statusLabel(entry.to)}`;
+    if (entry.to) return `→ ${statusLabel(entry.to)}`;
     return "";
   }
   if (entry.type === "merged") {

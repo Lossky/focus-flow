@@ -1,6 +1,6 @@
 {
   "name": "focus-flow",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "private": false,
   "description": "Local-first macOS task flow app built with Next.js and Tauri.",
   "scripts": {

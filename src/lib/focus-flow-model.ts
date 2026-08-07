@@ -544,7 +544,7 @@ export function classifyInput(text: string): NonNullable<Item["aiSuggestion"]> {
   const noteWords = ["想法", "灵感", "记录", "备忘"];
   const highWords = ["今天", "尽快", "马上", "必须"];
   if (draftWords.some((word) => value.includes(word))) return { type: "draft", status: "inbox", reason: "检测到草稿/纪要类关键词，先进入 Inbox 判断。" };
-  if (taskWords.some((word) => value.includes(word)) || lower.includes("todo")) return { type: "task", status: highWords.some((word) => value.includes(word)) ? "today" : "inbox", reason: highWords.some((word) => value.includes(word)) ? "带有时效信号，建议今天处理。" : "先进入 Inbox，后续再手动分流到 Today / Batch。" };
+  if (taskWords.some((word) => value.includes(word)) || lower.includes("todo")) return { type: "task", status: highWords.some((word) => value.includes(word)) ? "today" : "inbox", reason: highWords.some((word) => value.includes(word)) ? "带有时效信号，建议今天处理。" : "先进入 Inbox，后续再手动分流到 Today / 搁置。" };
   if (noteWords.some((word) => value.includes(word))) return { type: "note", status: "archived", reason: "更像记录，不建议直接进入待办。" };
   return { type: "candidate", status: "inbox", reason: "暂时无法确定，先作为候选项进入 Inbox。" };
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus } from "@/lib/focus-flow-model";
 import { ItemCard, getActiveDragId } from "./item-card";
 import { EmptyState } from "./ui";
@@ -22,6 +23,7 @@ export function TodayMainline({
   collapsedTaskIds,
   toggleCollapsedTask,
 }: TodayMainlineProps) {
+  const { t } = useI18n();
   const todayItems = items.filter((item) => item.status === "today");
   const visibleTodayItems = filterVisibleTreeItems(todayItems, new Set(collapsedTaskIds));
   const itemById = new Map(items.map((item) => [item.id, item]));
@@ -42,12 +44,12 @@ export function TodayMainline({
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-amber-200">Mainline</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-amber-100">Today 主线</h2>
-          <p className="mt-1 text-sm leading-6 text-amber-100/70">今天真正要推进的任务，只保留最重要的 1 到 3 个。</p>
+          <p className="text-xs uppercase tracking-[0.24em] text-amber-200">{t("mainline")}</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-amber-100">{t("todayMainline")}</h2>
+          <p className="mt-1 text-sm leading-6 text-amber-100/70">{t("todayMainlineHint")}</p>
           {todayLoadWarning && <p className="mt-3 rounded-xl border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-xs text-orange-100">{todayLoadWarning}</p>}
         </div>
-        <span className="rounded-full border border-amber-300/30 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">{todayItems.length} 条</span>
+        <span className="rounded-full border border-amber-300/30 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">{t("itemCount", { count: todayItems.length })}</span>
       </div>
       <div className="space-y-2 stagger-children">
         {visibleTodayItems.length === 0 ? (

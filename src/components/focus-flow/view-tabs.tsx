@@ -1,14 +1,8 @@
 import { memo } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import type { ViewMode } from "@/lib/focus-flow-model";
 
 type ViewTab = { key: ViewMode; label: string };
-
-const TABS: ViewTab[] = [
-  { key: "flow", label: "分流处理" },
-  { key: "board", label: "项目总览" },
-  { key: "calendar", label: "日历视图" },
-  { key: "quadrant", label: "四象限" },
-];
 
 type ViewTabsProps = {
   active: ViewMode;
@@ -16,9 +10,16 @@ type ViewTabsProps = {
 };
 
 export const ViewTabs = memo(function ViewTabs({ active, onChange }: ViewTabsProps) {
+  const { t } = useI18n();
+  const tabs: ViewTab[] = [
+    { key: "flow", label: t("flow") },
+    { key: "board", label: t("board") },
+    { key: "calendar", label: t("calendar") },
+    { key: "quadrant", label: t("quadrant") },
+  ];
   return (
     <div className="mb-4 flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1 w-fit">
-      {TABS.map((tab) => (
+      {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}

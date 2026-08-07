@@ -1,6 +1,9 @@
 "use client";
 
-import { formatRelativeTime, formatTime, statusLabel, type Item, type ItemHistoryType } from "@/lib/focus-flow-model";
+import { useId, useRef } from "react";
+import { useI18n } from "@/contexts/i18n-context";
+import { type Item, type ItemHistoryType, type ItemStatus } from "@/lib/focus-flow-model";
+import { useModalBehavior } from "./ui";
 
 const TIMELINE_META: Record<ItemHistoryType, { label: string; color: string; dotClass: string; icon: string }> = {
   created: { label: "创建", color: "text-sky-300", dotClass: "bg-sky-400", icon: "＋" },
@@ -17,6 +20,10 @@ type LifecycleModalProps = {
 };
 
 export function LifecycleModal({ item, onClose }: LifecycleModalProps) {
+  const { locale, t, statusLabel, formatTime, formatRelativeTime } = useI18n();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalBehavior(panelRef, onClose);
   const history = item.history || [];
   const sorted = [...history].reverse();
 
@@ -24,29 +31,29 @@ export function LifecycleModal({ item, onClose }: LifecycleModalProps) {
   const createdDate = new Date(item.createdAt);
   const now = new Date();
   const ageDays = Math.max(0, Math.floor((now.getTime() - createdDate.getTime()) / 86400000));
-  const ageLabel = ageDays === 0 ? "今天创建" : `已存在 ${ageDays} 天`;
+  const ageLabel = ageDays === 0 ? t("today") : locale === "zh-CN" ? `已存在 ${ageDays} 天` : `${ageDays} days old`;
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/70 p-4 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-label="任务生命周期"
+      aria-labelledby={titleId}
     >
-      <div className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl outline-none scrollbar-thin">
+      <div ref={panelRef} tabIndex={-1} className="mx-4 max-h-[80vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl outline-none scrollbar-thin">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">任务生命周期</h3>
-          <button onClick={onClose} className="text-sm text-zinc-400 transition hover:text-zinc-200">关闭</button>
+          <h3 id={titleId} className="text-lg font-semibold">{t("lifecycle")}</h3>
+          <button onClick={onClose} className="text-sm text-zinc-400 transition hover:text-zinc-200">{t("close")}</button>
         </div>
       {/* 任务摘要 */}
       <div className="mb-4 rounded-xl border border-white/10 bg-zinc-950/80 p-4">
         <p className="text-sm font-medium text-zinc-100">{item.content}</p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
-          <span>状态：<strong className="text-zinc-200">{statusLabel[item.status]}</strong></span>
+          <span>{t("status")}：<strong className="text-zinc-200">{statusLabel(item.status)}</strong></span>
           <span>{ageLabel}</span>
-          <span>创建于 {formatTime(item.createdAt)}</span>
-          {item.completedAt && <span className="text-emerald-400">完成于 {formatTime(item.completedAt)}</span>}
+          <span>{locale === "zh-CN" ? "创建于" : "Created"} {formatTime(item.createdAt)}</span>
+          {item.completedAt && <span className="text-emerald-400">{t("completedAt")} {formatTime(item.completedAt)}</span>}
         </div>
       </div>
 
@@ -66,7 +73,7 @@ export function LifecycleModal({ item, onClose }: LifecycleModalProps) {
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                     <span className={`text-sm font-medium ${meta.color}`}>{meta.label}</span>
                     <span className="text-sm text-zinc-300">
-                      {formatDescription(entry)}
+                      {formatDescription(entry, statusLabel)}
                     </span>
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
@@ -84,8 +91,8 @@ export function LifecycleModal({ item, onClose }: LifecycleModalProps) {
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-white/10 bg-zinc-950/40 px-4 py-8 text-center">
-          <p className="text-sm text-zinc-400">暂无流转记录</p>
-          <p className="mt-1 text-xs text-zinc-600">老任务可能未记录历史，后续操作会自动追踪</p>
+          <p className="text-sm text-zinc-400">{t("noRecords")}</p>
+          <p className="mt-1 text-xs text-zinc-600">{locale === "zh-CN" ? "老任务可能未记录历史，后续操作会自动追踪" : "Older tasks may have no history; future actions will be tracked automatically."}</p>
         </div>
       )}
       </div>
@@ -93,13 +100,13 @@ export function LifecycleModal({ item, onClose }: LifecycleModalProps) {
   );
 }
 
-function formatDescription(entry: { type: string; from?: string; to?: string; note?: string }): string {
+function formatDescription(entry: { type: string; from?: string; to?: string; note?: string }, statusLabel: (status: ItemStatus) => string): string {
   if (entry.type === "created") {
-    return entry.to ? `进入 ${statusLabel[entry.to as keyof typeof statusLabel]}` : "";
+    return entry.to ? `进入 ${statusLabel(entry.to as ItemStatus)}` : "";
   }
   if (entry.type === "status_changed" || entry.type === "completed" || entry.type === "archived") {
-    const from = entry.from ? statusLabel[entry.from as keyof typeof statusLabel] : "";
-    const to = entry.to ? statusLabel[entry.to as keyof typeof statusLabel] : "";
+    const from = entry.from ? statusLabel(entry.from as ItemStatus) : "";
+    const to = entry.to ? statusLabel(entry.to as ItemStatus) : "";
     if (from && to) return `${from} → ${to}`;
     if (to) return `→ ${to}`;
     return "";

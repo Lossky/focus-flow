@@ -1,6 +1,9 @@
-import { useState } from "react";
-import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, statusLabel, type Item, type ItemStatus, type Project } from "@/lib/focus-flow-model";
-import { ItemCard, getActiveDragId } from "./item-card";
+import { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
+import { useI18n } from "@/contexts/i18n-context";
+import { usePointerDrag } from "@/hooks/use-pointer-drag";
+import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus, type Project } from "@/lib/focus-flow-model";
+import { ItemCard } from "./item-card";
 
 export type FlowSection = { key: ItemStatus; title: string; hint: string };
 
@@ -23,11 +26,16 @@ export function FlowView({
   collapsedTaskIds,
   toggleCollapsedTask,
 }: FlowViewProps) {
+  const { t } = useI18n();
   const itemById = new Map(items.map((item) => [item.id, item]));
   const childCounts = buildChildCountMap(items);
   const collapsedSet = new Set(collapsedTaskIds);
-  const [dragOverLane, setDragOverLane] = useState<ItemStatus | null>(null);
   const [shelvedOpen, setShelvedOpen] = useState(false);
+  const handleDrop = useCallback((id: string, zoneKey: string) => {
+    const status = ["inbox", "blocked", "shelved"].includes(zoneKey) ? zoneKey as ItemStatus : undefined;
+    if (status) moveItem(id, status);
+  }, [moveItem]);
+  const { drag, beginDrag } = usePointerDrag({ onDrop: handleDrop });
 
   // 日常视野只有 Inbox + 阻塞；搁置是收纳抽屉，默认折叠
   const laneSections = sections.filter((s) => s.key === "inbox" || s.key === "blocked");
@@ -46,29 +54,22 @@ export function FlowView({
       onToggleChildren={toggleCollapsedTask}
       isFocusMode={isFocusMode}
       isPomodoroActive={activePomodoroTaskId === item.id}
+      onPointerDown={(event) => beginDrag(item.id, item.content, event)}
     />
   );
 
   return (
     <section className="space-y-4">
-      <p className="text-sm text-zinc-500">Inbox 是待判断的入口，阻塞区放等别人的事。拖拽卡片可以在区块间移动。</p>
+      <p className="text-sm text-zinc-500">{t("flowHint")}</p>
       <div className="grid gap-4 xl:grid-cols-2">
         {laneSections.map((section) => {
           const sectionItems = items.filter((item) => item.status === section.key);
           const visibleSectionItems = filterVisibleTreeItems(sectionItems, collapsedSet);
-          const isDragOver = dragOverLane === section.key;
           return (
             <div
               key={section.key}
-              className={`rounded-2xl border p-4 transition-colors duration-200 ${isDragOver ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/60"}`}
-              onDragOver={(e) => { e.preventDefault(); setDragOverLane(section.key); }}
-              onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setDragOverLane(null); }}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOverLane(null);
-                const draggedId = e.dataTransfer.getData("text/plain") || getActiveDragId();
-                if (draggedId) moveItem(draggedId, section.key);
-              }}
+              data-drop-zone={section.key}
+              className={`rounded-2xl border p-4 transition-colors duration-200 ${drag?.overKey === section.key ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/60"}`}
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
@@ -79,8 +80,8 @@ export function FlowView({
               </div>
               <div className="space-y-2 stagger-children">
                 {visibleSectionItems.length === 0 ? (
-                  <div className={`rounded-xl border border-dashed px-4 py-5 text-center text-sm ${isDragOver ? "border-amber-400/40 text-amber-200/70" : "border-white/10 text-zinc-500"}`}>
-                    {isDragOver ? "松开放到这里" : "这里还没有内容。"}
+                  <div className={`rounded-xl border border-dashed px-4 py-5 text-center text-sm ${drag?.overKey === section.key ? "border-amber-400/40 text-amber-200/70" : "border-white/10 text-zinc-500"}`}>
+                    {drag?.overKey === section.key ? "松开放到这里" : "这里还没有内容。"}
                   </div>
                 ) : (
                   visibleSectionItems.map(renderCard)
@@ -94,15 +95,8 @@ export function FlowView({
       {/* 搁置抽屉：默认折叠，不占日常视野 */}
       {shelvedSection && (
         <div
-          className={`rounded-2xl border transition-colors duration-200 ${dragOverLane === "shelved" ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/40"}`}
-          onDragOver={(e) => { e.preventDefault(); setDragOverLane("shelved"); }}
-          onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setDragOverLane(null); }}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOverLane(null);
-            const draggedId = e.dataTransfer.getData("text/plain") || getActiveDragId();
-            if (draggedId) moveItem(draggedId, "shelved");
-          }}
+          data-drop-zone="shelved"
+          className={`rounded-2xl border transition-colors duration-200 ${drag?.overKey === "shelved" ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/40"}`}
         >
           <button
             onClick={() => setShelvedOpen((v) => !v)}
@@ -116,7 +110,7 @@ export function FlowView({
               </div>
             </div>
             <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-zinc-400">
-              {dragOverLane === "shelved" ? "松开搁置" : `${shelvedItems.length} 条`}
+              {drag?.overKey === "shelved" ? "松开搁置" : `${shelvedItems.length} 条`}
             </span>
           </button>
           {shelvedOpen && (
@@ -132,11 +126,22 @@ export function FlowView({
           )}
         </div>
       )}
+
+      {drag && createPortal(
+        <div
+          className="pointer-events-none fixed z-[999] max-w-[240px] truncate rounded-lg border border-white/20 bg-zinc-800/95 px-2.5 py-1.5 text-xs text-zinc-100 shadow-2xl"
+          style={{ left: drag.x + 12, top: drag.y + 12 }}
+        >
+          {drag.label}
+        </div>,
+        document.body,
+      )}
     </section>
   );
 }
 
 export function ProjectOverview({ items, projects }: { items: Item[]; projects: Project[] }) {
+  const { t, statusLabel } = useI18n();
   // Include all items (open + done) for progress calculation
   const allItems = items;
 
@@ -164,7 +169,7 @@ export function ProjectOverview({ items, projects }: { items: Item[]; projects: 
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: project.color }} />
                   <h3 className="text-base font-semibold">{project.name}</h3>
                 </div>
-                <span className="text-xs tabular-nums text-zinc-400">{done}/{total} 完成</span>
+                <span className="text-xs tabular-nums text-zinc-400">{done}/{total} {t("completed")}</span>
               </div>
 
               {/* Progress bar */}
@@ -177,10 +182,10 @@ export function ProjectOverview({ items, projects }: { items: Item[]; projects: 
               <div className="mt-1.5 flex items-center justify-between text-[11px]">
                 <span style={{ color: project.color }}>{pct}%</span>
                 <div className="flex gap-2 text-zinc-500">
-                  {todayCount > 0 && <span>Today {todayCount}</span>}
-                  {inboxCount > 0 && <span>Inbox {inboxCount}</span>}
-                  {blockedCount > 0 && <span className="text-red-300/70">阻塞 {blockedCount}</span>}
-                  {shelvedCount > 0 && <span>搁置 {shelvedCount}</span>}
+                  {todayCount > 0 && <span>{t("today")} {todayCount}</span>}
+                  {inboxCount > 0 && <span>{t("inbox")} {inboxCount}</span>}
+                  {blockedCount > 0 && <span className="text-red-300/70">{t("blocked")} {blockedCount}</span>}
+                  {shelvedCount > 0 && <span>{t("shelved")} {shelvedCount}</span>}
                 </div>
               </div>
 
@@ -193,9 +198,9 @@ export function ProjectOverview({ items, projects }: { items: Item[]; projects: 
                       <div className="min-w-0 flex-1">
                         <span className={`leading-5 ${task.isMainline ? "font-medium text-amber-100" : "text-zinc-200"}`}>{task.content}</span>
                         <div className="flex gap-2 text-[10px] text-zinc-500">
-                          <span>{statusLabel[task.status]}</span>
-                          {task.isMainline && <span className="text-amber-300">主线</span>}
-                          {task.dueDate && <span>截止 {task.dueDate}</span>}
+                          <span>{statusLabel(task.status)}</span>
+                          {task.isMainline && <span className="text-amber-300">{t("mainline")}</span>}
+                          {task.dueDate && <span>{t("due")} {task.dueDate}</span>}
                         </div>
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import type { NotionConfig } from "@/lib/notion-config";
 import { Modal } from "./ui";
 
@@ -11,6 +12,7 @@ type NotionSettingsModalProps = {
 };
 
 export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSettingsModalProps) {
+  const { t } = useI18n();
   const [apiKey, setApiKey] = useState(initialConfig?.apiKey ?? "");
   const [projectsDbId, setProjectsDbId] = useState(initialConfig?.projectsDbId ?? "");
   const [tasksDbId, setTasksDbId] = useState(initialConfig?.tasksDbId ?? "");
@@ -26,7 +28,7 @@ export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSe
     <Modal title="Notion 设置" onClose={onClose}>
       <div className="space-y-4">
         <label className="space-y-1">
-          <span className="block text-xs text-zinc-400">Notion API Key</span>
+          <span className="block text-xs text-zinc-400">{t("notionApiKey")}</span>
           <input
             type="password"
             value={apiKey}
@@ -37,7 +39,7 @@ export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSe
         </label>
 
         <label className="space-y-1">
-          <span className="block text-xs text-zinc-400">Projects 数据库 ID</span>
+          <span className="block text-xs text-zinc-400">{t("projectsDatabase")}</span>
           <input
             type="text"
             value={projectsDbId}
@@ -48,7 +50,7 @@ export function NotionSettingsModal({ onClose, onSave, initialConfig }: NotionSe
         </label>
 
         <label className="space-y-1">
-          <span className="block text-xs text-zinc-400">Tasks 数据库 ID</span>
+          <span className="block text-xs text-zinc-400">{t("tasksDatabase")}</span>
           <input
             type="text"
             value={tasksDbId}

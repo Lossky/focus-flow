@@ -1,4 +1,5 @@
-import { memo, useEffect, useRef, type ChangeEventHandler, type ReactNode } from "react";
+import { memo, useEffect, useId, useRef, type ChangeEventHandler, type ReactNode, type RefObject } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { PixelCat } from "./pixel-art";
 
 type SelectProps = {
@@ -60,41 +61,94 @@ export function MiniTag({ children, color }: { children: ReactNode; color?: stri
   );
 }
 
-export function Modal({ title, children, onClose, wide = false }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean }) {
-  const panelRef = useRef<HTMLDivElement>(null);
+const modalStack: symbol[] = [];
+let bodyLockCount = 0;
+let previousBodyOverflow = "";
+
+/** 统一管理弹窗层级、焦点、Escape 和背景滚动，避免嵌套弹窗互相关闭。 */
+export function useModalBehavior(panelRef: RefObject<HTMLDivElement | null>, onClose: () => void) {
+  const modalIdRef = useRef<symbol | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  if (!modalIdRef.current) modalIdRef.current = Symbol("modal");
 
   useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+    const modalId = modalIdRef.current;
+    if (!modalId) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    modalStack.push(modalId);
+    if (bodyLockCount === 0) {
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    bodyLockCount += 1;
+
+    const focusPanel = () => panelRef.current?.focus();
+    focusPanel();
+    const focusables = () => Array.from(panelRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ) || []).filter((element) => element.offsetParent !== null);
+    const isTopModal = () => modalStack[modalStack.length - 1] === modalId;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isTopModal()) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusables();
+      if (!elements.length) {
+        event.preventDefault();
+        focusPanel();
+        return;
+      }
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey ? active === first || active === panelRef.current : active === last) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
 
-  // Focus trap: focus the panel on mount
-  useEffect(() => {
-    panelRef.current?.focus();
-  }, []);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      const index = modalStack.indexOf(modalId);
+      if (index !== -1) modalStack.splice(index, 1);
+      bodyLockCount = Math.max(0, bodyLockCount - 1);
+      if (bodyLockCount === 0) document.body.style.overflow = previousBodyOverflow;
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, [panelRef]);
+}
+
+export function Modal({ title, children, onClose, wide = false }: { title: string; children: ReactNode; onClose: () => void; wide?: boolean }) {
+  const { t } = useI18n();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useModalBehavior(panelRef, onClose);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-labelledby={titleId}
     >
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900 p-6 outline-none`}
+        className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[80vh] overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-zinc-900 p-6 outline-none`}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{title}</h3>
+          <h3 id={titleId} className="text-lg font-semibold">{title}</h3>
           <button onClick={onClose} className="text-sm text-zinc-400 transition hover:text-zinc-200">
-            关闭
+            {t("close")}
           </button>
         </div>
         {children}

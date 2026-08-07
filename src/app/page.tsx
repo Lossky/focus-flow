@@ -38,22 +38,24 @@ import { useNotionSync } from "@/hooks/use-notion-sync";
 import { usePomodoro } from "@/hooks/use-pomodoro";
 import { useDataActions } from "@/hooks/use-data-actions";
 import { useDebouncedValue } from "@/hooks/use-debounce";
+import { useI18n } from "@/contexts/i18n-context";
 
 const COLLAPSED_TASK_IDS_KEY = "focus-flow-collapsed-task-ids-v2";
-const APP_VERSION = "0.1.26";
-
-const SECTIONS: FlowSection[] = [
-  { key: "inbox", title: "Inbox 分流台", hint: "所有新输入先在这里判断，不急着做。" },
-  { key: "today", title: "Today 主线", hint: "今天真正要推进的事情，尽量控制在 1 到 3 个。" },
-  { key: "blocked", title: "阻塞中", hint: "等别人响应，自己推不动。定期回来催进度。" },
-  { key: "shelved", title: "搁置", hint: "暂时不确定要不要继续，先冷藏不占视野。" },
-];
+const APP_VERSION = "0.1.27";
 
 // ---------------------------------------------------------------------------
 // Home component
 // ---------------------------------------------------------------------------
 
 export default function Home() {
+  const { locale, toggleLocale, t } = useI18n();
+  const sections: FlowSection[] = [
+    { key: "inbox", title: `${t("inbox")} · 分流台`, hint: t("inboxHint") },
+    { key: "today", title: t("todayMainline"), hint: t("todayMainlineHint") },
+    { key: "blocked", title: t("blocked"), hint: t("blockedHint") },
+    { key: "shelved", title: t("shelved"), hint: t("shelvedHint") },
+  ];
+
   // --- UI state ---
   const [searchText, setSearchText] = useState("");
   const [filterTag, setFilterTag] = useState("all");
@@ -76,6 +78,7 @@ export default function Home() {
   });
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [toast, setToast] = useState<ToastState>({ show: false, text: "" });
+  const [undoAction, setUndoAction] = useState<{ label: string; run: () => void } | null>(null);
   const [isCornerMode, setIsCornerMode] = useState(false);
 
   // --- Refs ---
@@ -102,8 +105,9 @@ export default function Home() {
     getTagDef,
     addItems: addItemsHook,
     moveItem: moveItemHook,
-    toggleMainline: toggleMainlineHook,
+    restoreItemStates: restoreItemStatesHook,
     removeItem: removeItemHook,
+    toggleMainline: toggleMainlineHook,
     changeItemProject: changeItemProjectHook,
     setItemQuadrant: setItemQuadrantHook,
     updateItemTags: updateItemTagsHook,
@@ -193,12 +197,16 @@ export default function Home() {
   const todayLoad = useMemo(() => analyzeTodayLoad(items), [items]);
 
   const todayLoadWarning = useMemo(() => {
-    if (todayLoad.level === "full" || todayLoad.level === "overloaded") return todayLoad.message;
+    const label = t("today");
+    const hours = Number((todayLoad.totalMinutes / 60).toFixed(1));
+    if (todayLoad.level === "overloaded") return locale === "zh-CN" ? `${label} 预计 ${hours} 小时，明显超载，建议移出低优先级任务。` : `${label} is estimated at ${hours} hours and overloaded. Move out low-priority tasks.`;
+    if (todayLoad.level === "full") return locale === "zh-CN" ? `${label} 预计 ${hours} 小时，偏满，建议保留 1-3 个主线。` : `${label} is estimated at ${hours} hours and nearly full. Keep 1–3 mainline tasks.`;
     const todayCount = items.filter((i) => i.status === "today").length;
-    if (todayCount > 5) return `Today 已有 ${todayCount} 条，建议精简到 1-3 条主线任务。`;
-    if (todayCount > 3) return `Today 有 ${todayCount} 条，留意是否都需要今天推进。`;
+    if (todayCount > 5) return locale === "zh-CN" ? `${label} 已有 ${todayCount} 条，建议精简到 1-3 条主线任务。` : `${label} has ${todayCount} items. Consider reducing it to 1–3 mainline tasks.`;
+    if (todayCount > 3) return locale === "zh-CN" ? `${label} 有 ${todayCount} 条，留意是否都需要今天推进。` : `${label} has ${todayCount} items. Check whether all need to move today.`;
+    if (todayLoad.level === "light" && todayLoad.totalMinutes > 0) return locale === "zh-CN" ? `${label} 预计 ${hours} 小时，负载偏轻，可补一个低风险推进项。` : `${label} is estimated at ${hours} hours and light. You can add one low-risk task.`;
     return "";
-  }, [items, todayLoad]);
+  }, [items, locale, t, todayLoad]);
 
   const cornerTodayItems = useMemo(
     () => items.filter((i) => i.status === "today"),
@@ -227,27 +235,28 @@ export default function Home() {
     const createdToday = items.filter((i) => i.createdAt?.slice(0, 10) === todayKey);
     const doneToday = items.filter((i) => i.status === "done" && i.completedAt?.slice(0, 10) === todayKey);
     const mainline = items.filter((i) => i.isMainline && i.status !== "done" && i.status !== "archived");
+    const isZh = locale === "zh-CN";
     const lines: string[] = [
-      `# 日报 ${new Date().toLocaleDateString("zh-CN")}`,
+      `# ${isZh ? "日报" : "Daily report"} ${new Date().toLocaleDateString(locale)}`,
       "",
-      `## 今日完成 (${doneToday.length})`,
+      `## ${isZh ? "今日完成" : "Completed today"} (${doneToday.length})`,
       ...doneToday.map((i) => `- ${i.content}${i.result ? `：${i.result}` : ""}`),
       "",
-      `## 今日新增 (${createdToday.length})`,
+      `## ${isZh ? "今日新增" : "Added today"} (${createdToday.length})`,
       ...createdToday.map((i) => `- ${i.content}`),
       "",
-      `## 今日主线 (${mainline.length})`,
+      `## ${isZh ? "今日主线" : "Today mainline"} (${mainline.length})`,
       ...mainline.map((i) => `- ${i.content}${i.output ? ` → ${i.output}` : ""}`),
       "",
-      `## Today 遗留 (${today.length})`,
+      `## ${isZh ? "今日遗留" : "Remaining today"} (${today.length})`,
       ...today.map((i) => `- ${i.content}${i.output ? ` → ${i.output}` : ""}`),
       "",
-      `## 专注统计`,
-      `- 番茄钟完成：${sessionStats.focusCount} 次`,
-      `- 休息次数：${sessionStats.restCount} 次`,
+      `## ${isZh ? "专注统计" : "Focus statistics"}`,
+      `- ${isZh ? "番茄钟完成" : "Pomodoros completed"}：${sessionStats.focusCount}`,
+      `- ${isZh ? "休息次数" : "Breaks taken"}：${sessionStats.restCount}`,
     ];
     return lines.join("\n");
-  }, [items, sessionStats]);
+  }, [items, locale, sessionStats]);
 
   const focusItem = useMemo(
     () => (pomodoro.taskId ? items.find((item) => item.id === pomodoro.taskId) : undefined),
@@ -262,9 +271,12 @@ export default function Home() {
   // --- Toast with auto-dismiss + fade-out ---
   useEffect(() => {
     if (!toast.show) return;
-    const timer = setTimeout(() => setToast({ show: false, text: "" }), 2200);
+    const timer = setTimeout(() => {
+      setToast({ show: false, text: "" });
+      setUndoAction(null);
+    }, undoAction ? 5000 : 2200);
     return () => clearTimeout(timer);
-  }, [toast]);
+  }, [toast, undoAction]);
 
   useEffect(() => {
     const focusCapture = (event: KeyboardEvent) => {
@@ -284,7 +296,15 @@ export default function Home() {
   }, [collapsedTaskIds]);
 
   // --- Handlers ---
-  const showToast = useCallback((text: string) => setToast({ show: true, text }), []);
+  const showToast = useCallback((text: string) => {
+    setUndoAction(null);
+    setToast({ show: true, text });
+  }, []);
+
+  const showUndoToast = useCallback((text: string, action: { label: string; run: () => void }) => {
+    setUndoAction(action);
+    setToast({ show: true, text });
+  }, []);
 
   // --- Data actions hook ---
   const dataActions = useDataActions(
@@ -401,7 +421,30 @@ export default function Home() {
     showToast("任务已保存");
   };
 
-  const moveItem = moveItemHook;
+  const moveItem = useCallback((id: string, status: Item["status"]) => {
+    const idsToMove = new Set<string>([id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const item of items) {
+        if (item.parentId && idsToMove.has(item.parentId) && !idsToMove.has(item.id)) {
+          idsToMove.add(item.id);
+          changed = true;
+        }
+      }
+    }
+    const snapshots = items.filter((item) => idsToMove.has(item.id));
+    const changedItems = snapshots.filter((item) => item.status !== status);
+    moveItemHook(id, status);
+    if (!changedItems.length) return;
+    showUndoToast(`已移动 ${changedItems.length} 条任务`, {
+      label: "撤销",
+      run: () => {
+        restoreItemStatesHook(snapshots);
+        showToast("已撤销移动");
+      },
+    });
+  }, [items, moveItemHook, restoreItemStatesHook, showToast, showUndoToast]);
   const toggleMainline = toggleMainlineHook;
 
   const removeItem = useCallback((id: string) => {
@@ -496,6 +539,7 @@ export default function Home() {
           <div className="animate-toast-in fixed right-3 top-3 z-[60] flex items-center gap-2 rounded-xl border border-white/15 bg-zinc-900/95 px-3 py-2 text-xs text-zinc-100 shadow-2xl backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
             {toast.text}
+            {undoAction && <button onClick={() => { undoAction.run(); setUndoAction(null); setToast({ show: false, text: "" }); }} className="ml-2 rounded-md border border-amber-300/40 px-2 py-0.5 text-[11px] text-amber-200 transition hover:bg-amber-300/10">{undoAction.label}</button>}
           </div>
         )}
         <CornerMiniWindow
@@ -526,10 +570,10 @@ export default function Home() {
         <div className="animate-toast-in fixed right-6 top-16 z-[60] flex items-center gap-2 rounded-xl border border-white/15 bg-zinc-900/95 px-4 py-3 text-sm text-zinc-100 shadow-2xl backdrop-blur-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
           {toast.text}
+          {undoAction && <button onClick={() => { undoAction.run(); setUndoAction(null); setToast({ show: false, text: "" }); }} className="ml-2 rounded-md border border-amber-300/40 px-2 py-0.5 text-xs text-amber-200 transition hover:bg-amber-300/10">{undoAction.label}</button>}
         </div>
       )}
 
-      {/* ===== Compact Top Bar ===== */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-2.5 sm:px-6">
           {/* Brand */}
@@ -543,18 +587,18 @@ export default function Home() {
             <input
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
-              placeholder="搜索任务 / 项目 / 标签 ⌘K"
+              placeholder={t("searchPlaceholder")}
               className="w-full rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs outline-none transition placeholder:text-zinc-500 focus:border-teal-300/50 focus:bg-white/[0.06]"
             />
           </div>
 
           {/* Inline stats */}
           <div className="hidden items-center gap-1 text-[11px] tabular-nums text-zinc-400 md:flex">
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">Inbox <strong className="text-zinc-200">{counts.inbox}</strong></span>
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">Today <strong className="text-amber-200">{counts.today}</strong></span>
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">阻塞 <strong className="text-red-200">{counts.blocked}</strong></span>
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">搁置 <strong className="text-zinc-400">{counts.shelved}</strong></span>
-            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">主线 <strong className="text-amber-200">{counts.mainline}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">{t("inbox")} <strong className="text-zinc-200">{counts.inbox}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">{t("today")} <strong className="text-amber-200">{counts.today}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">{t("blocked")} <strong className="text-red-200">{counts.blocked}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">{t("shelved")} <strong className="text-zinc-400">{counts.shelved}</strong></span>
+            <span className="rounded bg-white/[0.04] px-1.5 py-0.5">{t("mainline")} <strong className="text-amber-200">{counts.mainline}</strong></span>
           </div>
 
           {/* Pomodoro inline */}
@@ -567,6 +611,13 @@ export default function Home() {
             ) : storageMode === "local" ? (
               <span className="hidden rounded-full border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-300 sm:inline">浏览器</span>
             ) : null}
+            <button
+              onClick={toggleLocale}
+              className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-1 text-[10px] text-sky-100 transition hover:bg-sky-400/20"
+              title={t("languageLabel")}
+            >
+              {locale === "zh-CN" ? "EN" : "中"}
+            </button>
             <AlwaysOnTopToggle onStatus={showToast} />
             <button
               onClick={() => void reloadData()}
@@ -677,7 +728,7 @@ export default function Home() {
             {viewMode === "flow" ? (
               <FlowView
                 items={filteredItems}
-                sections={SECTIONS}
+                sections={sections}
                 moveItem={moveItem}
                 activePomodoroTaskId={activePomodoroTaskId}
                 isFocusMode={isTaskFocusMode}

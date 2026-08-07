@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { getAlwaysOnTopState, setAlwaysOnTopState } from "@/lib/window-controls";
 
 export function AlwaysOnTopToggle({ onStatus }: { onStatus: (message: string) => void }) {
+  const { t } = useI18n();
   const [isDesktop, setIsDesktop] = useState(false);
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -43,5 +45,5 @@ export function AlwaysOnTopToggle({ onStatus }: { onStatus: (message: string) =>
     }
   }
 
-  return <button onClick={toggleAlwaysOnTop} disabled={isPending} title={isAlwaysOnTop ? "取消窗口置顶" : "窗口置顶"} aria-pressed={isAlwaysOnTop} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] transition ${isAlwaysOnTop ? "border-sky-400/60 bg-sky-500/15 text-sky-200" : "border-white/15 bg-zinc-900/70 text-zinc-300 hover:bg-zinc-800"} ${isPending ? "opacity-60" : ""}`}><svg aria-hidden="true" viewBox="0 0 24 24" className={`h-3.5 w-3.5 ${isAlwaysOnTop ? "rotate-45" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4l6 6" /><path d="M8 10l6-6 6 6-6 6" /><path d="M4 20l6-6" /></svg><span>{isAlwaysOnTop ? "已置顶" : "置顶"}</span></button>;
+  return <button onClick={toggleAlwaysOnTop} disabled={isPending} title={isAlwaysOnTop ? t("cancel") : t("window")} aria-pressed={isAlwaysOnTop} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] transition ${isAlwaysOnTop ? "border-sky-400/60 bg-sky-500/15 text-sky-200" : "border-white/15 bg-zinc-900/70 text-zinc-300 hover:bg-zinc-800"} ${isPending ? "opacity-60" : ""}`}><svg aria-hidden="true" viewBox="0 0 24 24" className={`h-3.5 w-3.5 ${isAlwaysOnTop ? "rotate-45" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4l6 6" /><path d="M8 10l6-6 6 6-6 6" /><path d="M4 20l6-6" /></svg><span>{isAlwaysOnTop ? t("done") : t("window")}</span></button>;
 }

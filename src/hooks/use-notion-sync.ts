@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import type { Project, Task } from "@/lib/focus-flow-model";
 import {
   isNotionConfigComplete,
@@ -29,6 +30,7 @@ type UseNotionSyncParams = {
 };
 
 export function useNotionSync({ projects, tasks, applyProjectSync, applyTaskSync, showToast }: UseNotionSyncParams) {
+  const { locale } = useI18n();
   const [notionConfig, setNotionConfig] = useState<NotionConfig | null>(null);
   const [isSyncingProjects, setIsSyncingProjects] = useState(false);
   const [isSyncingTasks, setIsSyncingTasks] = useState(false);
@@ -81,13 +83,15 @@ export function useNotionSync({ projects, tasks, applyProjectSync, applyTaskSync
       });
       const { nextTasks, result } = reconcileTasks(pages, tasks, projects);
       applyTaskSync(nextTasks);
-      showToast(`Task 同步完成：新增 ${result.created}，更新 ${result.updated}，跳过 ${result.skipped}`);
+      showToast(locale === "zh-CN"
+        ? `任务同步完成：新增 ${result.created}，更新 ${result.updated}，跳过 ${result.skipped}`
+        : `Task sync complete: ${result.created} added, ${result.updated} updated, ${result.skipped} skipped`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "同步失败");
     } finally {
       setIsSyncingTasks(false);
     }
-  }, [notionConfig, tasks, projects, applyTaskSync, showToast]);
+  }, [notionConfig, tasks, projects, applyTaskSync, showToast, locale]);
 
   return {
     notionConfig,

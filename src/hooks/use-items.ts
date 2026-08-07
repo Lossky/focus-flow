@@ -344,23 +344,39 @@ export function useItems() {
   }
 
   const moveItem = useCallback((id: string, status: ItemStatus) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const now = new Date().toISOString();
-        const completedAt = status === "done" || status === "archived" ? now : undefined;
-        const historyType = status === "done" ? "completed" : status === "archived" ? "archived" : "status_changed";
-        const updates: Partial<Item> = {
+    setItems((prev) => {
+      const idsToMove = new Set<string>([id]);
+      // 父任务和子任务在视图中需要保持同一流转状态，否则层级会被拆到不同泳道。
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const item of prev) {
+          if (item.parentId && idsToMove.has(item.parentId) && !idsToMove.has(item.id)) {
+            idsToMove.add(item.id);
+            changed = true;
+          }
+        }
+      }
+
+      const now = new Date().toISOString();
+      const completedAt = status === "done" || status === "archived" ? now : undefined;
+      const historyType = status === "done" ? "completed" : status === "archived" ? "archived" : "status_changed";
+      return prev.map((item) => {
+        if (!idsToMove.has(item.id) || item.status === status) return item;
+        return {
+          ...item,
           status,
           updatedAt: now,
           completedAt,
-          history: item.status === status
-            ? item.history
-            : [...(item.history || []), { type: historyType, from: item.status, to: status, at: now }],
+          history: [...(item.history || []), { type: historyType, from: item.status, to: status, at: now }],
         };
-        return { ...item, ...updates };
-      }),
-    );
+      });
+    });
+  }, []);
+
+  const restoreItemStates = useCallback((snapshots: Item[]) => {
+    const snapshotById = new Map(snapshots.map((item) => [item.id, item]));
+    setItems((prev) => prev.map((item) => snapshotById.get(item.id) || item));
   }, []);
 
   const toggleMainline = useCallback((id: string) => {
@@ -675,6 +691,7 @@ export function useItems() {
     getTasksForProject,
     addItems,
     moveItem,
+    restoreItemStates,
     toggleMainline,
     removeItem,
     changeItemProject,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 import { buildChildCountMap, filterVisibleTreeItems, formatDate, formatSeconds, POMODORO_SECONDS, priorityTone, type Item, type PomodoroState, type Project } from "@/lib/focus-flow-model";
 import { PixelHeart, PixelCat } from "./pixel-art";
 
@@ -29,6 +30,7 @@ export function CornerMiniWindow({
   collapsedTaskIds,
   toggleCollapsedTask,
 }: CornerMiniWindowProps) {
+  const { t } = useI18n();
   const isFocusMode = pomodoro.running || !!pomodoro.taskId || pomodoro.secondsLeft !== POMODORO_SECONDS;
   const visibleTodayItems = filterVisibleTreeItems(todayItems, new Set(collapsedTaskIds)).slice(0, 5);
   const childCounts = buildChildCountMap(todayItems);
@@ -50,7 +52,7 @@ export function CornerMiniWindow({
             {isFocusMode ? <PixelHeart /> : <PixelCat />}
             <div>
               <p className={`text-[10px] uppercase tracking-[0.2em] ${isFocusMode ? "text-amber-100/70" : "text-teal-100/70"}`}>
-                {isFocusMode ? "Focus" : "Mainline"}
+                {isFocusMode ? t("focus") : t("mainline")}
               </p>
               <h1 className="mt-0.5 text-sm font-semibold">{isFocusMode ? "专注小窗" : "今日主线"}</h1>
             </div>
@@ -107,6 +109,7 @@ function FocusMiniContent({
   isChildrenCollapsed: boolean;
   onToggleChildren: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const project = focusItem ? getProjectById(focusItem.projectId) : undefined;
   const isFinished = pomodoro.secondsLeft === 0;
   const progress = pomodoro.secondsLeft / POMODORO_SECONDS;
@@ -162,7 +165,7 @@ function FocusMiniContent({
               onClick={() => onToggleChildren(focusItem.id)}
               className="rounded-full border border-emerald-300/20 px-2 py-0.5 text-[11px] text-emerald-100 transition hover:bg-emerald-300/10"
             >
-              {isChildrenCollapsed ? "展开" : "收起"} {childCount} 子项
+              {isChildrenCollapsed ? t("expand") : t("collapse")} {childCount} {t("subtask")}
             </button>
           )}
         </div>
@@ -200,6 +203,7 @@ function MainlineMiniContent({
   onToggleChildren: (id: string) => void;
   collapsedTaskIds: string[];
 }) {
+  const { t } = useI18n();
   const itemById = new Map(items.map((item) => [item.id, item]));
   const childCounts = buildChildCountMap(allItems);
   const collapsedSet = new Set(collapsedTaskIds);
@@ -221,7 +225,7 @@ function MainlineMiniContent({
         <div className="flex items-center gap-2">
           <PixelCat />
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-teal-100/60">Today</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-teal-100/60">{t("today")}</p>
             <p className="text-sm text-teal-50">眼前要推进的事</p>
           </div>
         </div>
@@ -244,7 +248,7 @@ function MainlineMiniContent({
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: priority.accent }} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {item.isMainline && <span className="rounded-full border border-amber-300/30 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-amber-100">Mainline</span>}
+                    {item.isMainline && <span className="rounded-full border border-amber-300/30 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-amber-100">{t("mainline")}</span>}
                     {item.depth ? <span className="rounded-full border border-sky-300/30 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] text-sky-100">L{Math.min(item.depth, 4) + 1}</span> : null}
                     {childCount > 0 && (
                       <button
