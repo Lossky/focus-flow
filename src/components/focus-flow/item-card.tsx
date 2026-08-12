@@ -64,9 +64,7 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
   const secondaryActions = secondaryActionMap[item.status] ?? [];
 
   // Card background: priority color at 20% + mainline amber tint
-  const bgStyle = isMainline
-    ? { backgroundColor: `color-mix(in srgb, ${priority.accent} 12%, rgba(251,191,36,0.08))` }
-    : { backgroundColor: `color-mix(in srgb, ${priority.accent} 10%, rgba(0,0,0,0.2))` };
+  const bgStyle = { backgroundColor: "rgba(15, 29, 45, 0.88)" };
 
   return (
     <article
@@ -80,7 +78,7 @@ export const ItemCard = memo(function ItemCard({ item, parentItem, ancestorItems
       onDragEnd={onPointerDown ? undefined : () => {
         activeDragId = null;
       }}
-      className={`group relative rounded-xl border px-3 py-2.5 shadow-lg shadow-black/10 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl ${isMainline ? "border-amber-300/40" : "border-white/10"} ${focusTone} ${onPointerDown ? "touch-none select-none cursor-grab active:cursor-grabbing" : ""}`}
+      className={`group relative rounded-lg border px-3 py-2.5 shadow-lg shadow-black/10 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-xl ${isMainline ? "border-teal-300/40" : "border-white/10"} ${focusTone} ${onPointerDown ? "touch-none select-none cursor-grab active:cursor-grabbing" : ""}`}
       style={{ marginLeft: depth ? `${depth * 14}px` : undefined, borderLeftWidth: 3, borderLeftColor: priority.accent, ...bgStyle }}
     >
       {depth > 0 && <span className="absolute bottom-3 left-2 top-3 w-px rounded-full bg-sky-300/20" aria-hidden="true" />}

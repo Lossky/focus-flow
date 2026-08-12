@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FocusFlowProvider } from "@/contexts/focus-flow-context";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -50,7 +51,7 @@ const APP_VERSION = "0.1.27";
 export default function Home() {
   const { locale, toggleLocale, t } = useI18n();
   const sections: FlowSection[] = [
-    { key: "inbox", title: `${t("inbox")} · 分流台`, hint: t("inboxHint") },
+    { key: "inbox", title: "分流台", hint: t("inboxHint") },
     { key: "today", title: t("todayMainline"), hint: t("todayMainlineHint") },
     { key: "blocked", title: t("blocked"), hint: t("blockedHint") },
     { key: "shelved", title: t("shelved"), hint: t("shelvedHint") },
@@ -578,6 +579,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-2.5 sm:px-6">
           {/* Brand */}
           <div className="flex items-center gap-2">
+            <Image src="/icon/logo.png" alt="" width={40} height={40} className="h-9 w-9 object-contain" aria-hidden="true" />
             <h1 className="text-sm font-semibold tracking-tight text-teal-100">Focus Flow</h1>
             <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] tabular-nums text-zinc-500">v{APP_VERSION}</span>
           </div>
@@ -700,7 +702,7 @@ export default function Home() {
         <div className={isFocusMode ? "hidden" : "contents"}>
 
           {/* Row 1: Today mainline (big, left) + Quick capture (compact, right) */}
-          <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.65fr)]">
+          <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.95fr)]">
             <TodayMainline
               items={filteredItems}
               todayLoadWarning={todayLoadWarning}

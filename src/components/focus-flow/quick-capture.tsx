@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useI18n } from "@/contexts/i18n-context";
 import { DEFAULT_TASK_ID, DEFAULT_TASK_NAME, parseTaskInput, priorityTone, type ItemSource, type Priority, type Project, type RepeatType, type TagDef, type Task } from "@/lib/focus-flow-model";
@@ -102,14 +103,13 @@ export function QuickCapture({
   };
 
   return (
-    <section className="rounded-[1.5rem] border border-teal-300/20 bg-teal-950/[0.18] p-4 shadow-2xl shadow-black/20 backdrop-blur">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-teal-200">{t("captureLabel")}</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">{t("capture")}</h2>
-          <p className="mt-1 text-sm leading-5 text-zinc-400">{t("inbox")} · {t("inboxHint")} ⌘K / ⌘Enter</p>
+    <section className="rounded-xl border border-white/10 bg-[#0b1625]/80 p-3.5 shadow-xl shadow-black/20 backdrop-blur">
+      <div className="relative mb-3 flex items-start justify-between gap-3">
+        <div className="pr-20">
+          <h2 className="mt-0 text-xl font-semibold tracking-tight text-zinc-100">{t("capture")}</h2>
+          <p className="mt-1 text-xs leading-5 text-zinc-400">{t("inbox")} · {t("inboxHint")} ⌘K / ⌘Enter</p>
         </div>
-        <span className="rounded-full border border-teal-300/30 bg-teal-300/10 px-2.5 py-1 text-[11px] font-medium text-teal-100">{t("inbox")}</span>
+        <Image src="/icon/input.png" alt="" width={64} height={64} className="absolute right-0 top-0 h-16 w-16 object-contain" aria-hidden="true" />
       </div>
 
       {/* Quick settings row — always visible */}

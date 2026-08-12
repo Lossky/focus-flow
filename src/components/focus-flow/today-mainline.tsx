@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useState } from "react";
 import { useI18n } from "@/contexts/i18n-context";
 import { buildChildCountMap, filterVisibleTreeItems, getAncestorItems, type Item, type ItemStatus } from "@/lib/focus-flow-model";
@@ -32,7 +33,7 @@ export function TodayMainline({
 
   return (
     <section
-      className={`rounded-[2rem] border bg-gradient-to-br from-amber-300/[0.14] via-orange-950/[0.18] to-black/20 p-4 shadow-2xl shadow-black/20 backdrop-blur transition-colors duration-200 ${isDragOver ? "border-amber-400/60 ring-1 ring-amber-400/30" : "border-amber-300/30"}`}
+      className={`rounded-xl border border-white/10 bg-[#0b1625]/80 p-3.5 shadow-xl shadow-black/20 backdrop-blur transition-colors duration-200 ${isDragOver ? "border-teal-400/60 ring-1 ring-teal-400/30" : ""}`}
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
       onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget as Node)) return; setIsDragOver(false); }}
       onDrop={(e) => {
@@ -43,13 +44,22 @@ export function TodayMainline({
       }}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.24em] text-amber-200">{t("mainline")}</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-amber-100">{t("todayMainline")}</h2>
-          <p className="mt-1 text-sm leading-6 text-amber-100/70">{t("todayMainlineHint")}</p>
-          {todayLoadWarning && <p className="mt-3 rounded-xl border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-xs text-orange-100">{todayLoadWarning}</p>}
+        <div className="flex items-center gap-[5px]">
+          <Image
+            src="/icon/daily.png"
+            alt=""
+            width={64}
+            height={44}
+            className="h-11 w-16 shrink-0 object-contain"
+            aria-hidden="true"
+          />
+          <div>
+            <h2 className="mt-0 text-xl font-semibold tracking-tight text-zinc-100">{t("todayMainline")}</h2>
+            <p className="mt-1 text-xs leading-5 text-zinc-400">{t("todayMainlineHint")}</p>
+            {todayLoadWarning && <p className="mt-3 rounded-xl border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-xs text-orange-100">{todayLoadWarning}</p>}
+          </div>
         </div>
-        <span className="rounded-full border border-amber-300/30 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">{t("itemCount", { count: todayItems.length })}</span>
+        <span className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300">{t("itemCount", { count: todayItems.length })}</span>
       </div>
       <div className="space-y-2 stagger-children">
         {visibleTodayItems.length === 0 ? (

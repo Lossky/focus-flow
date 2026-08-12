@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { useI18n } from "@/contexts/i18n-context";
@@ -69,14 +70,24 @@ export function FlowView({
             <div
               key={section.key}
               data-drop-zone={section.key}
-              className={`rounded-2xl border p-4 transition-colors duration-200 ${drag?.overKey === section.key ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/60"}`}
+              className={`rounded-xl border p-3 transition-colors duration-200 ${drag?.overKey === section.key ? "border-teal-400/50 bg-teal-950/20" : "border-white/10 bg-[#0b1625]/80"}`}
             >
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold">{section.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-400">{section.hint}</p>
+              <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-[5px]">
+          <Image
+            src={section.key === "inbox" ? "/icon/inbox.png" : "/icon/block.png"}
+            alt=""
+            width={64}
+            height={44}
+            className="h-11 w-16 shrink-0 object-contain"
+            aria-hidden="true"
+          />
+                  <div>
+                    <h3 className="text-base font-semibold">{section.title}</h3>
+                    <p className="mt-0.5 text-xs text-zinc-400">{section.hint}</p>
+                  </div>
                 </div>
-                <span className="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-300">{visibleSectionItems.length} 条</span>
+                <span className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300">{visibleSectionItems.length} 条</span>
               </div>
               <div className="space-y-2 stagger-children">
                 {visibleSectionItems.length === 0 ? (
@@ -96,22 +107,26 @@ export function FlowView({
       {shelvedSection && (
         <div
           data-drop-zone="shelved"
-          className={`rounded-2xl border transition-colors duration-200 ${drag?.overKey === "shelved" ? "border-amber-400/50 bg-amber-950/15" : "border-white/10 bg-zinc-900/40"}`}
+          className={`rounded-xl border transition-colors duration-200 ${drag?.overKey === "shelved" ? "border-teal-400/50 bg-teal-950/20" : "border-white/10 bg-[#0b1625]/80"}`}
         >
           <button
             onClick={() => setShelvedOpen((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+            aria-expanded={shelvedOpen}
+            className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
           >
-            <div className="flex items-center gap-2">
-              <svg className={`h-3.5 w-3.5 shrink-0 text-zinc-500 transition-transform ${shelvedOpen ? "rotate-90" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4.5 3 7.5 6 4.5 9" /></svg>
+            <div className="flex items-center gap-[5px]">
+              <Image src="/icon/delay.png" alt="" width={64} height={44} className="h-11 w-16 shrink-0 object-contain" aria-hidden="true" />
               <div>
-                <h3 className="text-sm font-medium text-zinc-300">{shelvedSection.title}</h3>
-                {shelvedOpen && <p className="mt-0.5 text-xs text-zinc-500">{shelvedSection.hint}</p>}
+                <h3 className="text-base font-semibold text-zinc-100">{shelvedSection.title}</h3>
+                <p className="mt-0.5 text-xs text-zinc-400">{shelvedSection.hint}</p>
               </div>
             </div>
-            <span className="rounded-full border border-white/10 px-2.5 py-0.5 text-xs text-zinc-400">
-              {drag?.overKey === "shelved" ? "松开搁置" : `${shelvedItems.length} 条`}
-            </span>
+            <div className="flex items-center gap-2">
+              <svg className={`h-3.5 w-3.5 shrink-0 text-zinc-500 transition-transform ${shelvedOpen ? "rotate-90" : ""}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4.5 3 7.5 6 4.5 9" /></svg>
+              <span className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300">
+                {drag?.overKey === "shelved" ? "松开搁置" : `${shelvedItems.length} 条`}
+              </span>
+            </div>
           </button>
           {shelvedOpen && (
             <div className="space-y-2 border-t border-white/10 p-4 stagger-children">
