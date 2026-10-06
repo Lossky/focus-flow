@@ -1,17 +1,26 @@
-# 灯塔 N-07 · 原创机器人展厅
+# 原创机器人展厅
 
-静态网站，可直接部署到支持静态文件的托管服务。网站支持模型旋转与缩放、自动旋转、正侧背视角、重置视角、全屏查看，以及 GLB、Blender 和 PNG 下载；适配手机屏幕。
+四位原创机器人可在同一静态网页中切换。默认展示新的园艺机器人苔芽 M-12。
+
+| 角色 | 外形 | 文件名 |
+| --- | --- | --- |
+| 苔芽 M-12 | 薄荷绿与奶油白、履带底盘、双叶太阳能天线、机械夹爪 | `robot-m12` |
+| 铆钉 R-03 | 日落橙与石墨灰、四轮底盘、单眼镜头、夹臂和货架 | `robot-r03` |
+| 星巡 S-21 | 珍珠白与深蓝、圆形机身、白紫双侧涵道风扇、双着陆橇 | `robot-s21` |
+| 灯塔 N-07 | 象牙白与橙色、双足身体、青蓝双眼、挥手姿势 | `robot` |
+
+网站支持拖动旋转、滚轮或双指缩放、自动旋转、正面／侧面／背面、重置视角、全屏，以及当前角色的 GLB、Blender 和 PNG 下载。切换时保留自动旋转的开关状态并重置视角。系统要求减少动态效果时，默认暂停自动旋转。
 
 ## 文件
 
-- `index.html`：页面、样式与交互。
-- `assets/robot.glb`：交互模型。
-- `assets/robot.blend`：Blender 源文件。
-- `assets/robot.png`：模型渲染图与加载封面。
+- `index.html`：页面、样式和交互。
+- `assets/<文件名>.glb`：交互模型。
+- `assets/<文件名>.blend`：Blender 源文件。
+- `assets/<文件名>.png`：模型渲染图、选择卡缩略图及加载封面。
 - `assets/model-viewer.min.js`：本地 model-viewer 脚本。
 - `assets/studio.hdr`：模型环境光照。
 
-所有资源使用相对路径，不依赖外部字体或 CDN。模型与静态资源需一同放置并发布。
+所有资源使用相对路径，不依赖外部字体或 CDN。请同时发布全部模型和静态资源，并保留 `assets` 目录结构。
 
 ## 本地预览
 
@@ -21,8 +30,16 @@
 python3 -m http.server 8000
 ```
 
-然后在浏览器打开 `http://localhost:8000/`。直接通过文件协议打开页面可能无法加载模型或脚本。
+然后打开 `http://localhost:8000/`。请通过 HTTP 访问，浏览器通过文件协议打开时可能无法加载模型。
+
+## 交互与验证
+
+模型选择按钮的 `data-model` 为 `m12`、`r03`、`s21`、`n07`，当前按钮有 `aria-pressed="true"`。`#stage` 的 `data-current-model` 对应当前角色，`data-load-state` 为 `loading`、`ready` 或 `error`。模型节点始终可通过 `#viewer` 查询，每次切换会替换节点，以隔离旧加载请求没有 URL 的错误事件；读取节点引用时请在切换后重新查询。
+
+当前状态由 `#status` 的读屏通知更新。使用会穿透 Shadow DOM 的自动化工具时，请用 `#stage > #status` 定位页面状态，以避开 model-viewer 内部同名节点。发生错误时可点击 `#retry-model` 重新加载，或直接选择其他角色。缩略图保持固定布局，图片尚未加载时显示轮廓占位图。
+
+其他稳定选择器：`#rotate`、`#reset`、`#fullscreen`、`[data-view]`、`#download-glb`、`#download-blend`、`#download-png` 和 `#screenshot-link`。
 
 ## 发布
 
-将此目录中的文件完整上传到静态托管服务，保留 `assets` 目录结构，并将 `index.html` 设为首页。
+将此目录中的文件完整上传到静态托管服务，并将 `index.html` 设为首页。

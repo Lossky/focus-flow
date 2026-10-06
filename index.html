@@ -4,56 +4,82 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f1ea">
-  <meta name="description" content="认识灯塔 N-07，一位原创小型探索机器人。旋转、缩放，查看它的每一个细节。">
-  <title>灯塔 N-07 · 原创机器人展厅</title>
+  <meta name="description" content="四位原创机器人：灯塔、苔芽、铆钉与星巡。切换角色，旋转、缩放，探索不同的机械轮廓。">
+  <title>苔芽 M-12 · 原创机器人展厅</title>
   <script type="module" src="assets/model-viewer.min.js"></script>
   <style>
     :root{color-scheme:light;--paper:#f4f1ea;--ink:#243137;--muted:#737b7b;--line:#dcded5;--orange:#df703d;--cyan:#1a8992;--white:#fffef9}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}button,a{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:3px solid #1a899280;outline-offset:5px}button{font:inherit}a{color:inherit}svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
-    .shell{max-width:1480px;padding:0 5.3vw;margin:auto}header{height:92px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:13px;font-size:14px;font-weight:650;letter-spacing:1px}.brand-mark{display:grid;place-items:center;width:32px;height:32px;border:1.5px solid var(--ink);border-radius:9px;position:relative}.brand-mark:after{content:"";width:14px;height:8px;border-radius:3px;background:var(--cyan);box-shadow:0 0 0 3px #1a899214}.brand-mark:before{content:"";position:absolute;top:-5px;left:15px;width:1.5px;height:5px;background:var(--ink)}.header-note{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px;letter-spacing:2px}.dot{width:5px;height:5px;background:var(--orange);border-radius:50%;display:inline-block}
-    main{padding-top:46px}.hero{display:grid;grid-template-columns:minmax(280px,.78fr) minmax(0,1.55fr);gap:60px;align-items:center}.intro{padding:24px 0 40px}.eyebrow{display:flex;gap:12px;align-items:center;color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:600}.eyebrow:before{content:"";width:22px;height:1px;background:var(--cyan)}h1{margin:30px 0 13px;font-size:clamp(55px,5.1vw,77px);line-height:1.08;letter-spacing:-4px;font-weight:600}h1 span{display:block;font-size:clamp(65px,6.7vw,100px);font-family:Arial,sans-serif;font-weight:500;letter-spacing:-6px;margin-top:9px}.subtitle{font-size:11px;letter-spacing:3.8px;color:var(--muted);margin:24px 0 31px}.description{font-size:14px;line-height:1.9;color:#677171;max-width:320px;margin:0}.greeting{font-size:14px;line-height:1.8;margin:24px 0 0;color:var(--ink);font-weight:500}.intro-rule{width:40px;height:2px;background:var(--orange);margin:32px 0 28px}.detail-list{display:grid;gap:15px}.detail{display:flex;gap:15px;align-items:flex-start}.detail-number{color:var(--orange);font:10px/1.7 monospace;margin-top:2px}.detail strong{font-size:12px;font-weight:550}.detail p{font-size:11px;line-height:1.7;margin:4px 0 0;color:var(--muted)}
-    .stage{position:relative;height:690px;min-width:0;border:1px solid #d7dbd2;border-radius:26px;background:radial-gradient(ellipse at 55% 35%,#fffdf6 0%,#edece1 68%,#e6e8de 100%);overflow:hidden;isolation:isolate}.stage:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#4e686005 1px,transparent 1px),linear-gradient(90deg,#4e686005 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(transparent 60%,#000);pointer-events:none;z-index:-1}.stage-top{position:absolute;z-index:2;left:25px;right:25px;top:23px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}.stage-label{font-size:10px;font-family:monospace;letter-spacing:1.4px;color:#7f8982}.top-actions{display:flex;gap:8px;pointer-events:auto}.icon-button{display:grid;place-items:center;width:34px;height:34px;border:1px solid #cbd0c580;border-radius:10px;background:#fffefa80;color:#5d6b66;cursor:pointer;transition:background .18s,border-color .18s}.icon-button:hover{background:var(--white);border-color:#a8b6af}model-viewer{width:100%;height:calc(100% - 132px);margin-top:42px;--poster-color:transparent;--progress-bar-color:var(--cyan);--progress-bar-height:2px}model-viewer::part(default-progress-mask){border-radius:0}.stage-bottom{position:absolute;left:22px;right:22px;bottom:20px;display:flex;flex-direction:column;align-items:center;gap:15px;pointer-events:none}.view-controls{display:flex;gap:4px;padding:5px;background:#fffef5e8;border:1px solid #d2d8cd;border-radius:13px;box-shadow:0 3px 12px #384a3607;pointer-events:auto}.view-button,.rotate-button{border:0;border-radius:8px;padding:9px 14px;background:transparent;color:#74817b;font-size:11px;cursor:pointer;transition:background .18s,color .18s;white-space:nowrap}.view-button:hover,.rotate-button:hover{color:var(--ink);background:#e9ece4}.view-button.active{background:#263936;color:#fffef9}.control-divider{width:1px;background:#dce0d5;margin:6px 5px}.rotate-button{display:flex;align-items:center;gap:7px}.rotate-button svg{width:14px;height:14px}.rotate-button.active{color:var(--cyan)}.hint{font-size:10px;letter-spacing:.3px;color:#839086;text-align:center}.status{position:absolute;left:24px;right:24px;top:77px;font-size:12px;color:#6c7f75;z-index:2;pointer-events:none}.status.error{max-width:390px;background:#fffdf7ee;border:1px solid #dbd4c5;border-radius:10px;padding:12px 15px;line-height:1.8;color:#8b5e42}.corner{position:absolute;width:16px;height:16px;border-color:#afbab0;border-style:solid;border-width:0;pointer-events:none}.corner.tl{left:22px;top:72px;border-left-width:1px;border-top-width:1px}.corner.tr{right:22px;top:72px;border-right-width:1px;border-top-width:1px}
-    .below-stage{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:16px 5px 0}.below-stage .caption{font-size:10px;letter-spacing:1.3px;color:#839087}.caption span{color:var(--orange);margin-right:6px}.screenshot-link{color:var(--cyan);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:7px}.screenshot-link svg{width:13px;height:13px}.screenshot-link:hover{text-decoration:underline}.downloads{margin:42px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:23px 0;display:flex;align-items:center;justify-content:space-between;gap:24px}.download-label{font-size:12px;font-weight:500}.download-label small{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);font-weight:400;margin-top:7px}.download-links{display:flex;gap:10px;flex-wrap:wrap}.download{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #d5d9cf;border-radius:11px;text-decoration:none;font-size:12px;background:#fbfaf4;transition:background .18s,border-color .18s}.download:hover{border-color:#9db8ab;background:var(--white)}.download svg{width:15px;height:15px;color:#79897d}.download .format{font:10px monospace;color:#849087;border-left:1px solid #dce0d5;padding-left:12px}.download:first-child{background:#253936;color:#fffef9;border-color:#253936}.download:first-child svg,.download:first-child .format{color:#a9c7bf}.download:first-child .format{border-color:#ffffff30}.download:first-child:hover{background:#344e47}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0 30px;color:#8c948c;font-size:10px;letter-spacing:.5px}footer .end-mark{display:flex;align-items:center;gap:8px}footer .end-mark:before{content:"";height:5px;width:5px;background:var(--cyan);border-radius:50%}
+    *{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}button,a{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:3px solid #1a899280;outline-offset:4px}button{font:inherit}a{color:inherit}svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+    .shell{max-width:1480px;padding:0 5.3vw;margin:auto}header{height:84px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:18px}.brand{display:flex;align-items:center;gap:13px;font-size:14px;font-weight:650;letter-spacing:1px}.brand-mark{display:grid;place-items:center;width:32px;height:32px;border:1.5px solid var(--ink);border-radius:9px;position:relative}.brand-mark:after{content:"";width:14px;height:8px;border-radius:3px;background:var(--cyan);box-shadow:0 0 0 3px #1a899214}.brand-mark:before{content:"";position:absolute;top:-5px;left:15px;width:1.5px;height:5px;background:var(--ink)}.header-note{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:10px;letter-spacing:1.7px}.dot{width:5px;height:5px;background:var(--orange);border-radius:50%;display:inline-block}
+    main{padding-top:26px}.collection{margin-bottom:34px}.collection-heading{display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin-bottom:14px}.collection-heading h2{font-size:13px;letter-spacing:1px;font-weight:600;margin:0}.collection-heading p{font-size:11px;line-height:1.6;color:var(--muted);margin:0}.model-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.model-card{position:relative;display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:10px;width:100%;min-height:130px;padding:10px 15px 10px 5px;border:1px solid #d7dcd1;border-radius:16px;text-align:left;background:#faf9f1;cursor:pointer;color:var(--ink);overflow:hidden;transition:background .18s,border-color .18s,box-shadow .18s}.model-card:hover{background:var(--white);border-color:#a6bdb0}.model-card.selected{background:#fffdf7;border-color:#547e6a;box-shadow:0 0 0 1px #547e6a}.card-preview{position:relative;width:100%;height:108px;display:grid;place-items:center;background:radial-gradient(ellipse,#e8eee3,transparent 70%);border-radius:10px;overflow:hidden}.card-preview img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1}.card-preview img.failed{display:none}.preview-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#849386;opacity:.35}.preview-fallback svg{width:62px;height:70px;stroke-width:1.2}.card-copy{position:relative;z-index:2;min-width:0;padding-top:5px}.card-code{display:block;font:10px/1.4 monospace;letter-spacing:1.5px;color:#7e8a80;margin-bottom:7px}.card-name{display:block;font-size:20px;font-weight:550;letter-spacing:1px;margin-bottom:8px}.card-description{display:block;font-size:10px;line-height:1.65;color:var(--muted)}.card-selected{position:absolute;right:12px;top:10px;width:6px;height:6px;border-radius:50%;background:var(--cyan);opacity:0;transition:opacity .18s}.selected .card-selected{opacity:1}
+    .hero{display:grid;grid-template-columns:minmax(270px,.78fr) minmax(0,1.55fr);gap:60px;align-items:center}.intro{padding:24px 0 30px}.eyebrow{display:flex;gap:12px;align-items:center;color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:600}.eyebrow:before{content:"";width:22px;height:1px;background:var(--cyan)}h1{margin:26px 0 13px;font-size:clamp(55px,5.1vw,77px);line-height:1.08;letter-spacing:-4px;font-weight:600}h1 span{display:block;font-size:clamp(65px,6.7vw,100px);font-family:Arial,sans-serif;font-weight:500;letter-spacing:-6px;margin-top:9px}.subtitle{font-size:10px;letter-spacing:3px;color:var(--muted);margin:21px 0 25px}.description{font-size:14px;line-height:1.9;color:#677171;max-width:330px;margin:0}.greeting{font-size:14px;line-height:1.8;margin:20px 0 0;color:var(--ink);font-weight:500}.intro-rule{width:40px;height:2px;background:var(--orange);margin:26px 0 23px}.detail-list{display:grid;gap:13px}.detail{display:flex;gap:15px;align-items:flex-start}.detail-number{color:var(--orange);font:10px/1.7 monospace;margin-top:2px}.detail strong{font-size:12px;font-weight:550}.detail p{font-size:11px;line-height:1.7;margin:4px 0 0;color:var(--muted)}
+    .stage{position:relative;height:630px;min-width:0;border:1px solid #d7dbd2;border-radius:26px;background:radial-gradient(ellipse at 55% 35%,#fffdf6 0%,#edece1 68%,#e6e8de 100%);overflow:hidden;isolation:isolate}.stage:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#4e686005 1px,transparent 1px),linear-gradient(90deg,#4e686005 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(transparent 60%,#000);pointer-events:none;z-index:-1}.stage-top{position:absolute;z-index:2;left:25px;right:25px;top:21px;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none}.stage-label{font-size:10px;font-family:monospace;letter-spacing:1.2px;color:#7f8982}.top-actions{display:flex;gap:8px;pointer-events:auto}.icon-button{display:grid;place-items:center;width:42px;height:42px;border:1px solid #cbd0c580;border-radius:11px;background:#fffefa80;color:#5d6b66;cursor:pointer;transition:background .18s,border-color .18s}.icon-button:hover{background:var(--white);border-color:#a8b6af}model-viewer{width:100%;height:calc(100% - 132px);margin-top:42px;--poster-color:transparent;--progress-bar-color:var(--cyan);--progress-bar-height:2px}model-viewer::part(default-progress-mask){border-radius:0}.stage-bottom{position:absolute;left:22px;right:22px;bottom:20px;display:flex;flex-direction:column;align-items:center;gap:13px;pointer-events:none}.view-controls{display:flex;gap:4px;padding:5px;background:#fffef5e8;border:1px solid #d2d8cd;border-radius:13px;box-shadow:0 3px 12px #384a3607;pointer-events:auto}.view-button,.rotate-button{border:0;border-radius:8px;min-height:40px;padding:10px 14px;background:transparent;color:#74817b;font-size:11px;cursor:pointer;transition:background .18s,color .18s;white-space:nowrap}.view-button:hover,.rotate-button:hover{color:var(--ink);background:#e9ece4}.view-button.active{background:#263936;color:#fffef9}.control-divider{width:1px;background:#dce0d5;margin:6px 5px}.rotate-button{display:flex;align-items:center;gap:7px}.rotate-button svg{width:14px;height:14px}.rotate-button.active{color:var(--cyan)}.hint{font-size:10px;letter-spacing:.3px;color:#839086;text-align:center}.status{position:absolute;left:25px;right:25px;top:78px;font-size:10px;letter-spacing:.25px;color:#6c7f75;z-index:2;pointer-events:none;line-height:1.7}.status.ready:before{content:"";display:inline-block;width:4px;height:4px;background:var(--cyan);border-radius:50%;margin:0 6px 2px 0}.status.error{max-width:390px;background:#fffdf7ee;border:1px solid #dbd4c5;border-radius:10px;padding:12px 15px;color:#8b5e42;font-size:12px;pointer-events:auto}.status button{border:0;border-bottom:1px solid currentColor;margin-top:7px;padding:2px 0;background:transparent;color:inherit;font-size:12px;cursor:pointer;display:block}.corner{position:absolute;width:16px;height:16px;border-color:#afbab0;border-style:solid;border-width:0;pointer-events:none}.corner.tl{left:22px;top:72px;border-left-width:1px;border-top-width:1px}.corner.tr{right:22px;top:72px;border-right-width:1px;border-top-width:1px}
+    .below-stage{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:15px 5px 0}.below-stage .caption{font-size:10px;letter-spacing:1.1px;color:#839087}.caption>span:first-child{color:var(--orange);margin-right:6px}.screenshot-link{color:var(--cyan);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:7px;min-height:32px}.screenshot-link svg{width:13px;height:13px}.screenshot-link:hover{text-decoration:underline}.downloads{margin:33px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:23px 0;display:flex;align-items:center;justify-content:space-between;gap:24px}.download-label{font-size:12px;font-weight:500}.download-label small{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);font-weight:400;margin-top:7px}.download-links{display:flex;gap:10px;flex-wrap:wrap}.download{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #d5d9cf;border-radius:11px;text-decoration:none;font-size:12px;background:#fbfaf4;transition:background .18s,border-color .18s}.download:hover{border-color:#9db8ab;background:var(--white)}.download svg{width:15px;height:15px;color:#79897d}.download .format{font:10px monospace;color:#849087;border-left:1px solid #dce0d5;padding-left:12px}.download:first-child{background:#253936;color:#fffef9;border-color:#253936}.download:first-child svg,.download:first-child .format{color:#a9c7bf}.download:first-child .format{border-color:#ffffff30}.download:first-child:hover{background:#344e47}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0 30px;color:#8c948c;font-size:10px;letter-spacing:.5px}footer .end-mark{display:flex;align-items:center;gap:8px}footer .end-mark:before{content:"";height:5px;width:5px;background:var(--cyan);border-radius:50%}
     .stage:fullscreen{width:100vw;height:100dvh;border:0;border-radius:0}.stage:fullscreen .stage-top{top:25px}.stage:fullscreen .stage-bottom{bottom:28px}
-    @media(min-width:1650px){.shell{padding:0 70px}}@media(max-width:1150px){.hero{gap:35px;grid-template-columns:minmax(250px,.8fr) minmax(0,1.45fr)}.stage{height:650px}h1{font-size:59px}h1 span{font-size:80px}.description{font-size:13px}.download{gap:9px;padding:12px}.download .format{padding-left:9px}.download-label small{max-width:180px;line-height:1.6}}
-    @media(max-width:820px){.shell{padding:0 6vw}header{height:75px}.header-note{font-size:9px;letter-spacing:1px}.brand{font-size:12px;gap:10px}.brand-mark{width:29px;height:29px}main{padding-top:30px}.hero{grid-template-columns:1fr;gap:25px;align-items:start}.intro{padding:4px 0 0}h1{font-size:51px;letter-spacing:-2px;margin:20px 0 12px;display:flex;align-items:baseline;gap:17px}h1 span{font-size:66px;letter-spacing:-4px;display:inline;margin:0}.subtitle{margin:0 0 18px;font-size:9px;letter-spacing:2.8px}.description{max-width:530px;line-height:1.85}.greeting{margin-top:12px;font-size:12px}.intro-rule,.detail-list{display:none}.stage{height:68vh;height:68svh;min-height:460px;max-height:720px;border-radius:21px}.stage-top{left:18px;right:18px;top:18px}.stage-label{font-size:9px}.corner.tl{left:18px;top:65px}.corner.tr{right:18px;top:65px}.stage-bottom{left:14px;right:14px;bottom:19px;gap:14px}.view-button,.rotate-button{padding:9px 11px}.control-divider{margin-left:3px;margin-right:3px}.hint{font-size:9px}.below-stage{padding-top:13px}.below-stage .caption{font-size:9px;letter-spacing:.8px}.downloads{margin-top:28px;align-items:start;flex-direction:column;gap:17px;padding:21px 0}.download-label{display:flex;align-items:baseline;gap:10px}.download-label small{margin:0;max-width:none;font-size:9px}.download-links{width:100%;gap:8px}.download{flex:1;justify-content:center;padding:12px 10px;font-size:11px;gap:8px}.download .format{display:none}footer{font-size:9px;gap:12px;padding:22px 0 24px}}
-    @media(max-width:390px){h1{font-size:46px;gap:13px}h1 span{font-size:59px}.header-note{letter-spacing:0}.stage{min-height:430px}.view-button,.rotate-button{font-size:10px;padding:9px 9px}.rotate-button{gap:5px}.hint{font-size:8px}.download{font-size:10px;gap:6px}}
+    @media(min-width:1650px){.shell{padding:0 70px}}@media(max-width:1150px){.hero{gap:32px;grid-template-columns:minmax(245px,.8fr) minmax(0,1.45fr)}.stage{height:620px}h1{font-size:59px}h1 span{font-size:80px}.description{font-size:13px}.model-card{grid-template-columns:78px minmax(0,1fr);gap:4px;padding-right:10px;min-height:126px}.card-name{font-size:18px}.card-description{font-size:9px}.download{gap:9px;padding:12px}.download .format{padding-left:9px}.download-label small{max-width:180px;line-height:1.6}}
+    @media(max-width:820px){.shell{padding:0 6vw}header{height:75px}.header-note{font-size:9px;letter-spacing:.6px}.brand{font-size:12px;gap:10px}.brand-mark{width:29px;height:29px}main{padding-top:24px}.collection{margin-bottom:28px}.collection-heading{align-items:start}.collection-heading h2{font-size:12px}.collection-heading p{font-size:10px}.model-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.model-card{grid-template-columns:78px minmax(0,1fr);min-height:112px;padding:5px 9px 5px 2px;gap:4px;border-radius:13px}.card-preview{height:98px}.card-code{font-size:9px;margin-bottom:5px;letter-spacing:1px}.card-name{font-size:18px;margin-bottom:5px}.card-description{font-size:9px}.card-selected{right:10px;top:10px}.hero{grid-template-columns:1fr;gap:24px;align-items:start}.intro{padding:0}h1{font-size:50px;letter-spacing:-2px;margin:18px 0 12px;display:flex;align-items:baseline;gap:17px}h1 span{font-size:64px;letter-spacing:-4px;display:inline;margin:0}.subtitle{margin:0 0 15px;font-size:9px;letter-spacing:2.2px}.description{max-width:560px;line-height:1.85}.greeting{margin-top:10px;font-size:12px}.intro-rule{display:none}.detail-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:19px;padding-top:15px;border-top:1px solid var(--line)}.detail{gap:7px}.detail strong{font-size:10px;line-height:1.6}.detail p{display:none}.detail-number{font-size:9px}.stage{height:65vh;height:65svh;min-height:455px;max-height:700px;border-radius:21px}.stage-top{left:18px;right:18px;top:17px}.stage-label{font-size:9px;letter-spacing:.7px}.icon-button{width:44px;height:44px}.corner.tl{left:18px;top:68px}.corner.tr{right:18px;top:68px}.status{left:21px;right:21px;top:74px;font-size:9px}.status.error{font-size:11px}.status button{min-height:44px}.stage-bottom{left:12px;right:12px;bottom:18px;gap:12px}.view-button,.rotate-button{min-height:44px;padding:10px 11px}.control-divider{margin-left:3px;margin-right:3px}.hint{font-size:9px}.below-stage{padding-top:10px;gap:12px}.below-stage .caption{font-size:9px;letter-spacing:.4px}.screenshot-link{font-size:10px;gap:4px}.downloads{margin-top:24px;align-items:start;flex-direction:column;gap:17px;padding:21px 0}.download-label{display:flex;align-items:baseline;gap:10px}.download-label small{margin:0;max-width:none;font-size:9px}.download-links{width:100%;gap:8px}.download{flex:1;justify-content:center;padding:12px 9px;font-size:11px;gap:7px}.download .format{display:none}footer{font-size:9px;gap:12px;padding:22px 0 24px}}
+    @media(max-width:390px){.shell{padding:0 5vw}.header-note{font-size:8px;letter-spacing:0}.brand{font-size:11px;gap:8px}.collection-heading p{font-size:9px}.model-card{grid-template-columns:64px minmax(0,1fr);gap:2px}.card-name{font-size:17px}.card-description{font-size:8px}.card-code{font-size:8px}.card-preview{height:92px}h1{font-size:46px;gap:13px}h1 span{font-size:59px}.stage{min-height:430px}.view-button,.rotate-button{font-size:10px;padding:10px 9px}.rotate-button{gap:5px}.hint{font-size:8px}.download{font-size:10px;gap:5px;padding-left:6px;padding-right:6px}.stage-label{font-size:8px}.below-stage .caption{font-size:8px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
 </head>
 <body>
   <div class="shell">
     <header>
-      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>原创角色展厅</div>
-      <div class="header-note"><span class="dot"></span>ROBOT / N-07</div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>原创机器人展厅</div>
+      <div class="header-note"><span class="dot"></span>FOUR LITTLE WORLDS</div>
     </header>
     <main>
+      <section class="collection" aria-labelledby="collection-title">
+        <div class="collection-heading"><h2 id="collection-title">选一位新朋友</h2><p>四种轮廓，各有性格。</p></div>
+        <div class="model-grid" aria-label="选择机器人">
+          <button class="model-card selected" data-model="m12" aria-pressed="true" aria-label="查看苔芽 M-12，履带园艺机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><path d="M40 20V9m0 1c-1-9 16-9 17-8-1 11-9 14-17 8"/><rect x="20" y="23" width="40" height="40" rx="15"/><path d="M27 41h7m12 0h7M20 45H9v14m51-14h11v14"/><rect x="14" y="65" width="52" height="16" rx="8"/></svg></span><img src="assets/robot-m12.png" alt="薄荷绿矮胖机器人，履带底盘与双叶天线" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">M-12</span><span class="card-name">苔芽</span><span class="card-description">履带底盘<br>双叶天线 · 园艺伙伴</span></span>
+          </button>
+          <button class="model-card" data-model="r03" aria-pressed="false" aria-label="查看铆钉 R-03，四轮搬运机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><rect x="20" y="19" width="40" height="44" rx="8"/><circle cx="40" cy="33" r="9"/><path d="M20 39H9v19h11m40-19h11v19H60M26 53h28"/><circle cx="21" cy="72" r="9"/><circle cx="59" cy="72" r="9"/><path d="M30 73h20"/></svg></span><img src="assets/robot-r03.png" alt="日落橙机器人，单眼镜头、机械夹臂与四轮底盘" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">R-03</span><span class="card-name">铆钉</span><span class="card-description">四轮底盘<br>机械夹臂 · 搬运搭档</span></span>
+          </button>
+          <button class="model-card" data-model="s21" aria-pressed="false" aria-label="查看星巡 S-21，涵道风扇侦察机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><ellipse cx="40" cy="42" rx="21" ry="24"/><circle cx="40" cy="38" r="9"/><ellipse cx="11" cy="44" rx="8" ry="15"/><ellipse cx="69" cy="44" rx="8" ry="15"/><path d="M19 44h-4m50 0h-4M30 64l-4 10m24-10 4 10M7 34l8 19m50-19 8 19"/></svg></span><img src="assets/robot-s21.png" alt="白蓝圆形机器人，两侧紫色涵道风扇与双着陆橇" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">S-21</span><span class="card-name">星巡</span><span class="card-description">圆形机身<br>双侧风扇 · 空中观察员</span></span>
+          </button>
+          <button class="model-card" data-model="n07" aria-pressed="false" aria-label="查看灯塔 N-07，双足探索机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><rect x="22" y="9" width="36" height="25" rx="9"/><path d="M40 9V3M30 20h5m10 0h5"/><rect x="24" y="39" width="32" height="24" rx="8"/><path d="M24 44 13 56m43-12 11-13v-9M30 64v15H20m30-15v15h10"/></svg></span><img src="assets/robot.png" alt="暖白双足机器人，橙色胸甲，一只手挥手" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">N-07</span><span class="card-name">灯塔</span><span class="card-description">双足轮廓<br>青蓝双眼 · 探索伙伴</span></span>
+          </button>
+        </div>
+      </section>
       <div class="hero">
         <section class="intro" aria-labelledby="character-title">
-          <div class="eyebrow">小型探索机器人</div>
-          <h1 id="character-title">灯塔<span>N-07</span></h1>
-          <p class="subtitle">A LITTLE LIGHT, A NEW HELLO.</p>
-          <p class="description">象牙白外壳、日落橙胸甲，和一双亮起的青蓝眼睛。这位小小的探索者，正抬起一只手，向你打招呼。</p>
-          <p class="greeting">下一站，一起去看看。</p>
+          <div class="eyebrow" id="character-kind">履带园艺机器人</div>
+          <h1 id="character-title"><span id="character-name" style="display:contents;font:inherit;letter-spacing:inherit">苔芽</span><span id="character-code">M-12</span></h1>
+          <p class="subtitle" id="character-subtitle">A LITTLE GREEN, EVERY DAY.</p>
+          <p class="description" id="character-description">薄荷绿和奶油白的圆胖身体，稳稳坐在一对履带上。头顶的两片叶形太阳能天线迎着光，一对小机械夹爪，正准备照顾下一株小苗。</p>
+          <p class="greeting" id="character-greeting">慢慢来，小芽会长大。</p>
           <div class="intro-rule" aria-hidden="true"></div>
-          <div class="detail-list">
-            <div class="detail"><span class="detail-number">01</span><div><strong>圆角装甲</strong><p>柔和的外壳，包裹石墨色机械关节。</p></div></div>
-            <div class="detail"><span class="detail-number">02</span><div><strong>光窗核心</strong><p>胸口能量窗，与屏幕双眼相互呼应。</p></div></div>
-            <div class="detail"><span class="detail-number">03</span><div><strong>信号组件</strong><p>短天线和接收盘，留下独特的不对称轮廓。</p></div></div>
+          <div class="detail-list" id="character-details">
+            <div class="detail"><span class="detail-number">01</span><div><strong>履带小脚</strong><p>宽宽的履带，衬出低矮圆胖的轮廓。</p></div></div>
+            <div class="detail"><span class="detail-number">02</span><div><strong>叶形天线</strong><p>两片向上舒展的叶子，作为太阳能组件。</p></div></div>
+            <div class="detail"><span class="detail-number">03</span><div><strong>园艺夹爪</strong><p>小小的机械夹爪，给机械外壳添上温柔。</p></div></div>
           </div>
         </section>
-        <section aria-label="灯塔 N-07 三维模型预览">
-          <div class="stage" id="stage">
+        <section id="preview-region" aria-label="苔芽 M-12 三维模型预览">
+          <div class="stage" id="stage" data-current-model="m12" aria-busy="true">
             <div class="stage-top">
-              <span class="stage-label">N-07 / INTERACTIVE VIEW</span>
+              <span class="stage-label" id="stage-label">M-12 / INTERACTIVE VIEW</span>
               <div class="top-actions">
                 <button class="icon-button" id="reset" title="重置视角" aria-label="重置视角"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.2 7M4 4v6h6"/></svg></button>
                 <button class="icon-button" id="fullscreen" title="全屏查看" aria-label="全屏查看"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg></button>
               </div>
             </div>
             <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span>
-            <model-viewer id="viewer" src="assets/robot.glb" poster="assets/robot.png" alt="原创机器人灯塔 N-07：暖象牙白圆角外壳、橙色胸甲、青蓝屏幕眼睛、天线和接收盘，一只手抬起挥手" camera-controls auto-rotate rotation-per-second="12deg" auto-rotate-delay="1800" camera-orbit="20deg 80deg auto" camera-target="0m 2m 0m" field-of-view="30deg" min-camera-orbit="auto 15deg auto" max-camera-orbit="auto 110deg auto" shadow-intensity="1" shadow-softness="0.8" exposure="1" tone-mapping="aces" environment-image="assets/studio.hdr" interaction-prompt="none" touch-action="pan-y"></model-viewer>
-            <div class="status" id="status" role="status">正在唤醒 N-07…</div>
+            <model-viewer id="viewer" src="assets/robot-m12.glb" poster="assets/robot-m12.png" alt="原创园艺机器人苔芽 M-12：薄荷绿与奶油白的矮胖身体、履带底盘、两片叶形太阳能天线、小机械夹爪" camera-controls auto-rotate rotation-per-second="12deg" auto-rotate-delay="1800" camera-orbit="20deg 80deg auto" camera-target="0m 1.35m 0m" field-of-view="30deg" min-camera-orbit="auto 15deg auto" max-camera-orbit="auto 110deg auto" shadow-intensity="1" shadow-softness="0.8" exposure="1" tone-mapping="aces" environment-image="assets/studio.hdr" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+            <div class="status" id="status" role="status" aria-live="polite" aria-atomic="true">正在唤醒苔芽 M-12…</div>
             <div class="stage-bottom">
               <div class="view-controls" aria-label="模型视角控制">
                 <button class="view-button" data-view="0deg 80deg auto" aria-pressed="false">正面</button>
@@ -65,68 +91,225 @@
               <div class="hint">拖动旋转 · 滚轮缩放 · 手机双指缩放</div>
             </div>
           </div>
-          <div class="below-stage"><span class="caption"><span>●</span>原创角色 / 360° 预览</span><a class="screenshot-link" href="assets/robot.png" target="_blank" rel="noopener">查看渲染图<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+          <div class="below-stage"><span class="caption"><span>●</span><span id="stage-caption">苔芽 / 原创角色 · 360° 预览</span></span><a class="screenshot-link" id="screenshot-link" href="assets/robot-m12.png" target="_blank" rel="noopener">查看渲染图<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
         </section>
       </div>
-      <section class="downloads" aria-label="下载模型与图片">
-        <div class="download-label">把 N-07 带走<small>模型、源文件与渲染图</small></div>
+      <section class="downloads" aria-label="下载当前机器人模型与图片">
+        <div class="download-label"><span id="download-label">把 M-12 带走</span><small>模型、源文件与渲染图</small></div>
         <div class="download-links">
-          <a class="download" href="assets/robot.glb" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>下载模型<span class="format">GLB</span></a>
-          <a class="download" href="assets/robot.blend" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-14-4 18"/></svg>Blender 源文件<span class="format">BLEND</span></a>
-          <a class="download" href="assets/robot.png" download><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg>渲染图片<span class="format">PNG</span></a>
+          <a class="download" id="download-glb" href="assets/robot-m12.glb" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>下载模型<span class="format">GLB</span></a>
+          <a class="download" id="download-blend" href="assets/robot-m12.blend" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-14-4 18"/></svg>Blender 源文件<span class="format">BLEND</span></a>
+          <a class="download" id="download-png" href="assets/robot-m12.png" download><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg>渲染图片<span class="format">PNG</span></a>
         </div>
       </section>
+      <noscript><p>开启 JavaScript 即可旋转模型。你也可以通过上方链接查看渲染图和下载文件。</p></noscript>
     </main>
-    <footer><span>灯塔 N-07 · 原创机器人</span><span class="end-mark">保持好奇，继续探索。</span></footer>
+    <footer><span>四位朋友 · 原创机器人系列</span><span class="end-mark">保持好奇，继续探索。</span></footer>
   </div>
   <script>
-    const viewer = document.getElementById('viewer');
+    const models = {
+      m12: {
+        name: '苔芽', code: 'M-12', kind: '履带园艺机器人', file: 'robot-m12', target: '0m 1.35m 0m',
+        subtitle: 'A LITTLE GREEN, EVERY DAY.', greeting: '慢慢来，小芽会长大。',
+        description: '薄荷绿和奶油白的圆胖身体，稳稳坐在一对履带上。头顶的两片叶形太阳能天线迎着光，一对小机械夹爪，正准备照顾下一株小苗。',
+        alt: '原创园艺机器人苔芽 M-12：薄荷绿与奶油白的矮胖身体、履带底盘、两片叶形太阳能天线、小机械夹爪',
+        details: [['履带小脚', '宽宽的履带，衬出低矮圆胖的轮廓。'], ['叶形天线', '两片向上舒展的叶子，作为太阳能组件。'], ['园艺夹爪', '小小的机械夹爪，给机械外壳添上温柔。']]
+      },
+      r03: {
+        name: '铆钉', code: 'R-03', kind: '四轮搬运机器人', file: 'robot-r03', target: '0m 1.41m 0m',
+        subtitle: 'A HELPING HAND, ON FOUR WHEELS.', greeting: '这件事，交给我。',
+        description: '日落橙的方形装甲，搭配石墨灰机械骨架。四只轮子托起结实的身体，单眼镜头看着前方，一对机械夹臂和货架，勾勒出忙碌的搬运工。',
+        alt: '原创搬运机器人铆钉 R-03：日落橙与石墨灰装甲、四轮底盘、单眼镜头、机械夹臂与货架',
+        details: [['四轮底盘', '厚实车轮与低重心外形，撑起方正机身。'], ['单眼镜头', '居中的圆形镜头，让表情简洁而专注。'], ['机械夹臂', '外露关节、夹爪与货架，带着工业气息。']]
+      },
+      s21: {
+        name: '星巡', code: 'S-21', kind: '涵道风扇侦察机器人', file: 'robot-s21', target: '0m 1.25m 0m',
+        subtitle: 'A DIFFERENT VIEW, UP ABOVE.', greeting: '抬头，还有新的风景。',
+        description: '珍珠白的圆形机身，搭配深蓝底部与紫色镜头。白紫涵道风扇向两侧展开，里面的叶片清晰可见；两条着陆橇向下伸展，等待下一次稳稳落地。',
+        alt: '原创侦察机器人星巡 S-21：珍珠白与深蓝圆形机身、紫色单眼镜头、两侧可见叶片的白紫涵道风扇和双着陆橇',
+        details: [['圆形机身', '圆润外壳与居中的镜头，组成紧凑轮廓。'], ['双侧风扇', '两只白紫涵道，环抱清晰可见的叶片。'], ['双着陆橇', '两条伸展支架与着陆橇，撑起圆形机身。']]
+      },
+      n07: {
+        name: '灯塔', code: 'N-07', kind: '双足探索机器人', file: 'robot', target: '0m 2m 0m',
+        subtitle: 'A LITTLE LIGHT, A NEW HELLO.', greeting: '下一站，一起去看看。',
+        description: '象牙白外壳、日落橙胸甲，和一双亮起的青蓝眼睛。这位小小的探索者，正抬起一只手，向你打招呼。',
+        alt: '原创机器人灯塔 N-07：暖象牙白圆角外壳、橙色胸甲、青蓝屏幕眼睛、天线和接收盘，一只手抬起挥手',
+        details: [['圆角装甲', '柔和的外壳，包裹石墨色机械关节。'], ['光窗核心', '胸口光窗，与屏幕双眼相互呼应。'], ['信号组件', '短天线和接收盘，留下独特的不对称轮廓。']]
+      }
+    };
+    let viewer = document.getElementById('viewer');
+    const baseViewer = viewer.cloneNode(false);
     const status = document.getElementById('status');
+    const stage = document.getElementById('stage');
+    const modelButtons = [...document.querySelectorAll('[data-model]')];
+    const viewButtons = [...document.querySelectorAll('[data-view]')];
     const rotateButton = document.getElementById('rotate');
     const rotateLabel = document.getElementById('rotate-label');
-    const viewButtons = [...document.querySelectorAll('[data-view]')];
-    const stage = document.getElementById('stage');
     const fullscreenButton = document.getElementById('fullscreen');
+    let activeModel = 'm12';
+    let requestNumber = 0;
+    let rotationEnabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let loadTimeout;
+    let currentLoaded = false;
+    const asset = (model, extension) => `assets/${model.file}.${extension}`;
+    const absoluteUrl = value => new URL(value, document.baseURI).href;
+
+    // Keep fixed thumbnail space, including while a render image is unavailable.
+    document.querySelectorAll('.card-preview img').forEach(img => {
+      img.addEventListener('error', () => img.classList.add('failed'));
+      img.addEventListener('load', () => img.classList.remove('failed'));
+      if (img.complete && !img.naturalWidth) img.classList.add('failed');
+    });
+    function clearViews() {
+      viewButtons.forEach(button => {
+        button.classList.remove('active');
+        button.setAttribute('aria-pressed', 'false');
+      });
+    }
     function setRotation(enabled) {
-      viewer.autoRotate = enabled;
+      rotationEnabled = enabled;
+      viewer.toggleAttribute('auto-rotate', enabled);
       rotateButton.classList.toggle('active', enabled);
       rotateButton.setAttribute('aria-pressed', String(enabled));
       rotateLabel.textContent = enabled ? '暂停旋转' : '自动旋转';
       if (enabled) clearViews();
     }
-    function clearViews() {
-      viewButtons.forEach(button => { button.classList.remove('active'); button.setAttribute('aria-pressed', 'false'); });
+    function resetCamera(orbit = '20deg 80deg auto') {
+      viewer.resetTurntableRotation?.(0);
+      viewer.setAttribute('camera-target', models[activeModel].target);
+      viewer.setAttribute('camera-orbit', orbit);
+      viewer.setAttribute('field-of-view', '30deg');
+      viewer.jumpCameraToGoal?.();
     }
-    viewer.addEventListener('load', () => { status.hidden = true; });
-    viewer.addEventListener('error', () => { status.hidden = false; status.className = 'status error'; status.textContent = '模型暂时没能加载。你可以先查看渲染图，也可以下载模型文件。'; });
-    rotateButton.addEventListener('click', () => setRotation(!viewer.autoRotate));
+    function updateInfo(model) {
+      const values = {
+        'character-name': model.name, 'character-code': model.code,
+        'character-kind': model.kind, 'character-subtitle': model.subtitle,
+        'character-description': model.description, 'character-greeting': model.greeting,
+        'stage-label': `${model.code} / INTERACTIVE VIEW`,
+        'stage-caption': `${model.name} / 原创角色 · 360° 预览`,
+        'download-label': `把 ${model.code} 带走`
+      };
+      Object.entries(values).forEach(([id, value]) => document.getElementById(id).textContent = value);
+      const details = document.getElementById('character-details');
+      details.replaceChildren(...model.details.map(([title, text], index) => {
+        const row = document.createElement('div'); row.className = 'detail';
+        const number = document.createElement('span'); number.className = 'detail-number';
+        number.textContent = String(index + 1).padStart(2, '0');
+        const copy = document.createElement('div');
+        const heading = document.createElement('strong'); heading.textContent = title;
+        const paragraph = document.createElement('p'); paragraph.textContent = text;
+        copy.append(heading, paragraph); row.append(number, copy); return row;
+      }));
+      ['glb', 'blend', 'png'].forEach(extension => {
+        const link = document.getElementById(`download-${extension}`);
+        link.href = asset(model, extension);
+        link.setAttribute('aria-label', `下载${model.name} ${model.code} 的 ${extension.toUpperCase()} 文件`);
+      });
+      document.getElementById('screenshot-link').href = asset(model, 'png');
+      document.getElementById('screenshot-link').setAttribute('aria-label', `查看${model.name} ${model.code} 渲染图`);
+      document.getElementById('preview-region').setAttribute('aria-label', `${model.name} ${model.code} 三维模型预览`);
+      document.title = `${model.name} ${model.code} · 原创机器人展厅`;
+      stage.dataset.currentModel = activeModel;
+      modelButtons.forEach(button => {
+        const selected = button.dataset.model === activeModel;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+    }
+    function showLoading(model) {
+      currentLoaded = false;
+      status.className = 'status loading';
+      status.textContent = `正在唤醒${model.name} ${model.code}…`;
+      stage.setAttribute('aria-busy', 'true');
+      stage.dataset.loadState = 'loading';
+    }
+    function showError(message) {
+      status.className = 'status error';
+      status.textContent = message;
+      const retry = document.createElement('button');
+      retry.type = 'button'; retry.id = 'retry-model'; retry.textContent = '重新加载';
+      retry.addEventListener('click', () => selectModel(activeModel, true));
+      status.append(retry);
+      stage.setAttribute('aria-busy', 'false');
+      stage.dataset.loadState = 'error';
+    }
+    function attachViewerEvents(element, model, number) {
+      const belongsToCurrentRequest = () => viewer === element && requestNumber === number;
+      element.addEventListener('load', event => {
+        if (!belongsToCurrentRequest() || absoluteUrl(event.detail?.url || '') !== absoluteUrl(asset(model, 'glb'))) return;
+        clearTimeout(loadTimeout);
+        currentLoaded = true;
+        element.resetTurntableRotation?.(0);
+        element.jumpCameraToGoal?.();
+        status.className = 'status ready';
+        status.textContent = `${model.name} ${model.code} 已就绪 · 360° 可旋转`;
+        stage.setAttribute('aria-busy', 'false');
+        stage.dataset.loadState = 'ready';
+      });
+      element.addEventListener('error', () => {
+        if (!belongsToCurrentRequest()) return;
+        clearTimeout(loadTimeout);
+        showError(`${model.name}暂时没能加载。可先查看渲染图，或选择其他机器人。`);
+      });
+      element.addEventListener('camera-change', event => {
+        if (belongsToCurrentRequest() && event.detail.source === 'user-interaction') clearViews();
+      });
+      loadTimeout = setTimeout(() => {
+        if (belongsToCurrentRequest() && !currentLoaded) showError('加载比平时慢一些。可重新加载，或先查看渲染图。');
+      }, 45000);
+    }
+    function selectModel(key, force = false, initial = false) {
+      if (!models[key] || (!initial && !force && activeModel === key)) return;
+      clearTimeout(loadTimeout);
+      activeModel = key;
+      const model = models[key];
+      const number = ++requestNumber;
+      clearViews(); updateInfo(model); showLoading(model);
+      // A distinct element isolates old errors, which do not contain a source URL.
+      // model-viewer's shared resource cache still makes return visits quick.
+      if (!initial) {
+        const nextViewer = baseViewer.cloneNode(false);
+        nextViewer.removeAttribute('src');
+        nextViewer.setAttribute('poster', asset(model, 'png'));
+        nextViewer.setAttribute('alt', model.alt);
+        nextViewer.setAttribute('camera-target', model.target);
+        nextViewer.setAttribute('camera-orbit', '20deg 80deg auto');
+        nextViewer.setAttribute('field-of-view', '30deg');
+        nextViewer.toggleAttribute('auto-rotate', rotationEnabled);
+        const previousViewer = viewer;
+        viewer = nextViewer;
+        attachViewerEvents(viewer, model, number);
+        previousViewer.replaceWith(viewer);
+        viewer.setAttribute('src', asset(model, 'glb'));
+      } else {
+        attachViewerEvents(viewer, model, number);
+      }
+      setRotation(rotationEnabled);
+    }
+    modelButtons.forEach(button => button.addEventListener('click', () => selectModel(button.dataset.model)));
+    rotateButton.addEventListener('click', () => setRotation(!rotationEnabled));
     viewButtons.forEach(button => button.addEventListener('click', () => {
       setRotation(false); clearViews();
       button.classList.add('active'); button.setAttribute('aria-pressed', 'true');
-      viewer.resetTurntableRotation(0);
-      viewer.cameraTarget = '0m 2m 0m';
-      viewer.cameraOrbit = button.dataset.view;
-      viewer.jumpCameraToGoal();
+      resetCamera(button.dataset.view);
     }));
-    document.getElementById('reset').addEventListener('click', () => {
-      clearViews(); viewer.resetTurntableRotation(0);
-      viewer.cameraTarget = '0m 2m 0m'; viewer.cameraOrbit = '20deg 80deg auto'; viewer.fieldOfView = '30deg';
-      viewer.jumpCameraToGoal();
-    });
-    viewer.addEventListener('camera-change', event => { if (event.detail.source === 'user-interaction') clearViews(); });
+    document.getElementById('reset').addEventListener('click', () => { clearViews(); resetCamera(); });
     if (!stage.requestFullscreen) fullscreenButton.hidden = true;
     fullscreenButton.addEventListener('click', async () => {
-      try { if (document.fullscreenElement) await document.exitFullscreen(); else await stage.requestFullscreen(); }
-      catch { status.hidden = false; status.textContent = '当前浏览器暂不支持全屏，可旋转手机横屏查看。'; }
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await stage.requestFullscreen();
+      } catch {
+        status.className = 'status';
+        status.textContent = '当前浏览器暂不支持全屏，可旋转手机横屏查看。';
+      }
     });
     document.addEventListener('fullscreenchange', () => {
       const label = document.fullscreenElement ? '退出全屏' : '全屏查看';
       fullscreenButton.setAttribute('aria-label', label); fullscreenButton.title = label;
     });
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      viewer.removeAttribute('auto-rotate'); rotateButton.classList.remove('active');
-      rotateButton.setAttribute('aria-pressed', 'false'); rotateLabel.textContent = '自动旋转';
-    }
+    selectModel('m12', false, true);
   </script>
 </body>
 </html>
