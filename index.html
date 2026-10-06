@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f1ea">
-  <meta name="description" content="四位原创机器人：灯塔、苔芽、铆钉与星巡。切换角色，旋转、缩放，探索不同的机械轮廓。">
-  <title>苔芽 M-12 · 原创机器人展厅</title>
+  <meta name="description" content="七位原创机器人：暮灯、炉心、驮云、苔芽、铆钉、星巡与灯塔。切换角色，旋转、缩放，探索不同的机械轮廓。">
+  <title>暮灯 L-08 · 原创机器人展厅</title>
   <script type="module" src="assets/model-viewer.min.js"></script>
   <style>
     :root{color-scheme:light;--paper:#f4f1ea;--ink:#243137;--muted:#737b7b;--line:#dcded5;--orange:#df703d;--cyan:#1a8992;--white:#fffef9}
     *{box-sizing:border-box}[hidden]{display:none!important}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}button,a{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:3px solid #1a899280;outline-offset:4px}button{font:inherit}a{color:inherit}svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
     .shell{max-width:1480px;padding:0 5.3vw;margin:auto}header{height:84px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:18px}.brand{display:flex;align-items:center;gap:13px;font-size:14px;font-weight:650;letter-spacing:1px}.brand-mark{display:grid;place-items:center;width:32px;height:32px;border:1.5px solid var(--ink);border-radius:9px;position:relative}.brand-mark:after{content:"";width:14px;height:8px;border-radius:3px;background:var(--cyan);box-shadow:0 0 0 3px #1a899214}.brand-mark:before{content:"";position:absolute;top:-5px;left:15px;width:1.5px;height:5px;background:var(--ink)}.header-note{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:10px;letter-spacing:1.7px}.dot{width:5px;height:5px;background:var(--orange);border-radius:50%;display:inline-block}
-    main{padding-top:26px}.collection{margin-bottom:34px}.collection-heading{display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin-bottom:14px}.collection-heading h2{font-size:13px;letter-spacing:1px;font-weight:600;margin:0}.collection-heading p{font-size:11px;line-height:1.6;color:var(--muted);margin:0}.model-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.model-card{position:relative;display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:10px;width:100%;min-height:130px;padding:10px 15px 10px 5px;border:1px solid #d7dcd1;border-radius:16px;text-align:left;background:#faf9f1;cursor:pointer;color:var(--ink);overflow:hidden;transition:background .18s,border-color .18s,box-shadow .18s}.model-card:hover{background:var(--white);border-color:#a6bdb0}.model-card.selected{background:#fffdf7;border-color:#547e6a;box-shadow:0 0 0 1px #547e6a}.card-preview{position:relative;width:100%;height:108px;display:grid;place-items:center;background:radial-gradient(ellipse,#e8eee3,transparent 70%);border-radius:10px;overflow:hidden}.card-preview img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1}.card-preview img.failed{display:none}.preview-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#849386;opacity:.35}.preview-fallback svg{width:62px;height:70px;stroke-width:1.2}.card-copy{position:relative;z-index:2;min-width:0;padding-top:5px}.card-code{display:block;font:10px/1.4 monospace;letter-spacing:1.5px;color:#7e8a80;margin-bottom:7px}.card-name{display:block;font-size:20px;font-weight:550;letter-spacing:1px;margin-bottom:8px}.card-description{display:block;font-size:10px;line-height:1.65;color:var(--muted)}.card-selected{position:absolute;right:12px;top:10px;width:6px;height:6px;border-radius:50%;background:var(--cyan);opacity:0;transition:opacity .18s}.selected .card-selected{opacity:1}
+    main{padding-top:26px}.collection{margin-bottom:34px}.collection-heading{display:flex;align-items:baseline;justify-content:space-between;gap:18px;margin-bottom:14px}.collection-heading h2{font-size:13px;letter-spacing:1px;font-weight:600;margin:0}.collection-heading p{font-size:11px;line-height:1.6;color:var(--muted);margin:0}.model-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}.model-card{grid-column:span 3}.model-card:nth-child(n+5){grid-column:span 4}.model-card{position:relative;display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:10px;width:100%;min-height:130px;padding:10px 15px 10px 5px;border:1px solid #d7dcd1;border-radius:16px;text-align:left;background:#faf9f1;cursor:pointer;color:var(--ink);overflow:hidden;transition:background .18s,border-color .18s,box-shadow .18s}.model-card:hover{background:var(--white);border-color:#a6bdb0}.model-card.selected{background:#fffdf7;border-color:#547e6a;box-shadow:0 0 0 1px #547e6a}.card-preview{position:relative;width:100%;height:108px;display:grid;place-items:center;background:radial-gradient(ellipse,#e8eee3,transparent 70%);border-radius:10px;overflow:hidden}.card-preview img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1}.card-preview img.failed{display:none}.preview-fallback{position:absolute;inset:0;display:grid;place-items:center;color:#849386;opacity:.35}.preview-fallback svg{width:62px;height:70px;stroke-width:1.2}.card-copy{position:relative;z-index:2;min-width:0;padding-top:5px}.card-code{display:block;font:10px/1.4 monospace;letter-spacing:1.5px;color:#7e8a80;margin-bottom:7px}.card-name{display:block;font-size:20px;font-weight:550;letter-spacing:1px;margin-bottom:8px}.card-description{display:block;font-size:10px;line-height:1.65;color:var(--muted)}.card-selected{position:absolute;right:12px;top:10px;width:6px;height:6px;border-radius:50%;background:var(--cyan);opacity:0;transition:opacity .18s}.selected .card-selected{opacity:1}
     .hero{display:grid;grid-template-columns:minmax(270px,.78fr) minmax(0,1.55fr);gap:60px;align-items:center}.intro{padding:24px 0 30px}.eyebrow{display:flex;gap:12px;align-items:center;color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:600}.eyebrow:before{content:"";width:22px;height:1px;background:var(--cyan)}h1{margin:26px 0 13px;font-size:clamp(55px,5.1vw,77px);line-height:1.08;letter-spacing:-4px;font-weight:600}h1 span{display:block;font-size:clamp(65px,6.7vw,100px);font-family:Arial,sans-serif;font-weight:500;letter-spacing:-6px;margin-top:9px}.subtitle{font-size:10px;letter-spacing:3px;color:var(--muted);margin:21px 0 25px}.description{font-size:14px;line-height:1.9;color:#677171;max-width:330px;margin:0}.greeting{font-size:14px;line-height:1.8;margin:20px 0 0;color:var(--ink);font-weight:500}.intro-rule{width:40px;height:2px;background:var(--orange);margin:26px 0 23px}.detail-list{display:grid;gap:13px}.detail{display:flex;gap:15px;align-items:flex-start}.detail-number{color:var(--orange);font:10px/1.7 monospace;margin-top:2px}.detail strong{font-size:12px;font-weight:550}.detail p{font-size:11px;line-height:1.7;margin:4px 0 0;color:var(--muted)}
     .stage{position:relative;height:630px;min-width:0;border:1px solid #d7dbd2;border-radius:26px;background:radial-gradient(ellipse at 55% 35%,#fffdf6 0%,#edece1 68%,#e6e8de 100%);overflow:hidden;isolation:isolate}.stage:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#4e686005 1px,transparent 1px),linear-gradient(90deg,#4e686005 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(transparent 60%,#000);pointer-events:none;z-index:-1}.stage-top{position:absolute;z-index:2;left:25px;right:25px;top:21px;display:flex;align-items:center;justify-content:space-between;gap:12px;pointer-events:none}.stage-label{font-size:10px;font-family:monospace;letter-spacing:1.2px;color:#7f8982}.top-actions{display:flex;gap:8px;pointer-events:auto}.icon-button{display:grid;place-items:center;width:42px;height:42px;border:1px solid #cbd0c580;border-radius:11px;background:#fffefa80;color:#5d6b66;cursor:pointer;transition:background .18s,border-color .18s}.icon-button:hover{background:var(--white);border-color:#a8b6af}model-viewer{width:100%;height:calc(100% - 132px);margin-top:42px;--poster-color:transparent;--progress-bar-color:var(--cyan);--progress-bar-height:2px}model-viewer::part(default-progress-mask){border-radius:0}.stage-bottom{position:absolute;left:22px;right:22px;bottom:20px;display:flex;flex-direction:column;align-items:center;gap:13px;pointer-events:none}.view-controls{display:flex;gap:4px;padding:5px;background:#fffef5e8;border:1px solid #d2d8cd;border-radius:13px;box-shadow:0 3px 12px #384a3607;pointer-events:auto}.view-button,.rotate-button{border:0;border-radius:8px;min-height:40px;padding:10px 14px;background:transparent;color:#74817b;font-size:11px;cursor:pointer;transition:background .18s,color .18s;white-space:nowrap}.view-button:hover,.rotate-button:hover{color:var(--ink);background:#e9ece4}.view-button.active{background:#263936;color:#fffef9}.control-divider{width:1px;background:#dce0d5;margin:6px 5px}.rotate-button{display:flex;align-items:center;gap:7px}.rotate-button svg{width:14px;height:14px}.rotate-button.active{color:var(--cyan)}.hint{font-size:10px;letter-spacing:.3px;color:#839086;text-align:center}.status{position:absolute;left:25px;right:25px;top:78px;font-size:10px;letter-spacing:.25px;color:#6c7f75;z-index:2;pointer-events:none;line-height:1.7}.status.ready:before{content:"";display:inline-block;width:4px;height:4px;background:var(--cyan);border-radius:50%;margin:0 6px 2px 0}.status.error{max-width:390px;background:#fffdf7ee;border:1px solid #dbd4c5;border-radius:10px;padding:12px 15px;color:#8b5e42;font-size:12px;pointer-events:auto}.status button{border:0;border-bottom:1px solid currentColor;margin-top:7px;padding:2px 0;background:transparent;color:inherit;font-size:12px;cursor:pointer;display:block}.corner{position:absolute;width:16px;height:16px;border-color:#afbab0;border-style:solid;border-width:0;pointer-events:none}.corner.tl{left:22px;top:72px;border-left-width:1px;border-top-width:1px}.corner.tr{right:22px;top:72px;border-right-width:1px;border-top-width:1px}
     .below-stage{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:15px 5px 0}.below-stage .caption{font-size:10px;letter-spacing:1.1px;color:#839087}.caption>span:first-child{color:var(--orange);margin-right:6px}.screenshot-link{color:var(--cyan);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:7px;min-height:32px}.screenshot-link svg{width:13px;height:13px}.screenshot-link:hover{text-decoration:underline}.downloads{margin:33px 0 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:23px 0;display:flex;align-items:center;justify-content:space-between;gap:24px}.download-label{font-size:12px;font-weight:500}.download-label small{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);font-weight:400;margin-top:7px}.download-links{display:flex;gap:10px;flex-wrap:wrap}.download{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #d5d9cf;border-radius:11px;text-decoration:none;font-size:12px;background:#fbfaf4;transition:background .18s,border-color .18s}.download:hover{border-color:#9db8ab;background:var(--white)}.download svg{width:15px;height:15px;color:#79897d}.download .format{font:10px monospace;color:#849087;border-left:1px solid #dce0d5;padding-left:12px}.download:first-child{background:#253936;color:#fffef9;border-color:#253936}.download:first-child svg,.download:first-child .format{color:#a9c7bf}.download:first-child .format{border-color:#ffffff30}.download:first-child:hover{background:#344e47}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0 30px;color:#8c948c;font-size:10px;letter-spacing:.5px}footer .end-mark{display:flex;align-items:center;gap:8px}footer .end-mark:before{content:"";height:5px;width:5px;background:var(--cyan);border-radius:50%}
     .stage:fullscreen{width:100vw;height:100dvh;border:0;border-radius:0}.stage:fullscreen .stage-top{top:25px}.stage:fullscreen .stage-bottom{bottom:28px}
     @media(min-width:1650px){.shell{padding:0 70px}}@media(max-width:1150px){.hero{gap:32px;grid-template-columns:minmax(245px,.8fr) minmax(0,1.45fr)}.stage{height:620px}h1{font-size:59px}h1 span{font-size:80px}.description{font-size:13px}.model-card{grid-template-columns:78px minmax(0,1fr);gap:4px;padding-right:10px;min-height:126px}.card-name{font-size:18px}.card-description{font-size:9px}.download{gap:9px;padding:12px}.download .format{padding-left:9px}.download-label small{max-width:180px;line-height:1.6}}
-    @media(max-width:820px){.shell{padding:0 6vw}header{height:75px}.header-note{font-size:9px;letter-spacing:.6px}.brand{font-size:12px;gap:10px}.brand-mark{width:29px;height:29px}main{padding-top:24px}.collection{margin-bottom:28px}.collection-heading{align-items:start}.collection-heading h2{font-size:12px}.collection-heading p{font-size:10px}.model-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.model-card{grid-template-columns:78px minmax(0,1fr);min-height:112px;padding:5px 9px 5px 2px;gap:4px;border-radius:13px}.card-preview{height:98px}.card-code{font-size:9px;margin-bottom:5px;letter-spacing:1px}.card-name{font-size:18px;margin-bottom:5px}.card-description{font-size:9px}.card-selected{right:10px;top:10px}.hero{grid-template-columns:1fr;gap:24px;align-items:start}.intro{padding:0}h1{font-size:50px;letter-spacing:-2px;margin:18px 0 12px;display:flex;align-items:baseline;gap:17px}h1 span{font-size:64px;letter-spacing:-4px;display:inline;margin:0}.subtitle{margin:0 0 15px;font-size:9px;letter-spacing:2.2px}.description{max-width:560px;line-height:1.85}.greeting{margin-top:10px;font-size:12px}.intro-rule{display:none}.detail-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:19px;padding-top:15px;border-top:1px solid var(--line)}.detail{gap:7px}.detail strong{font-size:10px;line-height:1.6}.detail p{display:none}.detail-number{font-size:9px}.stage{height:65vh;height:65svh;min-height:455px;max-height:700px;border-radius:21px}.stage-top{left:18px;right:18px;top:17px}.stage-label{font-size:9px;letter-spacing:.7px}.icon-button{width:44px;height:44px}.corner.tl{left:18px;top:68px}.corner.tr{right:18px;top:68px}.status{left:21px;right:21px;top:74px;font-size:9px}.status.error{font-size:11px}.status button{min-height:44px}.stage-bottom{left:12px;right:12px;bottom:18px;gap:12px}.view-button,.rotate-button{min-height:44px;padding:10px 11px}.control-divider{margin-left:3px;margin-right:3px}.hint{font-size:9px}.below-stage{padding-top:10px;gap:12px}.below-stage .caption{font-size:9px;letter-spacing:.4px}.screenshot-link{font-size:10px;gap:4px}.downloads{margin-top:24px;align-items:start;flex-direction:column;gap:17px;padding:21px 0}.download-label{display:flex;align-items:baseline;gap:10px}.download-label small{margin:0;max-width:none;font-size:9px}.download-links{width:100%;gap:8px}.download{flex:1;justify-content:center;padding:12px 9px;font-size:11px;gap:7px}.download .format{display:none}footer{font-size:9px;gap:12px;padding:22px 0 24px}}
+    @media(max-width:820px){.shell{padding:0 6vw}header{height:75px}.header-note{font-size:9px;letter-spacing:.6px}.brand{font-size:12px;gap:10px}.brand-mark{width:29px;height:29px}main{padding-top:24px}.collection{margin-bottom:28px}.collection-heading{align-items:start}.collection-heading h2{font-size:12px}.collection-heading p{font-size:10px}.model-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.model-card,.model-card:nth-child(n+5){grid-column:auto}.model-card{grid-template-columns:78px minmax(0,1fr);min-height:112px;padding:5px 9px 5px 2px;gap:4px;border-radius:13px}.card-preview{height:98px}.card-code{font-size:9px;margin-bottom:5px;letter-spacing:1px}.card-name{font-size:18px;margin-bottom:5px}.card-description{font-size:9px}.card-selected{right:10px;top:10px}.hero{grid-template-columns:1fr;gap:24px;align-items:start}.intro{padding:0}h1{font-size:50px;letter-spacing:-2px;margin:18px 0 12px;display:flex;align-items:baseline;gap:17px}h1 span{font-size:64px;letter-spacing:-4px;display:inline;margin:0}.subtitle{margin:0 0 15px;font-size:9px;letter-spacing:2.2px}.description{max-width:560px;line-height:1.85}.greeting{margin-top:10px;font-size:12px}.intro-rule{display:none}.detail-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:19px;padding-top:15px;border-top:1px solid var(--line)}.detail{gap:7px}.detail strong{font-size:10px;line-height:1.6}.detail p{display:none}.detail-number{font-size:9px}.stage{height:65vh;height:65svh;min-height:455px;max-height:700px;border-radius:21px}.stage-top{left:18px;right:18px;top:17px}.stage-label{font-size:9px;letter-spacing:.7px}.icon-button{width:44px;height:44px}.corner.tl{left:18px;top:68px}.corner.tr{right:18px;top:68px}.status{left:21px;right:21px;top:74px;font-size:9px}.status.error{font-size:11px}.status button{min-height:44px}.stage-bottom{left:12px;right:12px;bottom:18px;gap:12px}.view-button,.rotate-button{min-height:44px;padding:10px 11px}.control-divider{margin-left:3px;margin-right:3px}.hint{font-size:9px}.below-stage{padding-top:10px;gap:12px}.below-stage .caption{font-size:9px;letter-spacing:.4px}.screenshot-link{font-size:10px;gap:4px}.downloads{margin-top:24px;align-items:start;flex-direction:column;gap:17px;padding:21px 0}.download-label{display:flex;align-items:baseline;gap:10px}.download-label small{margin:0;max-width:none;font-size:9px}.download-links{width:100%;gap:8px}.download{flex:1;justify-content:center;padding:12px 9px;font-size:11px;gap:7px}.download .format{display:none}footer{font-size:9px;gap:12px;padding:22px 0 24px}}
     @media(max-width:390px){.shell{padding:0 5vw}.header-note{font-size:8px;letter-spacing:0}.brand{font-size:11px;gap:8px}.collection-heading p{font-size:9px}.model-card{grid-template-columns:64px minmax(0,1fr);gap:2px}.card-name{font-size:17px}.card-description{font-size:8px}.card-code{font-size:8px}.card-preview{height:92px}h1{font-size:46px;gap:13px}h1 span{font-size:59px}.stage{min-height:430px}.view-button,.rotate-button{font-size:10px;padding:10px 9px}.rotate-button{gap:5px}.hint{font-size:8px}.download{font-size:10px;gap:5px;padding-left:6px;padding-right:6px}.stage-label{font-size:8px}.below-stage .caption{font-size:8px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
@@ -26,13 +26,28 @@
   <div class="shell">
     <header>
       <div class="brand"><span class="brand-mark" aria-hidden="true"></span>原创机器人展厅</div>
-      <div class="header-note"><span class="dot"></span>FOUR LITTLE WORLDS</div>
+      <div class="header-note"><span class="dot"></span>SEVEN LITTLE WORLDS</div>
     </header>
     <main>
       <section class="collection" aria-labelledby="collection-title">
-        <div class="collection-heading"><h2 id="collection-title">选一位新朋友</h2><p>四种轮廓，各有性格。</p></div>
+        <div class="collection-heading"><h2 id="collection-title">选一位新朋友</h2><p>七位伙伴，各有性格。</p></div>
         <div class="model-grid" aria-label="选择机器人">
-          <button class="model-card selected" data-model="m12" aria-pressed="true" aria-label="查看苔芽 M-12，履带园艺机器人">
+          <button class="model-card selected" data-model="l08" aria-pressed="true" aria-label="查看暮灯 L-08，灯笼夜行向导机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><path d="M40 10V4m0 6c-10 0-20 4-24 12l9 6m15-18c10 0 20 4 24 12l-9 6"/><rect x="26" y="24" width="28" height="34" rx="8"/><path d="M33 26v28m14-28v28M26 42H16v10m38-10h10v10M30 58 22 79H12m28-21v23m10-23 8 21h10"/><path d="M33 20h14"/></svg></span><img src="assets/robot-l08.png" alt="象牙白黄铜灯笼机器人，六片展开灯罩、琥珀核心与三条机械支脚" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">L-08</span><span class="card-name">暮灯</span><span class="card-description">灯笼核心<br>弧形灯罩 · 夜行向导</span></span>
+          </button>
+          <button class="model-card" data-model="f06" aria-pressed="false" aria-label="查看炉心 F-06，锅炉维修机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><rect x="20" y="15" width="40" height="50" rx="15"/><circle cx="40" cy="26" r="7"/><path d="m40 26 3-3M29 40h22m-22 7h22m-22 7h22M20 35H10v20m50-20 9 9 4-4M28 65v12H18m34-12v12h10M70 25v16m0-16 5-3m-5 3-5-3"/></svg></span><img src="assets/robot-f06.png" alt="砖红铜色圆筒锅炉机器人，炉膛格栅、压力表、短双足与扳手" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">F-06</span><span class="card-name">炉心</span><span class="card-description">圆筒锅炉<br>压力表 · 维修搭档</span></span>
+          </button>
+          <button class="model-card" data-model="c18" aria-pressed="false" aria-label="查看驮云 C-18，四足运输机器人">
+            <span class="card-selected" aria-hidden="true"></span>
+            <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><rect x="19" y="28" width="47" height="23" rx="8"/><rect x="25" y="12" width="34" height="16" rx="3"/><path d="M34 13v14m16-14v14"/><rect x="5" y="30" width="19" height="17" rx="6"/><path d="M11 36h6M26 51l-5 19H10m25-19v19h8m10-19v19h-8m12-19 6 19h8"/></svg></span><img src="assets/robot-c18.png" alt="冰白深蓝四足运输机器人，长货舱、短导航头与绑带货箱" width="220" height="220" decoding="async"></span>
+            <span class="card-copy"><span class="card-code">C-18</span><span class="card-name">驮云</span><span class="card-description">四足底盘<br>绑带货舱 · 山路行者</span></span>
+          </button>
+          <button class="model-card" data-model="m12" aria-pressed="false" aria-label="查看苔芽 M-12，履带园艺机器人">
             <span class="card-selected" aria-hidden="true"></span>
             <span class="card-preview"><span class="preview-fallback" aria-hidden="true"><svg viewBox="0 0 80 90"><path d="M40 20V9m0 1c-1-9 16-9 17-8-1 11-9 14-17 8"/><rect x="20" y="23" width="40" height="40" rx="15"/><path d="M27 41h7m12 0h7M20 45H9v14m51-14h11v14"/><rect x="14" y="65" width="52" height="16" rx="8"/></svg></span><img src="assets/robot-m12.png" alt="薄荷绿矮胖机器人，履带底盘与双叶天线" width="220" height="220" decoding="async"></span>
             <span class="card-copy"><span class="card-code">M-12</span><span class="card-name">苔芽</span><span class="card-description">履带底盘<br>双叶天线 · 园艺伙伴</span></span>
@@ -56,30 +71,30 @@
       </section>
       <div class="hero">
         <section class="intro" aria-labelledby="character-title">
-          <div class="eyebrow" id="character-kind">履带园艺机器人</div>
-          <h1 id="character-title"><span id="character-name" style="display:contents;font:inherit;letter-spacing:inherit">苔芽</span><span id="character-code">M-12</span></h1>
-          <p class="subtitle" id="character-subtitle">A LITTLE GREEN, EVERY DAY.</p>
-          <p class="description" id="character-description">薄荷绿和奶油白的圆胖身体，稳稳坐在一对履带上。头顶的两片叶形太阳能天线迎着光，一对小机械夹爪，正准备照顾下一株小苗。</p>
-          <p class="greeting" id="character-greeting">慢慢来，小芽会长大。</p>
+          <div class="eyebrow" id="character-kind">灯笼夜行向导机器人</div>
+          <h1 id="character-title"><span id="character-name" style="display:contents;font:inherit;letter-spacing:inherit">暮灯</span><span id="character-code">L-08</span></h1>
+          <p class="subtitle" id="character-subtitle">A WARM LIGHT, ALONG THE WAY.</p>
+          <p class="description" id="character-description">蜂蜜色的琥珀灯笼核心，藏在象牙白与黄铜的笼架里。六片弧形灯罩向外舒展，三条机械支脚稳稳落地；小表情屏和短短的手臂，陪你走过安静的夜路。</p>
+          <p class="greeting" id="character-greeting">天色暗了，我陪你走。</p>
           <div class="intro-rule" aria-hidden="true"></div>
           <div class="detail-list" id="character-details">
-            <div class="detail"><span class="detail-number">01</span><div><strong>履带小脚</strong><p>宽宽的履带，衬出低矮圆胖的轮廓。</p></div></div>
-            <div class="detail"><span class="detail-number">02</span><div><strong>叶形天线</strong><p>两片向上舒展的叶子，作为太阳能组件。</p></div></div>
-            <div class="detail"><span class="detail-number">03</span><div><strong>园艺夹爪</strong><p>小小的机械夹爪，给机械外壳添上温柔。</p></div></div>
+            <div class="detail"><span class="detail-number">01</span><div><strong>琥珀灯笼</strong><p>蜂蜜色核心，围在象牙白和黄铜的笼架里。</p></div></div>
+            <div class="detail"><span class="detail-number">02</span><div><strong>展开灯罩</strong><p>六片弧形灯罩，组成向外舒展的轮廓。</p></div></div>
+            <div class="detail"><span class="detail-number">03</span><div><strong>三足同行</strong><p>三条机械支脚，搭配小表情屏与短臂。</p></div></div>
           </div>
         </section>
-        <section id="preview-region" aria-label="苔芽 M-12 三维模型预览">
-          <div class="stage" id="stage" data-current-model="m12" aria-busy="true">
+        <section id="preview-region" aria-label="暮灯 L-08 三维模型预览">
+          <div class="stage" id="stage" data-current-model="l08" aria-busy="true">
             <div class="stage-top">
-              <span class="stage-label" id="stage-label">M-12 / INTERACTIVE VIEW</span>
+              <span class="stage-label" id="stage-label">L-08 / INTERACTIVE VIEW</span>
               <div class="top-actions">
                 <button class="icon-button" id="reset" title="重置视角" aria-label="重置视角"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.2 7M4 4v6h6"/></svg></button>
                 <button class="icon-button" id="fullscreen" title="全屏查看" aria-label="全屏查看"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg></button>
               </div>
             </div>
             <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span>
-            <model-viewer id="viewer" src="assets/robot-m12.glb" poster="assets/robot-m12.png" alt="原创园艺机器人苔芽 M-12：薄荷绿与奶油白的矮胖身体、履带底盘、两片叶形太阳能天线、小机械夹爪" camera-controls auto-rotate rotation-per-second="12deg" auto-rotate-delay="1800" camera-orbit="20deg 80deg auto" camera-target="0m 1.35m 0m" field-of-view="30deg" min-camera-orbit="auto 15deg auto" max-camera-orbit="auto 110deg auto" shadow-intensity="1" shadow-softness="0.8" exposure="1" tone-mapping="aces" environment-image="assets/studio.hdr" interaction-prompt="none" touch-action="pan-y"></model-viewer>
-            <div class="status" id="status" role="status" aria-live="polite" aria-atomic="true">正在唤醒苔芽 M-12…</div>
+            <model-viewer id="viewer" src="assets/robot-l08.glb" poster="assets/robot-l08.png" alt="原创夜行向导机器人暮灯 L-08：蜂蜜色琥珀灯笼核心、象牙白黄铜笼架、六片展开的弧形灯罩、三条机械支脚、小表情屏与短臂" camera-controls auto-rotate rotation-per-second="12deg" auto-rotate-delay="1800" camera-orbit="20deg 80deg auto" camera-target="0m 1.4m 0m" field-of-view="30deg" min-camera-orbit="auto 15deg auto" max-camera-orbit="auto 110deg auto" shadow-intensity="1" shadow-softness="0.8" exposure="1" tone-mapping="aces" environment-image="assets/studio.hdr" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+            <div class="status" id="status" role="status" aria-live="polite" aria-atomic="true">正在唤醒暮灯 L-08…</div>
             <div class="stage-bottom">
               <div class="view-controls" aria-label="模型视角控制">
                 <button class="view-button" data-view="0deg 80deg auto" aria-pressed="false">正面</button>
@@ -91,23 +106,44 @@
               <div class="hint">拖动旋转 · 滚轮缩放 · 手机双指缩放</div>
             </div>
           </div>
-          <div class="below-stage"><span class="caption"><span>●</span><span id="stage-caption">苔芽 / 原创角色 · 360° 预览</span></span><a class="screenshot-link" id="screenshot-link" href="assets/robot-m12.png" target="_blank" rel="noopener">查看渲染图<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+          <div class="below-stage"><span class="caption"><span>●</span><span id="stage-caption">暮灯 / 原创角色 · 360° 预览</span></span><a class="screenshot-link" id="screenshot-link" href="assets/robot-l08.png" target="_blank" rel="noopener">查看渲染图<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
         </section>
       </div>
       <section class="downloads" aria-label="下载当前机器人模型与图片">
-        <div class="download-label"><span id="download-label">把 M-12 带走</span><small>模型、源文件与渲染图</small></div>
+        <div class="download-label"><span id="download-label">把 L-08 带走</span><small>模型、源文件与渲染图</small></div>
         <div class="download-links">
-          <a class="download" id="download-glb" href="assets/robot-m12.glb" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>下载模型<span class="format">GLB</span></a>
-          <a class="download" id="download-blend" href="assets/robot-m12.blend" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-14-4 18"/></svg>Blender 源文件<span class="format">BLEND</span></a>
-          <a class="download" id="download-png" href="assets/robot-m12.png" download><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg>渲染图片<span class="format">PNG</span></a>
+          <a class="download" id="download-glb" href="assets/robot-l08.glb" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>下载模型<span class="format">GLB</span></a>
+          <a class="download" id="download-blend" href="assets/robot-l08.blend" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-14-4 18"/></svg>Blender 源文件<span class="format">BLEND</span></a>
+          <a class="download" id="download-png" href="assets/robot-l08.png" download><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg>渲染图片<span class="format">PNG</span></a>
         </div>
       </section>
       <noscript><p>开启 JavaScript 即可旋转模型。你也可以通过上方链接查看渲染图和下载文件。</p></noscript>
     </main>
-    <footer><span>四位朋友 · 原创机器人系列</span><span class="end-mark">保持好奇，继续探索。</span></footer>
+    <footer><span>七位伙伴 · 原创机器人系列</span><span class="end-mark">保持好奇，继续探索。</span></footer>
   </div>
   <script>
     const models = {
+      l08: {
+        name: '暮灯', code: 'L-08', kind: '灯笼夜行向导机器人', file: 'robot-l08', target: '0m 1.4m 0m',
+        subtitle: 'A WARM LIGHT, ALONG THE WAY.', greeting: '天色暗了，我陪你走。',
+        description: '蜂蜜色的琥珀灯笼核心，藏在象牙白与黄铜的笼架里。六片弧形灯罩向外舒展，三条机械支脚稳稳落地；小表情屏和短短的手臂，陪你走过安静的夜路。',
+        alt: '原创夜行向导机器人暮灯 L-08：蜂蜜色琥珀灯笼核心、象牙白黄铜笼架、六片展开的弧形灯罩、三条机械支脚、小表情屏与短臂',
+        details: [['琥珀灯笼', '蜂蜜色核心，围在象牙白和黄铜的笼架里。'], ['展开灯罩', '六片弧形灯罩，组成向外舒展的轮廓。'], ['三足同行', '三条机械支脚，搭配小表情屏与短臂。']]
+      },
+      f06: {
+        name: '炉心', code: 'F-06', kind: '锅炉维修机器人', file: 'robot-f06', target: '0m 1.3m 0m',
+        subtitle: 'A LITTLE SPARK, A HELPING HAND.', greeting: '别着急，我来拧紧最后一颗螺丝。',
+        description: '砖红色的圆筒锅炉机身，镶着铜色零件与奶油白装甲。炉膛格栅露出暖色核心，压力表安在上方；两只短脚托着圆滚滚的身体，一只手握着随身的扳手。',
+        alt: '原创维修机器人炉心 F-06：砖红、铜色与奶油白圆筒锅炉机身、炉膛格栅核心、压力表、短双足与手持扳手',
+        details: [['圆筒锅炉', '砖红机身，搭配铜色环件与奶油白装甲。'], ['炉膛格栅', '格栅后的暖色核心，与上方压力表相呼应。'], ['随身扳手', '短短的双足和一把扳手，组成朴实的维修搭档。']]
+      },
+      c18: {
+        name: '驮云', code: 'C-18', kind: '四足运输机器人', file: 'robot-c18', target: '0m 1.35m 0m',
+        subtitle: 'A STEADY STEP, A LONGER JOURNEY.', greeting: '行李放好，下一段路一起走。',
+        description: '冰白和深蓝的长货舱，点缀淡紫色组件。四条机械腿撑起身体，短短的导航头望着前方；货箱被绑带束在背上，像一位准备远行的山路伙伴。',
+        alt: '原创运输机器人驮云 C-18：冰白、深蓝与淡紫四足机身、长货舱、短导航头和绑带固定的货箱',
+        details: [['四足轮廓', '四条机械腿，撑起修长的运输机身。'], ['导航小头', '短小的导航头，与长长的货舱形成对比。'], ['绑带货箱', '背上的货箱与固定绑带，勾勒出远行的行装。']]
+      },
       m12: {
         name: '苔芽', code: 'M-12', kind: '履带园艺机器人', file: 'robot-m12', target: '0m 1.35m 0m',
         subtitle: 'A LITTLE GREEN, EVERY DAY.', greeting: '慢慢来，小芽会长大。',
@@ -146,8 +182,9 @@
     const rotateButton = document.getElementById('rotate');
     const rotateLabel = document.getElementById('rotate-label');
     const fullscreenButton = document.getElementById('fullscreen');
-    let activeModel = 'm12';
+    let activeModel = 'l08';
     let requestNumber = 0;
+    const retrySources = new Map();
     let rotationEnabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let loadTimeout;
     let currentLoaded = false;
@@ -234,10 +271,10 @@
       stage.setAttribute('aria-busy', 'false');
       stage.dataset.loadState = 'error';
     }
-    function attachViewerEvents(element, model, number) {
+    function attachViewerEvents(element, model, number, source) {
       const belongsToCurrentRequest = () => viewer === element && requestNumber === number;
       element.addEventListener('load', event => {
-        if (!belongsToCurrentRequest() || absoluteUrl(event.detail?.url || '') !== absoluteUrl(asset(model, 'glb'))) return;
+        if (!belongsToCurrentRequest() || absoluteUrl(event.detail?.url || '') !== absoluteUrl(source)) return;
         clearTimeout(loadTimeout);
         currentLoaded = true;
         element.resetTurntableRotation?.(0);
@@ -265,6 +302,10 @@
       activeModel = key;
       const model = models[key];
       const number = ++requestNumber;
+      // A rejected resource stays in model-viewer's cache. A retry needs a fresh URL.
+      // Reuse its successful URL on later visits; downloads keep the original filenames.
+      if (force) retrySources.set(key, `${asset(model, 'glb')}?retry=${number}`);
+      const source = retrySources.get(key) || asset(model, 'glb');
       clearViews(); updateInfo(model); showLoading(model);
       // A distinct element isolates old errors, which do not contain a source URL.
       // model-viewer's shared resource cache still makes return visits quick.
@@ -279,11 +320,11 @@
         nextViewer.toggleAttribute('auto-rotate', rotationEnabled);
         const previousViewer = viewer;
         viewer = nextViewer;
-        attachViewerEvents(viewer, model, number);
+        attachViewerEvents(viewer, model, number, source);
         previousViewer.replaceWith(viewer);
-        viewer.setAttribute('src', asset(model, 'glb'));
+        viewer.setAttribute('src', source);
       } else {
-        attachViewerEvents(viewer, model, number);
+        attachViewerEvents(viewer, model, number, source);
       }
       setRotation(rotationEnabled);
     }
@@ -309,7 +350,7 @@
       const label = document.fullscreenElement ? '退出全屏' : '全屏查看';
       fullscreenButton.setAttribute('aria-label', label); fullscreenButton.title = label;
     });
-    selectModel('m12', false, true);
+    selectModel('l08', false, true);
   </script>
 </body>
 </html>
